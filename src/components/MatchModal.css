@@ -1,0 +1,119 @@
+.match-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 11, 26, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+  animation: matchFadeIn 0.3s ease;
+  backdrop-filter: blur(8px);
+}
+
+@keyframes matchFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes matchSlideUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes matchPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.match-modal {
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px 24px;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+  animation: matchSlideUp 0.4s ease 0.1s both;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), 0 0 80px var(--primary-glow);
+}
+
+.match-header {
+  margin-bottom: 24px;
+}
+
+.match-emoji {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 8px;
+  animation: matchPulse 1s ease infinite;
+}
+
+.match-title {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0 0 4px;
+  background: var(--gradient-warm);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+}
+
+.match-subtitle {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin: 0;
+  font-weight: 500;
+}
+
+.match-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.match-poster {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+}
+
+.match-poster-placeholder {
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  background: linear-gradient(135deg, rgba(255, 92, 106, 0.05) 0%, rgba(255, 200, 78, 0.05) 100%);
+}
+
+.match-info {
+  padding: 16px;
+}
+
+.match-info h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  letter-spacing: -0.2px;
+}
+
+.match-meta {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.match-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

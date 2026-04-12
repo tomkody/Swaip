@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create:*)",
+      "Bash(echo \"PATH=$PATH\")",
+      "Bash(export NVM_DIR=\"$HOME/.nvm\")",
+      "Bash(. \"$NVM_DIR/nvm.sh\")",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(node -e \"const d = require\\(''/Users/kody/Downloads/Thunderbit_ff43ad_20260411_110827.json''\\); console.log\\(''Total movies:'', d.length\\); console.log\\(''Last:'', d[d.length-1]\\)\")",
+      "Bash(node -e \"const d = require\\(''/Users/kody/Downloads/Thunderbit_ff43ad_20260411_110827.json''\\); console.log\\(d[0][''Movie Poster'']\\); console.log\\(d[1][''Movie Poster'']\\); console.log\\(d[2][''Movie Poster'']\\)\")",
+      "Bash(node -e \":*)",
+      "Bash(git init:*)",
+      "Bash(git config:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
