@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, markRoomActive, subscribeToRoomActive } from '../lib/room'
+import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, markRoomActive } from '../lib/room'
 import { fetchTopRatedMovies } from '../lib/tmdb'
 import { fetchTopRatedSeries } from '../lib/seriesFetch'
 import SwipeCard from '../components/SwipeCard'
@@ -58,23 +58,25 @@ export default function Room() {
     init()
   }, [roomId])
 
+  // Poll for partner joining (creator only) — checks every 2s until partner starts
   useEffect(() => {
-    if (!room) return
+    if (!isCreator || partnerJoined) return
+    const interval = setInterval(async () => {
+      const latest = await getRoom(roomId)
+      if (latest?.status === 'active') {
+        clearInterval(interval)
+        setPartnerJustJoined(true)
+        setTimeout(() => {
+          setPartnerJustJoined(false)
+          setPartnerJoined(true)
+        }, 2500)
+      }
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [isCreator, partnerJoined, roomId])
 
-    // Creator subscribes to room becoming active (reliable DB-based detection)
-    const unsubRoomActive = isCreator
-      ? subscribeToRoomActive(roomId, () => {
-          setPartnerJustJoined(true)
-          setTimeout(() => {
-            setPartnerJustJoined(false)
-            setPartnerJoined(true)
-          }, 2500)
-        })
-      : () => {}
-
-    if (room.type !== 'movies' && room.type !== 'series') {
-      return () => unsubRoomActive()
-    }
+  useEffect(() => {
+    if (!room || (room.type !== 'movies' && room.type !== 'series')) return
 
     const unsubSwipes = subscribeToSwipes(roomId, userToken.current, (itemId) => {
       const matched = movies.find((m) => m.id === itemId)
@@ -84,11 +86,8 @@ export default function Room() {
       }
     })
 
-    return () => {
-      unsubSwipes()
-      unsubRoomActive()
-    }
-  }, [room, movies, roomId, isCreator])
+    return () => unsubSwipes()
+  }, [room, movies, roomId])
 
   const handleSwipe = useCallback(
     async (direction) => {
