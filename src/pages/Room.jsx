@@ -25,6 +25,7 @@ export default function Room() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [partnerJoined, setPartnerJoined] = useState(!isCreator)
+  const [partnerJustJoined, setPartnerJustJoined] = useState(false)
   const [hasJoined, setHasJoined] = useState(isCreator) // joiner sees welcome screen first
   const [copied, setCopied] = useState(false)
   const userToken = useRef(getUserToken())
@@ -58,7 +59,22 @@ export default function Room() {
   }, [roomId])
 
   useEffect(() => {
-    if (!room || (room.type !== 'movies' && room.type !== 'series')) return
+    if (!room) return
+
+    // Presence for all room types — creator gets notified when partner joins
+    const unsubRoom = subscribeToRoom(roomId, () => {
+      if (isCreator) {
+        setPartnerJustJoined(true)
+        setTimeout(() => {
+          setPartnerJustJoined(false)
+          setPartnerJoined(true)
+        }, 2500)
+      }
+    })
+
+    if (room.type !== 'movies' && room.type !== 'series') {
+      return () => unsubRoom()
+    }
 
     const unsubSwipes = subscribeToSwipes(roomId, userToken.current, (itemId) => {
       const matched = movies.find((m) => m.id === itemId)
@@ -68,15 +84,11 @@ export default function Room() {
       }
     })
 
-    const unsubRoom = subscribeToRoom(roomId, () => {
-      setPartnerJoined(true)
-    })
-
     return () => {
       unsubSwipes()
       unsubRoom()
     }
-  }, [room, movies, roomId])
+  }, [room, movies, roomId, isCreator])
 
   const handleSwipe = useCallback(
     async (direction) => {
@@ -150,6 +162,20 @@ export default function Room() {
           <button className="btn btn-primary join-btn" onClick={() => setHasJoined(true)}>
             {room.type === 'movies' || room.type === 'series' ? 'Start Swiping 👆' : 'See the options 👆'}
           </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Partner just joined — show transition screen to creator
+  if (partnerJustJoined) {
+    return (
+      <div className="room-center">
+        <div className="partner-joined">
+          <div className="partner-joined-icon">🎉</div>
+          <h2>Your friend joined!</h2>
+          <p>Starting now…</p>
+          <div className="partner-joined-bar"><div className="partner-joined-fill" /></div>
         </div>
       </div>
     )
