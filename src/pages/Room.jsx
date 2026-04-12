@@ -25,6 +25,7 @@ export default function Room() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [partnerJoined, setPartnerJoined] = useState(!isCreator)
+  const [hasJoined, setHasJoined] = useState(isCreator) // joiner sees welcome screen first
   const [copied, setCopied] = useState(false)
   const userToken = useRef(getUserToken())
 
@@ -125,6 +126,31 @@ export default function Room() {
         <button className="btn btn-primary" onClick={() => navigate('/')}>
           Go Home
         </button>
+      </div>
+    )
+  }
+
+  // Joiner welcome screen
+  if (!isCreator && !hasJoined) {
+    const typeInfo = {
+      movies:        { emoji: '🎬', label: 'Movies',       desc: 'Swipe right on movies you want to watch. When you both like the same one — it\'s a match!' },
+      series:        { emoji: '📺', label: 'TV Series',    desc: 'Swipe right on shows you want to binge. When you both like the same one — it\'s a match!' },
+      conversations: { emoji: '💬', label: 'Conversations', desc: 'Pick the topics you\'d love to talk about. You\'ll only see topics you both chose.' },
+      activities:    { emoji: '🎯', label: 'Activities',   desc: 'Pick activities you\'re up for. You\'ll see which ones you both want to do.' },
+    }
+    const info = typeInfo[room.type] || typeInfo.movies
+
+    return (
+      <div className="room-center">
+        <div className="join-screen">
+          <div className="join-icon">{info.emoji}</div>
+          <p className="join-invited">Your friend invited you!</p>
+          <h2 className="join-title">{info.label} Room</h2>
+          <p className="join-desc">{info.desc}</p>
+          <button className="btn btn-primary join-btn" onClick={() => setHasJoined(true)}>
+            {room.type === 'movies' || room.type === 'series' ? 'Start Swiping 👆' : 'See the options 👆'}
+          </button>
+        </div>
       </div>
     )
   }
