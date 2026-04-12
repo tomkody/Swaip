@@ -119,6 +119,36 @@ export async function createActivityRoom() {
   return data
 }
 
+// Mark room as active (joiner has started)
+export async function markRoomActive(roomId) {
+  if (!supabase) {
+    const key = `swaip_room_${roomId}`
+    const room = JSON.parse(localStorage.getItem(key) || '{}')
+    room.status = 'active'
+    localStorage.setItem(key, JSON.stringify(room))
+    return
+  }
+  await supabase.from('rooms').update({ status: 'active' }).eq('id', roomId)
+}
+
+// Subscribe to room becoming active (creator waits for joiner)
+export function subscribeToRoomActive(roomId, onActive) {
+  if (!supabase) return () => {}
+
+  const channel = supabase
+    .channel(`room-active-${roomId}`)
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
+      (payload) => {
+        if (payload.new.status === 'active') onActive()
+      }
+    )
+    .subscribe()
+
+  return () => supabase.removeChannel(channel)
+}
+
 export async function getRoom(roomId) {
   if (!supabase) {
     const room = localStorage.getItem(`swaip_room_${roomId}`)

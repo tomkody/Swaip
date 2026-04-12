@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, subscribeToRoom } from '../lib/room'
+import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, markRoomActive, subscribeToRoomActive } from '../lib/room'
 import { fetchTopRatedMovies } from '../lib/tmdb'
 import { fetchTopRatedSeries } from '../lib/seriesFetch'
 import SwipeCard from '../components/SwipeCard'
@@ -61,19 +61,19 @@ export default function Room() {
   useEffect(() => {
     if (!room) return
 
-    // Presence for all room types — creator gets notified when partner joins
-    const unsubRoom = subscribeToRoom(roomId, () => {
-      if (isCreator) {
-        setPartnerJustJoined(true)
-        setTimeout(() => {
-          setPartnerJustJoined(false)
-          setPartnerJoined(true)
-        }, 2500)
-      }
-    })
+    // Creator subscribes to room becoming active (reliable DB-based detection)
+    const unsubRoomActive = isCreator
+      ? subscribeToRoomActive(roomId, () => {
+          setPartnerJustJoined(true)
+          setTimeout(() => {
+            setPartnerJustJoined(false)
+            setPartnerJoined(true)
+          }, 2500)
+        })
+      : () => {}
 
     if (room.type !== 'movies' && room.type !== 'series') {
-      return () => unsubRoom()
+      return () => unsubRoomActive()
     }
 
     const unsubSwipes = subscribeToSwipes(roomId, userToken.current, (itemId) => {
@@ -86,7 +86,7 @@ export default function Room() {
 
     return () => {
       unsubSwipes()
-      unsubRoom()
+      unsubRoomActive()
     }
   }, [room, movies, roomId, isCreator])
 
@@ -159,7 +159,7 @@ export default function Room() {
           <p className="join-invited">Your friend invited you!</p>
           <h2 className="join-title">{info.label} Room</h2>
           <p className="join-desc">{info.desc}</p>
-          <button className="btn btn-primary join-btn" onClick={() => setHasJoined(true)}>
+          <button className="btn btn-primary join-btn" onClick={() => { markRoomActive(roomId); setHasJoined(true) }}>
             {room.type === 'movies' || room.type === 'series' ? 'Start Swiping 👆' : 'See the options 👆'}
           </button>
         </div>
