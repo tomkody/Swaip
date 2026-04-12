@@ -7,6 +7,7 @@ import SwipeCard from '../components/SwipeCard'
 import MatchModal from '../components/MatchModal'
 import ConversationRoom from '../components/ConversationRoom'
 import ActivityRoom from '../components/ActivityRoom'
+import RankingView from '../components/RankingView'
 import './Room.css'
 
 export default function Room() {
@@ -22,6 +23,7 @@ export default function Room() {
   const [matches, setMatches] = useState([])
   const [liked, setLiked] = useState([])
   const [showLiked, setShowLiked] = useState(false)
+  const [isDone, setIsDone] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [partnerJoined, setPartnerJoined] = useState(!isCreator)
@@ -215,86 +217,9 @@ export default function Room() {
     return <ActivityRoom room={room} onDone={() => navigate('/')} />
   }
 
-  // Movie mode — all swiped
-  if (currentIndex >= movies.length) {
-    const matchIds = new Set(matches.map((m) => m.id))
-    const likedNotMatched = liked.filter((m) => !matchIds.has(m.id))
-
-    return (
-      <div className="room-center">
-        <div className="done">
-          <div className="done-icon">✅</div>
-          <h2>All done!</h2>
-          {matches.length > 0 ? (
-            <>
-              <p className="done-text">
-                You matched on {matches.length} movie{matches.length !== 1 ? 's' : ''}:
-              </p>
-              <div className="match-list">
-                {matches.map((m) => (
-                  <div key={m.id} className="match-list-item">
-                    {m.poster ? (
-                      <img src={m.poster} alt={m.title} className="match-thumb" />
-                    ) : (
-                      <div className="match-thumb match-thumb-placeholder">🎬</div>
-                    )}
-                    <div>
-                      <strong>{m.title}</strong>
-                      <span className="match-year">{m.year}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <p className="done-text">No matches this time. Try again!</p>
-          )}
-
-          {/* Reveal liked movies */}
-          {likedNotMatched.length > 0 && (
-            <div className="reveal-liked">
-              <button
-                className="reveal-liked-toggle"
-                onClick={() => setShowLiked(!showLiked)}
-              >
-                {showLiked ? 'Hide' : 'Show'} what else I liked ({likedNotMatched.length})
-                <svg
-                  width="16" height="16" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-                  className={`reveal-arrow ${showLiked ? 'open' : ''}`}
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
-              <p className="reveal-liked-hint">
-                Show your partner what you'd also love to watch
-              </p>
-              {showLiked && (
-                <div className="match-list liked-list">
-                  {likedNotMatched.map((m) => (
-                    <div key={m.id} className="match-list-item liked-item">
-                      {m.poster ? (
-                        <img src={m.poster} alt={m.title} className="match-thumb" />
-                      ) : (
-                        <div className="match-thumb match-thumb-placeholder">🎬</div>
-                      )}
-                      <div>
-                        <strong>{m.title}</strong>
-                        <span className="match-year">{m.year}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          <button className="btn btn-primary" onClick={() => navigate('/')}>
-            New Room
-          </button>
-        </div>
-      </div>
-    )
+  // Movie/Series mode — done (all swiped or clicked "I'm done")
+  if (isDone || currentIndex >= movies.length) {
+    return <RankingView matches={matches} room={room} onDone={() => navigate('/')} />
   }
 
   // Movie mode — swipe UI
@@ -321,6 +246,12 @@ export default function Room() {
           onSwipe={handleSwipe}
           active
         />
+      </div>
+
+      <div className="room-footer">
+        <button className="done-early-btn" onClick={() => setIsDone(true)}>
+          I'm done swiping{matches.length > 0 ? ` · ${matches.length} match${matches.length !== 1 ? 'es' : ''}` : ''}
+        </button>
       </div>
 
       {matchItem && (

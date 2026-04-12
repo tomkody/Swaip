@@ -50,6 +50,24 @@
   padding-top: 8px;
 }
 
+.room-footer {
+  padding: 12px 0 4px;
+  display: flex;
+  justify-content: center;
+}
+
+.done-early-btn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  transition: color 0.2s;
+}
+.done-early-btn:hover { color: var(--text); }
+
 /* Center states */
 .room-center {
   flex: 1;

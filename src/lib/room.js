@@ -325,6 +325,58 @@ export function subscribeToConversationSelections(roomId, userToken, onPartnerSu
   return () => supabase.removeChannel(channel)
 }
 
+// Submit top-3 rankings
+export async function submitRankings(roomId, userToken, itemIds) {
+  if (!supabase) {
+    const key = `swaip_rankings_${roomId}`
+    const existing = JSON.parse(localStorage.getItem(key) || '{}')
+    existing[userToken] = itemIds
+    localStorage.setItem(key, JSON.stringify(existing))
+    return
+  }
+  // Delete old rankings for this user first, then insert new ones
+  await supabase.from('rankings').delete().eq('room_id', roomId).eq('user_token', userToken)
+  if (itemIds.length === 0) return
+  const rows = itemIds.map((id, i) => ({ room_id: roomId, user_token: userToken, item_id: id, rank: i + 1 }))
+  const { error } = await supabase.from('rankings').insert(rows)
+  if (error) throw error
+}
+
+// Get rankings for this room
+export async function getRankings(roomId, userToken) {
+  if (!supabase) {
+    const key = `swaip_rankings_${roomId}`
+    const data = JSON.parse(localStorage.getItem(key) || '{}')
+    const myRanking = data[userToken] || null
+    const otherUser = Object.keys(data).find(u => u !== userToken)
+    const partnerRanking = otherUser ? data[otherUser] : null
+    return { myRanking, partnerRanking, partnerSubmitted: !!partnerRanking }
+  }
+  const { data, error } = await supabase.from('rankings').select().eq('room_id', roomId).order('rank')
+  if (error) return { myRanking: null, partnerRanking: null, partnerSubmitted: false }
+  const byUser = {}
+  for (const row of data) {
+    if (!byUser[row.user_token]) byUser[row.user_token] = []
+    byUser[row.user_token].push(row.item_id)
+  }
+  const myRanking = byUser[userToken] || null
+  const otherUser = Object.keys(byUser).find(u => u !== userToken)
+  const partnerRanking = otherUser ? byUser[otherUser] : null
+  return { myRanking, partnerRanking, partnerSubmitted: !!partnerRanking }
+}
+
+// Subscribe to partner submitting rankings
+export function subscribeToRankings(roomId, userToken, onPartnerSubmitted) {
+  if (!supabase) return () => {}
+  const channel = supabase
+    .channel(`rankings-${roomId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rankings', filter: `room_id=eq.${roomId}` },
+      (payload) => { if (payload.new.user_token !== userToken && payload.new.rank === 1) onPartnerSubmitted() }
+    )
+    .subscribe()
+  return () => supabase.removeChannel(channel)
+}
+
 // Subscribe to room presence
 export function subscribeToRoom(roomId, onJoin) {
   if (!supabase) return () => {}
