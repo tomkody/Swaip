@@ -1,17 +1,27 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createSeriesRoom, getUserToken } from '../lib/room'
+import { PLATFORMS } from '../lib/platforms'
 import './CreateSeriesRoom.css'
 
 export default function CreateSeriesRoom() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  const [selected, setSelected] = useState([])
+
+  const allSelected = selected.length === 0
+
+  function togglePlatform(id) {
+    setSelected(prev =>
+      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
+    )
+  }
 
   async function handleCreate() {
     setLoading(true)
     try {
       getUserToken()
-      const room = await createSeriesRoom()
+      const room = await createSeriesRoom(selected)
       navigate(`/room/${room.id}`, { state: { isCreator: true } })
     } catch (err) {
       console.error('Failed to create room:', err)
@@ -33,13 +43,36 @@ export default function CreateSeriesRoom() {
         <div className="series-hero-icon">📺</div>
         <h1>TV Series</h1>
         <p className="subtitle">
-          Swipe through 50 top-rated TV series of all time. When you both swipe right on the same show — it's a match!
+          Swipe through top-rated TV shows. When you both swipe right on the same show — it's a match!
         </p>
 
-        <div className="series-preview">
-          <div className="preview-card">📺</div>
-          <div className="preview-card">🎭</div>
-          <div className="preview-card">⭐</div>
+        <div className="platform-section">
+          <p className="platform-title">Filter by streaming platform</p>
+          <p className="platform-hint">Only your picks — your partner will see the same selection</p>
+
+          <button
+            className={`platform-all-btn ${allSelected ? 'active' : ''}`}
+            onClick={() => setSelected([])}
+          >
+            {allSelected ? '✓ ' : ''}All Platforms
+          </button>
+
+          <div className="platform-grid">
+            {PLATFORMS.map(p => {
+              const active = selected.includes(p.id)
+              return (
+                <button
+                  key={p.id}
+                  className={`platform-btn ${active ? 'active' : ''}`}
+                  style={active ? { background: p.bg, borderColor: p.border, color: p.color } : {}}
+                  onClick={() => togglePlatform(p.id)}
+                >
+                  {active && <span className="platform-check">✓</span>}
+                  {p.name}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         <button

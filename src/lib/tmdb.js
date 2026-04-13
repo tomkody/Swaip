@@ -1,6 +1,6 @@
 import { MOVIES } from './movies'
+import { MOVIE_PLATFORMS } from './platforms'
 
-// Simple seeded random number generator
 function seededRandom(seed) {
   let s = 0
   for (let i = 0; i < seed.length; i++) {
@@ -12,8 +12,16 @@ function seededRandom(seed) {
   }
 }
 
-export function fetchTopRatedMovies(roomId) {
-  const shuffled = [...MOVIES]
+export function fetchTopRatedMovies(roomId, platforms = []) {
+  const pool = platforms.length === 0
+    ? [...MOVIES]
+    : MOVIES.filter(m => {
+        const mp = MOVIE_PLATFORMS[m.id]
+        return mp && mp.some(p => platforms.includes(p))
+      })
+
+  const source = pool.length >= 10 ? pool : [...MOVIES] // fallback if too few
+  const shuffled = [...source]
   const rng = roomId ? seededRandom(roomId) : Math.random
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));

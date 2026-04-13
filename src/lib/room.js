@@ -11,28 +11,23 @@ export function getUserToken() {
 }
 
 // Create a movie room
-export async function createMovieRoom() {
+export async function createMovieRoom(platforms = []) {
   const roomId = uuidv4().slice(0, 8)
+  const platformsJson = platforms.length ? JSON.stringify(platforms) : null
 
   if (!supabase) {
-    const room = {
-      id: roomId,
-      type: 'movies',
-      created_at: new Date().toISOString(),
-      status: 'waiting',
-    }
+    const room = { id: roomId, type: 'movies', platforms: platformsJson, created_at: new Date().toISOString(), status: 'waiting' }
     localStorage.setItem(`swaip_room_${roomId}`, JSON.stringify(room))
     return room
   }
 
   const { data, error } = await supabase
     .from('rooms')
-    .insert({ id: roomId, type: 'movies', status: 'waiting' })
-    .select()
-    .single()
+    .insert({ id: roomId, type: 'movies', topic_id: platformsJson, status: 'waiting' })
+    .select().single()
 
   if (error) throw error
-  return data
+  return { ...data, platforms: platformsJson }
 }
 
 // Create a conversation room (topicIds is an array of topic IDs)
@@ -70,28 +65,23 @@ export async function createConversationRoom(topicIds, topicNames) {
 }
 
 // Create a TV series room
-export async function createSeriesRoom() {
+export async function createSeriesRoom(platforms = []) {
   const roomId = uuidv4().slice(0, 8)
+  const platformsJson = platforms.length ? JSON.stringify(platforms) : null
 
   if (!supabase) {
-    const room = {
-      id: roomId,
-      type: 'series',
-      created_at: new Date().toISOString(),
-      status: 'waiting',
-    }
+    const room = { id: roomId, type: 'series', platforms: platformsJson, created_at: new Date().toISOString(), status: 'waiting' }
     localStorage.setItem(`swaip_room_${roomId}`, JSON.stringify(room))
     return room
   }
 
   const { data, error } = await supabase
     .from('rooms')
-    .insert({ id: roomId, type: 'series', status: 'waiting' })
-    .select()
-    .single()
+    .insert({ id: roomId, type: 'series', topic_id: platformsJson, status: 'waiting' })
+    .select().single()
 
   if (error) throw error
-  return data
+  return { ...data, platforms: platformsJson }
 }
 
 // Create an activity room

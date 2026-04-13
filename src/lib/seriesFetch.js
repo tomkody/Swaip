@@ -1,4 +1,5 @@
 import { SERIES } from './series'
+import { SERIES_PLATFORMS } from './platforms'
 
 function seededRandom(seed) {
   let s = 0
@@ -11,8 +12,16 @@ function seededRandom(seed) {
   }
 }
 
-export function fetchTopRatedSeries(roomId) {
-  const shuffled = [...SERIES]
+export function fetchTopRatedSeries(roomId, platforms = []) {
+  const pool = platforms.length === 0
+    ? [...SERIES]
+    : SERIES.filter(s => {
+        const sp = SERIES_PLATFORMS[s.id]
+        return sp && sp.some(p => platforms.includes(p))
+      })
+
+  const source = pool.length >= 10 ? pool : [...SERIES] // fallback if too few
+  const shuffled = [...source]
   const rng = roomId ? seededRandom(roomId) : Math.random
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));

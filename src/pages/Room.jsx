@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, markRoomActive, fetchRoomMatches } from '../lib/room'
+import { PLATFORMS } from '../lib/platforms'
 import { fetchTopRatedMovies } from '../lib/tmdb'
 import { fetchTopRatedSeries } from '../lib/seriesFetch'
 import SwipeCard from '../components/SwipeCard'
@@ -45,12 +46,11 @@ export default function Room() {
         }
         setRoom(roomData)
 
+        const platforms = roomData.platforms ? JSON.parse(roomData.platforms) : []
         if (roomData.type === 'movies') {
-          const movieList = fetchTopRatedMovies(roomData.id)
-          setMovies(movieList)
+          setMovies(fetchTopRatedMovies(roomData.id, platforms))
         } else if (roomData.type === 'series') {
-          const seriesList = fetchTopRatedSeries(roomData.id)
-          setMovies(seriesList)
+          setMovies(fetchTopRatedSeries(roomData.id, platforms))
         }
       } catch (err) {
         setError('Failed to load room')
@@ -240,7 +240,15 @@ export default function Room() {
   return (
     <div className="room">
       <div className="room-header">
-        <span className="room-genre">{room.type === 'series' ? '📺' : '🎬'} Top Rated</span>
+        <span className="room-genre">
+          {room.type === 'series' ? '📺' : '🎬'}
+          {(() => {
+            const platforms = room.platforms ? JSON.parse(room.platforms) : []
+            if (!platforms.length) return ' Top Rated'
+            const names = platforms.map(id => PLATFORMS.find(p => p.id === id)?.name).filter(Boolean)
+            return ' ' + names.join(' · ')
+          })()}
+        </span>
         <span className="room-progress">
           {currentIndex + 1} / {movies.length}
         </span>
