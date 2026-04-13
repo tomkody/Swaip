@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, markRoomActive } from '../lib/room'
+import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, markRoomActive, fetchRoomMatches } from '../lib/room'
 import { fetchTopRatedMovies } from '../lib/tmdb'
 import { fetchTopRatedSeries } from '../lib/seriesFetch'
 import SwipeCard from '../components/SwipeCard'
@@ -24,6 +24,8 @@ export default function Room() {
   const [liked, setLiked] = useState([])
   const [showLiked, setShowLiked] = useState(false)
   const [isDone, setIsDone] = useState(false)
+  const [doneMatches, setDoneMatches] = useState(null) // null = not fetched yet
+  const [fetchingDone, setFetchingDone] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [partnerJoined, setPartnerJoined] = useState(!isCreator)
@@ -218,8 +220,18 @@ export default function Room() {
   }
 
   // Movie/Series mode — done (all swiped or clicked "I'm done")
+  if (fetchingDone) {
+    return (
+      <div className="room-center">
+        <div className="loader" />
+        <p style={{ color: 'var(--text-muted)', marginTop: 12 }}>Finding your matches…</p>
+      </div>
+    )
+  }
+
   if (isDone || currentIndex >= movies.length) {
-    return <RankingView matches={matches} room={room} onDone={() => navigate('/')} />
+    const matchesToShow = doneMatches !== null ? doneMatches : matches
+    return <RankingView matches={matchesToShow} room={room} movies={movies} onDone={() => navigate('/')} />
   }
 
   // Movie mode — swipe UI
@@ -249,7 +261,16 @@ export default function Room() {
       </div>
 
       <div className="room-footer">
-        <button className="done-early-btn" onClick={() => setIsDone(true)}>
+        <button className="done-early-btn" onClick={async () => {
+          setFetchingDone(true)
+          const ids = await fetchRoomMatches(roomId, userToken.current)
+          if (ids !== null) {
+            // Supabase: resolve IDs to movie objects
+            setDoneMatches(movies.filter(m => ids.includes(m.id)))
+          }
+          setFetchingDone(false)
+          setIsDone(true)
+        }}>
           I'm done swiping{matches.length > 0 ? ` · ${matches.length} match${matches.length !== 1 ? 'es' : ''}` : ''}
         </button>
       </div>

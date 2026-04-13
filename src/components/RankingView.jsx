@@ -1,32 +1,58 @@
-import { useState, useEffect, useRef } from 'react'
-import { getUserToken, submitRankings, getRankings, subscribeToRankings } from '../lib/room'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches } from '../lib/room'
 import './RankingView.css'
 
-export default function RankingView({ matches, room, onDone }) {
+export default function RankingView({ matches: initialMatches, room, movies = [], onDone }) {
   const userToken = useRef(getUserToken())
+  const [matches, setMatches] = useState(initialMatches)
   const [top3, setTop3] = useState([])
   const [phase, setPhase] = useState('rank') // 'rank' | 'wait' | 'results'
   const [partnerRanks, setPartnerRanks] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [lastRefresh, setLastRefresh] = useState(null)
   const dragFrom = useRef(null)
+
+  const checkPartner = useCallback(async () => {
+    const { partnerRanking, partnerSubmitted } = await getRankings(room.id, userToken.current)
+    if (partnerSubmitted) {
+      setPartnerRanks(partnerRanking)
+      return true
+    }
+    return false
+  }, [room.id])
 
   // Check if partner already submitted + subscribe
   useEffect(() => {
-    getRankings(room.id, userToken.current).then(({ partnerRanking, partnerSubmitted }) => {
-      if (partnerSubmitted) setPartnerRanks(partnerRanking)
-    })
-    const unsub = subscribeToRankings(room.id, userToken.current, () => {
-      getRankings(room.id, userToken.current).then(({ partnerRanking }) => {
-        setPartnerRanks(partnerRanking)
-      })
-    })
+    checkPartner()
+    const unsub = subscribeToRankings(room.id, userToken.current, () => checkPartner())
     return unsub
-  }, [room.id])
+  }, [room.id, checkPartner])
+
+  // Auto-poll every 15s while waiting
+  useEffect(() => {
+    if (phase !== 'wait') return
+    const interval = setInterval(() => checkPartner(), 15000)
+    return () => clearInterval(interval)
+  }, [phase, checkPartner])
 
   // Move to results once partner submits (if we already submitted)
   useEffect(() => {
     if (partnerRanks && phase === 'wait') setPhase('results')
   }, [partnerRanks, phase])
+
+  async function handleRefresh() {
+    setRefreshing(true)
+    // Re-fetch matches from DB
+    const ids = await fetchRoomMatches(room.id, userToken.current)
+    if (ids !== null && movies.length > 0) {
+      setMatches(movies.filter(m => ids.includes(m.id)))
+    }
+    // Check partner rankings
+    await checkPartner()
+    setLastRefresh(new Date())
+    setRefreshing(false)
+  }
 
   function toggleItem(item) {
     setTop3(prev => {
@@ -164,11 +190,11 @@ export default function RankingView({ matches, room, onDone }) {
         <div className="rv-wait">
           <div className="rv-icon" style={{ animation: 'pulse 2s ease infinite' }}>⏳</div>
           <h2>Waiting for your partner…</h2>
-          <p>They're picking their top picks</p>
-          <div className="rv-wait-list">
-            {top3.length === 0
-              ? <p className="rv-empty">You skipped rankings</p>
-              : top3.map((m, i) => (
+          <p>They're still picking their top picks</p>
+
+          {top3.length > 0 && (
+            <div className="rv-wait-list">
+              {top3.map((m, i) => (
                 <div key={m.id} className="rv-wait-item">
                   <span className="rv-wait-rank">#{i + 1}</span>
                   {m.poster
@@ -177,7 +203,20 @@ export default function RankingView({ matches, room, onDone }) {
                   <span className="rv-wait-title">{m.title}</span>
                 </div>
               ))}
+            </div>
+          )}
+
+          <div className="rv-refresh-row">
+            <button className="rv-refresh-btn" onClick={handleRefresh} disabled={refreshing}>
+              {refreshing ? '⟳ Checking…' : '⟳ Refresh'}
+            </button>
+            {lastRefresh && (
+              <span className="rv-refresh-hint">
+                Last checked {lastRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
           </div>
+          <p className="rv-refresh-hint" style={{ marginTop: 8 }}>Auto-checks every 15 seconds</p>
         </div>
       </div>
     )

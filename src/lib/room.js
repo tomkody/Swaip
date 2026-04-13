@@ -119,6 +119,33 @@ export async function createActivityRoom() {
   return data
 }
 
+// Fetch actual mutual matches from DB (authoritative source)
+export async function fetchRoomMatches(roomId, userToken) {
+  if (!supabase) return null // demo mode: caller uses in-memory matches
+
+  const { data, error } = await supabase
+    .from('swipes')
+    .select('user_token, item_id')
+    .eq('room_id', roomId)
+    .eq('direction', 'right')
+
+  if (error || !data) return []
+
+  const byUser = {}
+  for (const row of data) {
+    if (!byUser[row.user_token]) byUser[row.user_token] = new Set()
+    byUser[row.user_token].add(row.item_id)
+  }
+
+  const users = Object.keys(byUser)
+  if (users.length < 2) return [] // partner hasn't swiped yet
+
+  const otherUser = users.find(u => u !== userToken)
+  const mine = byUser[userToken] || new Set()
+  const theirs = byUser[otherUser] || new Set()
+  return [...mine].filter(id => theirs.has(id)) // mutual right-swipe IDs
+}
+
 // Mark room as active (joiner has started)
 export async function markRoomActive(roomId) {
   if (!supabase) {
