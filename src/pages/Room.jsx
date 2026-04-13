@@ -279,7 +279,14 @@ export default function Room() {
         <MatchModal
           item={matchItem}
           onContinue={() => setMatchItem(null)}
-          onDone={() => navigate('/')}
+          onDone={async () => {
+            setMatchItem(null)
+            setFetchingDone(true)
+            const ids = await fetchRoomMatches(roomId, userToken.current)
+            if (ids !== null) setDoneMatches(movies.filter(m => ids.includes(m.id)))
+            setFetchingDone(false)
+            setIsDone(true)
+          }}
         />
       )}
     </div>
