@@ -307,7 +307,50 @@
   margin: 0;
 }
 
-/* Results */
+/* Results hero */
+.rv-results-hero {
+  text-align: center;
+  padding: 24px 20px 16px;
+}
+.rv-results-hero h2 {
+  font-size: 22px;
+  font-weight: 900;
+  margin: 0 0 6px;
+  letter-spacing: -0.3px;
+}
+.rv-results-hero p {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.rv-match-static { cursor: default; }
+.rv-match-static:hover { border-color: var(--border) !important; }
+
+.rv-rank-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.rv-rank-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+}
+.rv-rank-you {
+  background: rgba(255, 92, 106, 0.15);
+  color: var(--primary);
+  border: 1px solid rgba(255, 92, 106, 0.3);
+}
+.rv-rank-them {
+  background: rgba(108, 92, 231, 0.15);
+  color: #a89af7;
+  border: 1px solid rgba(108, 92, 231, 0.3);
+}
+
+/* Results (legacy, kept for shared items) */
 .rv-results { max-width: 400px; width: 100%; text-align: left; }
 .rv-results h2 { font-size: 22px; font-weight: 900; margin: 0 0 20px; text-align: center; letter-spacing: -0.3px; }
 

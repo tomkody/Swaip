@@ -122,62 +122,82 @@ export default function RankingView({ matches: initialMatches, room, movies = []
     const { scored, unranked } = getResults()
     const combined = scored.filter(r => r.both)
     const oneOnly = scored.filter(r => !r.both)
+    const hasRankings = scored.length > 0
+    const typeLabel = room.type === 'series' ? 'shows' : room.type === 'activities' ? 'activities' : 'movies'
+
     return (
-      <div className="rv-page rv-center">
-        <div className="rv-results">
-          <div className="rv-icon">🎯</div>
-          <h2>Combined Top Picks</h2>
-          {combined.length > 0 && (
-            <div className="rv-section">
-              <p className="rv-label">Both of you picked these ✓</p>
-              {combined.map((r, i) => (
-                <div key={r.item.id} className="rv-result-item rv-both">
-                  <span className="rv-pos">#{i + 1}</span>
-                  {r.item.poster
-                    ? <img src={r.item.poster} alt={r.item.title} className="rv-thumb" />
-                    : <div className="rv-thumb rv-thumb-empty">{emoji}</div>}
-                  <div className="rv-result-info">
-                    <strong>{r.item.title}</strong>
-                    <span>You #{r.myRank} · Them #{r.partnerRank}</span>
-                  </div>
-                  <span className="rv-both-badge">Match</span>
-                </div>
-              ))}
-            </div>
-          )}
-          {oneOnly.length > 0 && (
-            <div className="rv-section">
-              <p className="rv-label">One of you picked these</p>
-              {oneOnly.map(r => (
-                <div key={r.item.id} className="rv-result-item">
-                  {r.item.poster
-                    ? <img src={r.item.poster} alt={r.item.title} className="rv-thumb" />
-                    : <div className="rv-thumb rv-thumb-empty">{emoji}</div>}
-                  <div className="rv-result-info">
-                    <strong>{r.item.title}</strong>
-                    <span>{r.myRank ? `You #${r.myRank}` : '—'} · {r.partnerRank ? `Them #${r.partnerRank}` : '—'}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {unranked.length > 0 && (
-            <div className="rv-section">
-              <p className="rv-label">Other matches</p>
-              {unranked.map(m => (
-                <div key={m.id} className="rv-result-item rv-unranked">
+      <div className="rv-page">
+        {/* Hero summary */}
+        <div className="rv-results-hero">
+          <div className="rv-icon">🎉</div>
+          <h2>You matched on {matches.length} {typeLabel}!</h2>
+          <p>{matches.length === 0 ? 'No matches this time.' : 'Here\'s everything you both agreed on:'}</p>
+        </div>
+
+        {/* ALL matched movies — always shown first */}
+        {matches.length > 0 && (
+          <div className="rv-match-list" style={{ paddingTop: 0 }}>
+            <p className="rv-label">All matches ({matches.length})</p>
+            {matches.map(m => {
+              const myRank = top3.findIndex(t => t.id === m.id) + 1 || null
+              const partnerRank = partnerRanks ? (partnerRanks.indexOf(m.id) + 1) || null : null
+              const isTopMatch = myRank && partnerRank
+              return (
+                <div key={m.id} className={`rv-match-item rv-match-static ${isTopMatch ? 'rv-in-top3' : ''}`}>
                   {m.poster
-                    ? <img src={m.poster} alt={m.title} className="rv-thumb" />
-                    : <div className="rv-thumb rv-thumb-empty">{emoji}</div>}
-                  <div className="rv-result-info"><strong>{m.title}</strong></div>
+                    ? <img src={m.poster} alt={m.title} className="rv-match-thumb" />
+                    : <div className="rv-match-thumb rv-match-thumb-empty">{emoji}</div>}
+                  <div className="rv-match-info">
+                    <strong>{m.title}</strong>
+                    <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                  </div>
+                  {(myRank || partnerRank) && (
+                    <div className="rv-rank-tags">
+                      {myRank && <span className="rv-rank-tag rv-rank-you">You #{myRank}</span>}
+                      {partnerRank && <span className="rv-rank-tag rv-rank-them">Them #{partnerRank}</span>}
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-          {scored.length === 0 && unranked.length === 0 && (
-            <p className="rv-empty">No matches to show.</p>
-          )}
-          <button className="btn btn-primary rv-done-btn" onClick={onDone}>New Room</button>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Priority rankings — shown only if someone ranked */}
+        {hasRankings && (
+          <div className="rv-match-list" style={{ paddingTop: 0 }}>
+            <p className="rv-label" style={{ marginTop: 8 }}>Priority picks</p>
+            {combined.length > 0 && combined.map((r, i) => (
+              <div key={r.item.id} className="rv-result-item rv-both">
+                <span className="rv-pos">#{i + 1}</span>
+                {r.item.poster
+                  ? <img src={r.item.poster} alt={r.item.title} className="rv-thumb" />
+                  : <div className="rv-thumb rv-thumb-empty">{emoji}</div>}
+                <div className="rv-result-info">
+                  <strong>{r.item.title}</strong>
+                  <span>You #{r.myRank} · Them #{r.partnerRank}</span>
+                </div>
+                <span className="rv-both-badge">✓ Both</span>
+              </div>
+            ))}
+            {oneOnly.map(r => (
+              <div key={r.item.id} className="rv-result-item">
+                {r.item.poster
+                  ? <img src={r.item.poster} alt={r.item.title} className="rv-thumb" />
+                  : <div className="rv-thumb rv-thumb-empty">{emoji}</div>}
+                <div className="rv-result-info">
+                  <strong>{r.item.title}</strong>
+                  <span>{r.myRank ? `You #${r.myRank}` : '—'} · {r.partnerRank ? `Them #${r.partnerRank}` : '—'}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {matches.length === 0 && <p className="rv-empty" style={{ padding: '0 20px' }}>Try swiping more next time!</p>}
+
+        <div className="rv-footer">
+          <button className="btn btn-primary rv-submit" onClick={onDone}>Start New Room</button>
         </div>
       </div>
     )
