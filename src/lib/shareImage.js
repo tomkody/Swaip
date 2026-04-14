@@ -31,7 +31,7 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   return lines.length * lineHeight
 }
 
-export async function generateShareImage({ title, posterUrl, swipeCount }) {
+export async function generateShareImage({ title, posterUrl, emoji, swipeCount }) {
   const W = 1080, H = 1920
   const canvas = document.createElement('canvas')
   canvas.width = W
@@ -52,8 +52,8 @@ export async function generateShareImage({ title, posterUrl, swipeCount }) {
   ctx.fillStyle = orb
   ctx.fillRect(0, 0, W, H)
 
-  // Poster
-  let posterBottom = H * 0.6
+  // Poster or emoji
+  let posterBottom = H * 0.52
   if (posterUrl) {
     try {
       const img = await loadImage(posterUrl)
@@ -71,6 +71,14 @@ export async function generateShareImage({ title, posterUrl, swipeCount }) {
       ctx.fillStyle = fade
       ctx.fillRect(0, 0, W, clampH + 60)
     } catch { /* no poster */ }
+  } else if (emoji) {
+    // Large emoji centered in the top half
+    ctx.font = '320px serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(emoji, W / 2, H * 0.28)
+    ctx.textBaseline = 'alphabetic'
+    posterBottom = H * 0.52
   }
 
   const textStartY = posterBottom + 60

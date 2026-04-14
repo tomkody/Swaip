@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches } from '../lib/room'
+import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches, subscribeToSwipes } from '../lib/room'
 import './RankingView.css'
 
 export default function RankingView({ matches: initialMatches, room, movies = [], onDone }) {
@@ -35,6 +35,35 @@ export default function RankingView({ matches: initialMatches, room, movies = []
     const interval = setInterval(() => checkPartner(), 15000)
     return () => clearInterval(interval)
   }, [phase, checkPartner])
+
+  // ── Real-time match updates ─────────────────────────────────────
+  // Subscribe to partner swipes so matches update even after we clicked "done"
+  useEffect(() => {
+    if (phase === 'results') return
+    const unsub = subscribeToSwipes(room.id, userToken.current, (itemId) => {
+      const numId = Number(itemId)
+      const matched = movies.find(m => m.id === numId || m.id === itemId)
+      if (matched) {
+        setMatches(prev => prev.find(m => m.id === matched.id) ? prev : [...prev, matched])
+      }
+    })
+    return unsub
+  }, [room.id, movies, phase])
+
+  // Poll for new matches every 12s while ranking or waiting (catches any missed realtime events)
+  useEffect(() => {
+    if (phase === 'results') return
+    const poll = async () => {
+      const ids = await fetchRoomMatches(room.id, userToken.current)
+      if (ids !== null && ids.length > 0 && movies.length > 0) {
+        const fresh = movies.filter(m => ids.includes(m.id))
+        if (fresh.length > 0) setMatches(fresh)
+      }
+    }
+    poll() // immediate check on mount
+    const interval = setInterval(poll, 12000)
+    return () => clearInterval(interval)
+  }, [room.id, movies, phase])
 
   // Move to results once partner submits (if we already submitted)
   useEffect(() => {

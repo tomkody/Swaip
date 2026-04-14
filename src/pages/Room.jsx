@@ -4,6 +4,7 @@ import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, markRoomActive, 
 import { PLATFORMS } from '../lib/platforms'
 import { fetchTopRatedMovies } from '../lib/tmdb'
 import { fetchTopRatedSeries } from '../lib/seriesFetch'
+import { getFoodItems } from '../lib/foodItems'
 import SwipeCard from '../components/SwipeCard'
 import MatchModal from '../components/MatchModal'
 import ConversationRoom from '../components/ConversationRoom'
@@ -38,6 +39,7 @@ export default function Room() {
   const [showLiked, setShowLiked] = useState(false)
   const [isDone, setIsDone] = useState(false)
   const [doneMatches, setDoneMatches] = useState(null) // null = not fetched yet
+  const isDoneRef = useRef(false)
   const [fetchingDone, setFetchingDone] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -91,14 +93,27 @@ export default function Room() {
     return () => clearInterval(interval)
   }, [isCreator, partnerJoined, roomId])
 
+  // Keep isDoneRef in sync so the swipe subscription can read it without stale closure
+  useEffect(() => { isDoneRef.current = isDone }, [isDone])
+
   useEffect(() => {
     if (!room || (room.type !== 'movies' && room.type !== 'series')) return
 
     const unsubSwipes = subscribeToSwipes(roomId, userToken.current, (itemId) => {
       const matched = movies.find((m) => m.id === itemId)
       if (matched) {
-        setMatchItem(matched)
-        setMatches((prev) => [...prev, matched])
+        // Always update real-time matches list (deduped)
+        setMatches((prev) => prev.find(m => m.id === matched.id) ? prev : [...prev, matched])
+        // If already done, update doneMatches so RankingView gets the new match
+        setDoneMatches((prev) => {
+          if (prev === null) return null
+          if (prev.find(m => m.id === matched.id)) return prev
+          return [...prev, matched]
+        })
+        // Only show match-modal overlay while still actively swiping
+        if (!isDoneRef.current) {
+          setMatchItem(matched)
+        }
       }
     })
 
@@ -248,7 +263,10 @@ export default function Room() {
   }
 
   if (isDone || currentIndex >= movies.length) {
-    const matchesToShow = doneMatches !== null ? doneMatches : matches
+    // Always use the longer list — doneMatches grows as the partner keeps swiping
+    const matchesToShow = (doneMatches !== null && doneMatches.length >= matches.length)
+      ? doneMatches
+      : matches
     return <RankingView matches={matchesToShow} room={room} movies={movies} onDone={() => navigate('/')} />
   }
 

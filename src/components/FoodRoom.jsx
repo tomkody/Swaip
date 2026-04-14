@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import confetti from 'canvas-confetti'
-import { getUserToken, recordSwipe, subscribeToSwipes, fetchRoomMatches } from '../lib/room'
+import { getUserToken, recordSwipe, subscribeToSwipes, fetchRoomMatches, checkFoodMatches } from '../lib/room'
 import { getFoodItems } from '../lib/foodItems'
 import { saveMatch } from '../lib/savedMatches'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
@@ -16,22 +16,48 @@ export default function FoodRoom({ room, onDone }) {
   const [matchItem, setMatchItem] = useState(null)
   const [isDone, setIsDone] = useState(false)
   const [doneMatches, setDoneMatches] = useState(null)
-  const [fetchingDone, setFetchingDone] = useState(false)
   const [sharing, setSharing] = useState(false)
   const swipeCount = useRef(0)
+  const isDoneRef = useRef(false)
+
+  useEffect(() => { isDoneRef.current = isDone }, [isDone])
 
   // Subscribe to partner swipes — same pattern as Room.jsx
   useEffect(() => {
     const unsub = subscribeToSwipes(room.id, userToken.current, (itemId) => {
       const matched = items.current.find(m => m.id === Number(itemId))
       if (matched) {
-        setMatchItem(matched)
-        setMatches(prev => [...prev, matched])
-        saveMatch({ id: matched.id, title: matched.title, category: 'food', image: null })
-        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
+        setMatches(prev => prev.find(m => m.id === matched.id) ? prev : [...prev, matched])
+        setDoneMatches(prev => {
+          if (prev === null) return null
+          if (prev.find(m => m.id === matched.id)) return prev
+          return [...prev, matched]
+        })
+        if (!isDoneRef.current) {
+          setMatchItem(matched)
+          saveMatch({ id: matched.id, title: matched.title, category: 'food', image: null })
+          confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
+        }
       }
     })
     return unsub
+  }, [room.id])
+
+  // Poll for new food matches every 12s (both before and after done — partner may finish later)
+  useEffect(() => {
+    const poll = async () => {
+      const matched = await checkFoodMatches(room.id, userToken.current, items.current.map(i => i.id))
+      if (matched.length > 0) {
+        const matchedItems = items.current.filter(i => matched.includes(i.id))
+        setMatches(matchedItems)
+        setDoneMatches(prev => {
+          if (prev === null) return prev
+          return matchedItems
+        })
+      }
+    }
+    const interval = setInterval(poll, 12000)
+    return () => clearInterval(interval)
   }, [room.id])
 
   const handleSwipe = useCallback(async (direction) => {
@@ -54,21 +80,30 @@ export default function FoodRoom({ room, onDone }) {
     setCurrentIndex(i => i + 1)
   }, [currentIndex, room.id])
 
-  async function handleDone() {
-    setFetchingDone(true)
-    const ids = await fetchRoomMatches(room.id, userToken.current)
-    if (ids !== null) {
-      setDoneMatches(items.current.filter(m => ids.includes(m.id)))
-    }
-    setFetchingDone(false)
+  function handleDone() {
+    // Close modal and go to results immediately — no async blocking
+    setMatchItem(null)
     setIsDone(true)
+    // Fetch authoritative matches in background and update if better
+    checkFoodMatches(room.id, userToken.current, items.current.map(i => i.id))
+      .then(matched => {
+        if (matched.length > 0) {
+          setDoneMatches(items.current.filter(i => matched.includes(i.id)))
+        } else {
+          // Fallback to whatever real-time matches we already have
+          setDoneMatches(prev => prev ?? matches)
+        }
+      })
+      .catch(() => {
+        setDoneMatches(prev => prev ?? matches)
+      })
   }
 
   async function handleShare(item) {
     if (sharing) return
     setSharing(true)
     try {
-      const canvas = await generateShareImage({ title: item.title, posterUrl: null, swipeCount: swipeCount.current })
+      const canvas = await generateShareImage({ title: item.title, posterUrl: null, emoji: item.emoji, swipeCount: swipeCount.current })
       downloadCanvas(canvas, `swaip-${item.title.replace(/\s+/g, '-').toLowerCase()}.png`)
     } catch (err) { console.error('Share error:', err) }
     finally { setSharing(false) }
@@ -100,11 +135,17 @@ export default function FoodRoom({ room, onDone }) {
           </button>
 
           <div className="food-match-actions">
-            <button className="btn btn-primary" onClick={() => setMatchItem(null)}>
-              Keep Swiping
-            </button>
+            {currentIndex < items.current.length ? (
+              <button className="btn btn-primary" onClick={() => setMatchItem(null)}>
+                Keep Swiping
+              </button>
+            ) : (
+              <button className="btn btn-primary" onClick={handleDone}>
+                See All Matches
+              </button>
+            )}
             <button className="btn btn-secondary" onClick={handleDone}>
-              Done
+              Done — See All Matches
             </button>
           </div>
         </div>
@@ -112,22 +153,21 @@ export default function FoodRoom({ room, onDone }) {
     )
   }
 
-  // ── Fetching done ──────────────────────────────────────────────
-  if (fetchingDone) {
-    return (
-      <div className="food-center">
-        <div className="food-loader" />
-        <p style={{ color: 'var(--text-muted)', marginTop: 12 }}>Finding your matches…</p>
-      </div>
-    )
-  }
-
   // ── Results ────────────────────────────────────────────────────
   if (isDone || currentIndex >= items.current.length) {
-    const results = doneMatches ?? matches
+    // Always use the longer list — doneMatches grows as partner keeps swiping
+    const results = (doneMatches !== null && doneMatches.length >= matches.length)
+      ? doneMatches
+      : matches
+    const stillLoading = doneMatches === null
     return (
       <div className="food-results">
         <div className="food-results-inner">
+          {stillLoading && (
+            <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 12 }}>
+              Checking for matches…
+            </p>
+          )}
           {results.length > 0 ? (
             <>
               <div className="food-results-icon">🎊</div>
