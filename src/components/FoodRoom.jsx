@@ -1,42 +1,78 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import confetti from 'canvas-confetti'
-import { getUserToken, recordSwipe, subscribeToSwipes, checkMutualSwipesByPrefix } from '../lib/room'
+import { getUserToken, recordSwipe, subscribeToSwipes, checkMutualSwipesByIds } from '../lib/room'
 import { saveMatch } from '../lib/savedMatches'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import SwipeCard from './SwipeCard'
 import './FoodRoom.css'
 
+// Numeric IDs in the 900 range — safely outside movies (1-250) and series (1-250)
 const CUISINES = [
-  { id: 'food_cuisine_italian',  title: 'Italian',  emoji: '🍝', overview: 'Pasta, pizza, risotto, tiramisu…' },
-  { id: 'food_cuisine_sushi',    title: 'Sushi',    emoji: '🍱', overview: 'Fresh rolls, sashimi, miso, edamame…' },
-  { id: 'food_cuisine_burgers',  title: 'Burgers',  emoji: '🍔', overview: 'Juicy patties, crispy fries, milkshakes…' },
-  { id: 'food_cuisine_indian',   title: 'Indian',   emoji: '🍛', overview: 'Curries, naan, biryani, samosas…' },
-  { id: 'food_cuisine_mexican',  title: 'Mexican',  emoji: '🌮', overview: 'Tacos, burritos, guac, churros…' },
-  { id: 'food_cuisine_chinese',  title: 'Chinese',  emoji: '🥟', overview: 'Dim sum, dumplings, noodles, Peking duck…' },
-  { id: 'food_cuisine_french',   title: 'French',   emoji: '🥐', overview: 'Croissants, coq au vin, crème brûlée…' },
-  { id: 'food_cuisine_thai',     title: 'Thai',     emoji: '🍜', overview: 'Pad thai, green curry, mango sticky rice…' },
-  { id: 'food_cuisine_pizza',    title: 'Pizza',    emoji: '🍕', overview: 'Margherita, pepperoni, calzone, garlic bread…' },
+  { id: 901, title: 'Italian',  emoji: '🍝', overview: 'Pasta, pizza, risotto, tiramisu…' },
+  { id: 902, title: 'Sushi',    emoji: '🍱', overview: 'Fresh rolls, sashimi, miso, edamame…' },
+  { id: 903, title: 'Burgers',  emoji: '🍔', overview: 'Juicy patties, crispy fries, milkshakes…' },
+  { id: 904, title: 'Indian',   emoji: '🍛', overview: 'Curries, naan, biryani, samosas…' },
+  { id: 905, title: 'Mexican',  emoji: '🌮', overview: 'Tacos, burritos, guac, churros…' },
+  { id: 906, title: 'Chinese',  emoji: '🥟', overview: 'Dim sum, dumplings, noodles, Peking duck…' },
+  { id: 907, title: 'French',   emoji: '🥐', overview: 'Croissants, coq au vin, crème brûlée…' },
+  { id: 908, title: 'Thai',     emoji: '🍜', overview: 'Pad thai, green curry, mango sticky rice…' },
+  { id: 909, title: 'Pizza',    emoji: '🍕', overview: 'Margherita, pepperoni, calzone, garlic bread…' },
 ]
+const CUISINE_IDS = CUISINES.map(c => c.id)
 
 const GOOGLE_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY
 
+// Demo restaurants use numeric IDs: 951–999
+const DEMO_RESTAURANTS = {
+  Italian: [
+    { id: 951, title: 'La Bella Trattoria',  overview: 'Classic Italian comfort food', emoji: '🍝', rating: '4.7' },
+    { id: 952, title: 'Piccolo Roma',         overview: 'Authentic Roman cuisine',      emoji: '🫙', rating: '4.5' },
+    { id: 953, title: 'Pasta e Basta',        overview: 'Fresh pasta made daily',       emoji: '🍕', rating: '4.4' },
+  ],
+  Sushi: [
+    { id: 954, title: 'Sakura Sushi Bar', overview: 'Premium fresh fish daily',   emoji: '🍱', rating: '4.8' },
+    { id: 955, title: 'Maki House',       overview: 'Creative rolls & classics',  emoji: '🥢', rating: '4.6' },
+    { id: 956, title: 'Tokyo Bites',      overview: 'Omakase & à la carte',       emoji: '🍣', rating: '4.5' },
+  ],
+  Burgers: [
+    { id: 957, title: 'The Burger Lab',     overview: 'Science-backed smash burgers', emoji: '🍔', rating: '4.7' },
+    { id: 958, title: 'Smash & Grill',      overview: 'Double smash, crispy edges',   emoji: '🧀', rating: '4.6' },
+    { id: 959, title: 'Old School Burgers', overview: 'Classic diner vibes',          emoji: '🥓', rating: '4.5' },
+  ],
+  Indian: [
+    { id: 960, title: 'Spice Garden',      overview: 'Rich curries & tandoor',  emoji: '🍛', rating: '4.7' },
+    { id: 961, title: 'Taj Mahal Kitchen', overview: 'Northern Indian classics', emoji: '🌶️', rating: '4.6' },
+    { id: 962, title: 'Curry House',       overview: 'Homestyle Indian cooking', emoji: '🫓', rating: '4.5' },
+  ],
+  Mexican: [
+    { id: 963, title: 'El Rancho',      overview: 'Street-style tacos & mezcal', emoji: '🌮', rating: '4.7' },
+    { id: 964, title: 'Taqueria Local', overview: 'Authentic al pastor',          emoji: '🌯', rating: '4.6' },
+    { id: 965, title: 'Casa Mexica',    overview: 'Modern Mexican kitchen',       emoji: '🥑', rating: '4.5' },
+  ],
+  Chinese: [
+    { id: 966, title: 'Golden Dragon',  overview: 'Cantonese dim sum & mains', emoji: '🥟', rating: '4.7' },
+    { id: 967, title: 'Dim Sum Palace', overview: 'Weekend dim sum specialist', emoji: '🍜', rating: '4.6' },
+    { id: 968, title: 'Wonton House',   overview: 'Hand-pulled noodles & soup', emoji: '🫕', rating: '4.5' },
+  ],
+  French: [
+    { id: 969, title: 'Café de Paris', overview: 'Parisian bistro classics',  emoji: '🥐', rating: '4.8' },
+    { id: 970, title: 'Bistro Lyon',   overview: 'Lyonnaise cuisine & wine',  emoji: '🍷', rating: '4.6' },
+    { id: 971, title: 'Le Petit Four', overview: 'Fine French patisserie',    emoji: '🧁', rating: '4.5' },
+  ],
+  Thai: [
+    { id: 972, title: 'Thai Orchid',      overview: 'Aromatic curries & stir-fry', emoji: '🍜', rating: '4.7' },
+    { id: 973, title: 'Pad Thai Palace',  overview: 'Street food favorites',       emoji: '🥜', rating: '4.6' },
+    { id: 974, title: 'Bangkok Spice',    overview: 'Authentic Thai heat levels',  emoji: '🌿', rating: '4.5' },
+  ],
+  Pizza: [
+    { id: 975, title: 'Napoli Wood Fire', overview: 'Neapolitan DOC pizza',     emoji: '🍕', rating: '4.8' },
+    { id: 976, title: 'Slice of Life',    overview: 'New York style by the slice', emoji: '🧀', rating: '4.6' },
+    { id: 977, title: 'The Pizza Lab',    overview: 'Experimental toppings',    emoji: '🫙', rating: '4.5' },
+  ],
+}
+
 function getDemoRestaurants(cuisineTitle) {
-  const names = {
-    Italian:  [['La Bella Trattoria','⭐ 4.7 · $$','🍝'],['Piccolo Roma','⭐ 4.5 · $$$','🫙'],['Pasta e Basta','⭐ 4.4 · $$','🍕']],
-    Sushi:    [['Sakura Sushi Bar','⭐ 4.8 · $$$','🍱'],['Maki House','⭐ 4.6 · $$','🥢'],['Tokyo Bites','⭐ 4.5 · $$','🍣']],
-    Burgers:  [['The Burger Lab','⭐ 4.7 · $$','🍔'],['Smash & Grill','⭐ 4.6 · $','🧀'],['Old School Burgers','⭐ 4.5 · $$','🥓']],
-    Indian:   [['Spice Garden','⭐ 4.7 · $$','🍛'],['Taj Mahal Kitchen','⭐ 4.6 · $$$','🌶️'],['Curry House','⭐ 4.5 · $$','🫓']],
-    Mexican:  [['El Rancho','⭐ 4.7 · $$','🌮'],['Taqueria Local','⭐ 4.6 · $','🌯'],['Casa Mexica','⭐ 4.5 · $$','🥑']],
-    Chinese:  [['Golden Dragon','⭐ 4.7 · $$','🥟'],['Dim Sum Palace','⭐ 4.6 · $$$','🍜'],['Wonton House','⭐ 4.5 · $','🫕']],
-    French:   [['Café de Paris','⭐ 4.8 · $$$','🥐'],['Bistro Lyon','⭐ 4.6 · $$','🍷'],['Le Petit Four','⭐ 4.5 · $$$','🧁']],
-    Thai:     [['Thai Orchid','⭐ 4.7 · $$','🍜'],['Pad Thai Palace','⭐ 4.6 · $','🥜'],['Bangkok Spice','⭐ 4.5 · $$','🌿']],
-    Pizza:    [['Napoli Wood Fire','⭐ 4.8 · $$','🍕'],['Slice of Life','⭐ 4.6 · $','🧀'],['The Pizza Lab','⭐ 4.5 · $$','🫙']],
-  }
-  const list = names[cuisineTitle] || names.Burgers
-  return list.map(([title, overview, emoji], i) => ({
-    id: `demo_${cuisineTitle.toLowerCase()}_${i}`,
-    title, overview, emoji, poster: null,
-  }))
+  return (DEMO_RESTAURANTS[cuisineTitle] || DEMO_RESTAURANTS.Burgers).map(r => ({ ...r, poster: null }))
 }
 
 export default function FoodRoom({ room, onDone }) {
@@ -49,10 +85,11 @@ export default function FoodRoom({ room, onDone }) {
   const [locationNote, setLocationNote] = useState(null)
   const [sharing, setSharing] = useState(false)
   const [swipeCount, setSwipeCount] = useState(0)
+
   const restaurantsRef = useRef([])
   const phaseRef = useRef('cuisine')
   const userToken = useRef(getUserToken())
-  const matchedRef = useRef(false) // prevent double-triggering
+  const matchedRef = useRef(false)
 
   useEffect(() => { restaurantsRef.current = restaurants }, [restaurants])
   useEffect(() => { phaseRef.current = phase }, [phase])
@@ -75,7 +112,7 @@ export default function FoodRoom({ room, onDone }) {
       title: restaurant.title,
       category: 'food',
       image: restaurant.poster || null,
-      rating: restaurant.overview || null,
+      rating: restaurant.rating || null,
     })
     confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
   }, [])
@@ -83,58 +120,52 @@ export default function FoodRoom({ room, onDone }) {
   // ── Realtime subscription (Supabase) ───────────────────────────
   useEffect(() => {
     const unsub = subscribeToSwipes(room.id, userToken.current, (itemId) => {
+      const numId = Number(itemId)
       if (phaseRef.current === 'matched') return
-      if (itemId.startsWith('food_cuisine_')) {
-        const cuisine = CUISINES.find(c => c.id === itemId)
+      if (CUISINE_IDS.includes(numId)) {
+        const cuisine = CUISINES.find(c => c.id === numId)
         if (cuisine) handleCuisineMatch(cuisine)
       } else {
-        const restaurant = restaurantsRef.current.find(r => r.id === itemId)
+        const restaurant = restaurantsRef.current.find(r => r.id === numId)
         if (restaurant) handleRestaurantMatch(restaurant)
       }
     })
     return unsub
   }, [room.id, handleCuisineMatch, handleRestaurantMatch])
 
-  // ── Polling fallback (localStorage / missed real-time events) ──
-  // Polls every 1.5s during cuisine phase to catch partner matches
-  // that may have been missed (player A swiped right before B did)
+  // ── Polling for cuisine phase ──────────────────────────────────
   useEffect(() => {
     if (phase !== 'cuisine') return
     const interval = setInterval(async () => {
       if (matchedRef.current) { clearInterval(interval); return }
       try {
-        const matchedId = await checkMutualSwipesByPrefix(room.id, userToken.current, 'food_cuisine_')
+        const matchedId = await checkMutualSwipesByIds(room.id, userToken.current, CUISINE_IDS)
         if (matchedId) {
           clearInterval(interval)
           const cuisine = CUISINES.find(c => c.id === matchedId)
           if (cuisine) handleCuisineMatch(cuisine)
         }
-      } catch (err) { console.warn('Poll error:', err) }
+      } catch (err) { console.warn('Cuisine poll error:', err) }
     }, 1500)
     return () => clearInterval(interval)
   }, [phase, room.id, handleCuisineMatch])
 
-  // ── Same polling for restaurant phase ─────────────────────────
-  // Uses a generic prefix-free check: looks for any mutual swipe on items
-  // that appear in the current restaurant list
+  // ── Polling for restaurant phase ───────────────────────────────
   useEffect(() => {
     if (phase !== 'restaurant') return
     const interval = setInterval(async () => {
       if (phaseRef.current === 'matched') { clearInterval(interval); return }
       const list = restaurantsRef.current
       if (!list.length) return
-      // Use first restaurant id to infer prefix
-      const firstId = list[0].id
-      const prefix = firstId.startsWith('demo_') ? 'demo_' : firstId.slice(0, 8)
+      const ids = list.map(r => r.id)
       try {
-        const matchedId = await checkMutualSwipesByPrefix(room.id, userToken.current, prefix)
-        if (!matchedId) return
-        const restaurant = list.find(r => r.id === matchedId)
-        if (restaurant) {
+        const matchedId = await checkMutualSwipesByIds(room.id, userToken.current, ids)
+        if (matchedId) {
           clearInterval(interval)
-          handleRestaurantMatch(restaurant)
+          const restaurant = list.find(r => r.id === matchedId)
+          if (restaurant) handleRestaurantMatch(restaurant)
         }
-      } catch (err) { console.warn('Poll error:', err) }
+      } catch (err) { console.warn('Restaurant poll error:', err) }
     }, 1500)
     return () => clearInterval(interval)
   }, [phase, room.id, handleRestaurantMatch])
@@ -142,7 +173,7 @@ export default function FoodRoom({ room, onDone }) {
   // ── Fetch restaurants ──────────────────────────────────────────
   async function fetchRestaurants(cuisineTitle) {
     if (!GOOGLE_KEY) {
-      setLocationNote('No API key set — showing demo restaurants.')
+      setLocationNote('No Google API key — showing demo restaurants.')
       setRestaurants(getDemoRestaurants(cuisineTitle))
       setPhase('restaurant')
       return
@@ -167,19 +198,23 @@ export default function FoodRoom({ room, onDone }) {
       })
       const data = await res.json()
       if (data.places?.length > 0) {
-        setRestaurants(data.places.map(p => ({
-          id: p.id,
+        // Assign numeric IDs starting at 1001 to avoid any collisions
+        const mapped = data.places.map((p, i) => ({
+          id: 1001 + i,
           title: p.displayName?.text || 'Restaurant',
           overview: [p.formattedAddress, p.currentOpeningHours?.openNow ? '🟢 Open now' : ''].filter(Boolean).join(' · '),
-          rating: p.rating ? `⭐ ${p.rating.toFixed(1)}${p.priceLevel ? ' · ' + '$'.repeat(p.priceLevel - 1 || 1) : ''}` : null,
-          poster: p.photos?.[0] ? `https://places.googleapis.com/v1/${p.photos[0].name}/media?maxWidthPx=400&key=${GOOGLE_KEY}` : null,
+          rating: p.rating ? p.rating.toFixed(1) : null,
+          poster: p.photos?.[0]
+            ? `https://places.googleapis.com/v1/${p.photos[0].name}/media?maxWidthPx=400&key=${GOOGLE_KEY}`
+            : null,
           emoji: '🍽️',
-        })))
+        }))
+        setRestaurants(mapped)
         setPhase('restaurant')
       } else throw new Error('No results')
     } catch (err) {
       console.warn('Places API error:', err.message)
-      setLocationNote('Could not fetch nearby restaurants. Showing popular spots instead.')
+      setLocationNote('Could not get your location — showing popular spots instead.')
       setRestaurants(getDemoRestaurants(cuisineTitle))
       setPhase('restaurant')
     }
@@ -194,9 +229,9 @@ export default function FoodRoom({ room, onDone }) {
       const isMatch = await recordSwipe(room.id, userToken.current, cuisine.id, direction)
       if (isMatch && direction === 'right') {
         handleCuisineMatch(cuisine)
-        return // don't increment index after match
+        return
       }
-    } catch (err) { console.error(err) }
+    } catch (err) { console.error('recordSwipe error:', err) }
     setCuisineIndex(i => i + 1)
   }, [cuisineIndex, room.id, handleCuisineMatch])
 
@@ -210,7 +245,7 @@ export default function FoodRoom({ room, onDone }) {
         handleRestaurantMatch(restaurant)
         return
       }
-    } catch (err) { console.error(err) }
+    } catch (err) { console.error('recordSwipe error:', err) }
     setRestaurantIndex(i => i + 1)
   }, [restaurantIndex, room.id, handleRestaurantMatch])
 
@@ -234,7 +269,7 @@ export default function FoodRoom({ room, onDone }) {
           <div className="food-done-all">
             <div className="food-done-icon">😅</div>
             <h2>No match yet</h2>
-            <p>You swiped through all cuisines but your partner hasn't matched any yet. Ask them to hurry up! 😄</p>
+            <p>You've swiped through all cuisines but your partner hasn't matched yet. Ask them to hurry up!</p>
             <button className="btn btn-primary" onClick={() => { matchedRef.current = false; setCuisineIndex(0); setSwipeCount(0) }}>Start over</button>
             <button className="btn btn-secondary" style={{ marginTop: 8 }} onClick={onDone}>Go home</button>
           </div>
@@ -275,7 +310,7 @@ export default function FoodRoom({ room, onDone }) {
           <div className="food-done-all">
             <div className="food-done-icon">🤷</div>
             <h2>No restaurant match</h2>
-            <p>You both ran out of {matchedCuisine?.title?.toLowerCase()} restaurants. Try another cuisine!</p>
+            <p>You swiped through all {matchedCuisine?.title?.toLowerCase()} spots. Try another cuisine!</p>
             <button className="btn btn-primary" onClick={() => { matchedRef.current = false; setPhase('cuisine'); setCuisineIndex(0); setMatchedCuisine(null) }}>Try another cuisine</button>
             <button className="btn btn-secondary" style={{ marginTop: 8 }} onClick={onDone}>Go home</button>
           </div>
@@ -313,7 +348,7 @@ export default function FoodRoom({ room, onDone }) {
             )}
             <div className="food-matched-info">
               <h2>{finalMatch.title}</h2>
-              {finalMatch.rating && <div className="food-matched-rating">{finalMatch.rating}</div>}
+              {finalMatch.rating && <div className="food-matched-rating">⭐ {finalMatch.rating}</div>}
               {finalMatch.overview && <p className="food-matched-address">{finalMatch.overview}</p>}
             </div>
           </div>
