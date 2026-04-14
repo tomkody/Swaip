@@ -17,7 +17,9 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(python3 -c \"import sys, json; data = json.load\\(sys.stdin\\); print\\(data['lastPrompt']\\)\")",
-      "Bash(python3 -c ':*)"
+      "Bash(python3 -c ':*)",
+      "Bash(node -e \"const s = require\\('./src/lib/series.js'\\); console.log\\(s.SERIES.slice\\(50,150\\).map\\(x=>x.id+'. '+x.title\\).join\\('\\\\n'\\)\\)\")",
+      "Bash(node -e \"const s = require\\('./src/lib/series.js'\\); console.log\\(s.SERIES.slice\\(150\\).map\\(x=>x.id+'. '+x.title\\).join\\('\\\\n'\\)\\)\")"
     ]
   }
 }

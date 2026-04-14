@@ -11,23 +11,23 @@ export function getUserToken() {
 }
 
 // Create a movie room
-export async function createMovieRoom(platforms = []) {
+export async function createMovieRoom(platforms = [], genres = []) {
   const roomId = uuidv4().slice(0, 8)
-  const platformsJson = platforms.length ? JSON.stringify(platforms) : null
+  const filters = (platforms.length || genres.length) ? JSON.stringify({ platforms, genres }) : null
 
   if (!supabase) {
-    const room = { id: roomId, type: 'movies', platforms: platformsJson, created_at: new Date().toISOString(), status: 'waiting' }
+    const room = { id: roomId, type: 'movies', platforms: filters, created_at: new Date().toISOString(), status: 'waiting' }
     localStorage.setItem(`swaip_room_${roomId}`, JSON.stringify(room))
     return room
   }
 
   const { data, error } = await supabase
     .from('rooms')
-    .insert({ id: roomId, type: 'movies', topic_id: platformsJson, status: 'waiting' })
+    .insert({ id: roomId, type: 'movies', topic_id: filters, status: 'waiting' })
     .select().single()
 
   if (error) throw error
-  return { ...data, platforms: platformsJson }
+  return { ...data, platforms: filters }
 }
 
 // Create a conversation room (topicIds is an array of topic IDs)
@@ -65,23 +65,23 @@ export async function createConversationRoom(topicIds, topicNames) {
 }
 
 // Create a TV series room
-export async function createSeriesRoom(platforms = []) {
+export async function createSeriesRoom(platforms = [], genres = []) {
   const roomId = uuidv4().slice(0, 8)
-  const platformsJson = platforms.length ? JSON.stringify(platforms) : null
+  const filters = (platforms.length || genres.length) ? JSON.stringify({ platforms, genres }) : null
 
   if (!supabase) {
-    const room = { id: roomId, type: 'series', platforms: platformsJson, created_at: new Date().toISOString(), status: 'waiting' }
+    const room = { id: roomId, type: 'series', platforms: filters, created_at: new Date().toISOString(), status: 'waiting' }
     localStorage.setItem(`swaip_room_${roomId}`, JSON.stringify(room))
     return room
   }
 
   const { data, error } = await supabase
     .from('rooms')
-    .insert({ id: roomId, type: 'series', topic_id: platformsJson, status: 'waiting' })
+    .insert({ id: roomId, type: 'series', topic_id: filters, status: 'waiting' })
     .select().single()
 
   if (error) throw error
-  return { ...data, platforms: platformsJson }
+  return { ...data, platforms: filters }
 }
 
 // Create an activity room

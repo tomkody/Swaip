@@ -4,24 +4,35 @@ import { createSeriesRoom, getUserToken } from '../lib/room'
 import { PLATFORMS } from '../lib/platforms'
 import './CreateSeriesRoom.css'
 
+const GENRE_OPTIONS = [
+  'Action', 'Anime', 'Animation', 'Comedy',
+  'Crime', 'Documentary', 'Drama', 'Fantasy',
+  'History', 'Horror', 'Mystery', 'Reality',
+  'Romance', 'Sci-Fi', 'Sport', 'Thriller',
+  'War', 'Western',
+]
+
 export default function CreateSeriesRoom() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
-  const [selected, setSelected] = useState([])
-
-  const allSelected = selected.length === 0
+  const [platforms, setPlatforms] = useState([])
+  const [genres, setGenres] = useState([])
+  const [platformOpen, setPlatformOpen] = useState(false)
+  const [genreOpen, setGenreOpen] = useState(false)
 
   function togglePlatform(id) {
-    setSelected(prev =>
-      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
-    )
+    setPlatforms(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])
+  }
+
+  function toggleGenre(g) {
+    setGenres(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g])
   }
 
   async function handleCreate() {
     setLoading(true)
     try {
       getUserToken()
-      const room = await createSeriesRoom(selected)
+      const room = await createSeriesRoom(platforms, genres)
       navigate(`/room/${room.id}`, { state: { isCreator: true } })
     } catch (err) {
       console.error('Failed to create room:', err)
@@ -30,6 +41,14 @@ export default function CreateSeriesRoom() {
       setLoading(false)
     }
   }
+
+  const platformLabel = platforms.length === 0
+    ? 'All Platforms'
+    : platforms.map(id => PLATFORMS.find(p => p.id === id)?.name).filter(Boolean).join(', ')
+
+  const genreLabel = genres.length === 0
+    ? 'All Genres'
+    : genres.join(', ')
 
   return (
     <div className="create-series">
@@ -46,33 +65,95 @@ export default function CreateSeriesRoom() {
           Swipe through top-rated TV shows. When you both swipe right on the same show — it's a match!
         </p>
 
-        <div className="platform-section">
-          <p className="platform-title">Filter by streaming platform</p>
-          <p className="platform-hint">Only your picks — your partner will see the same selection</p>
-
-          <button
-            className={`platform-all-btn ${allSelected ? 'active' : ''}`}
-            onClick={() => setSelected([])}
-          >
-            {allSelected ? '✓ ' : ''}All Platforms
+        {/* Streaming Platforms */}
+        <div className="filter-section">
+          <button className="filter-header" onClick={() => setPlatformOpen(o => !o)}>
+            <span className="filter-header-left">
+              <span className="filter-icon">📡</span>
+              <span className="filter-header-title">Streaming Platforms</span>
+              <span className="filter-badge">{platformLabel}</span>
+            </span>
+            <svg
+              width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+              className={`filter-arrow ${platformOpen ? 'open' : ''}`}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
           </button>
 
-          <div className="platform-grid">
-            {PLATFORMS.map(p => {
-              const active = selected.includes(p.id)
-              return (
-                <button
-                  key={p.id}
-                  className={`platform-btn ${active ? 'active' : ''}`}
-                  style={active ? { background: p.bg, borderColor: p.border, color: p.color } : {}}
-                  onClick={() => togglePlatform(p.id)}
-                >
-                  {active && <span className="platform-check">✓</span>}
-                  {p.name}
-                </button>
-              )
-            })}
-          </div>
+          {platformOpen && (
+            <div className="filter-body">
+              <button
+                className={`filter-all-btn ${platforms.length === 0 ? 'active' : ''}`}
+                onClick={() => setPlatforms([])}
+              >
+                {platforms.length === 0 && <span className="filter-check">✓</span>}
+                All Platforms
+              </button>
+              <div className="filter-grid">
+                {PLATFORMS.map(p => {
+                  const active = platforms.includes(p.id)
+                  return (
+                    <button
+                      key={p.id}
+                      className={`filter-btn ${active ? 'active' : ''}`}
+                      style={active ? { background: p.bg, borderColor: p.border, color: p.color } : {}}
+                      onClick={() => togglePlatform(p.id)}
+                    >
+                      {active && <span className="filter-check">✓</span>}
+                      {p.name}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Genres */}
+        <div className="filter-section">
+          <button className="filter-header" onClick={() => setGenreOpen(o => !o)}>
+            <span className="filter-header-left">
+              <span className="filter-icon">🎭</span>
+              <span className="filter-header-title">Genres</span>
+              <span className="filter-badge">{genreLabel}</span>
+            </span>
+            <svg
+              width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+              className={`filter-arrow ${genreOpen ? 'open' : ''}`}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+
+          {genreOpen && (
+            <div className="filter-body">
+              <button
+                className={`filter-all-btn ${genres.length === 0 ? 'active' : ''}`}
+                onClick={() => setGenres([])}
+              >
+                {genres.length === 0 && <span className="filter-check">✓</span>}
+                All Genres
+              </button>
+              <div className="filter-grid">
+                {GENRE_OPTIONS.map(g => {
+                  const active = genres.includes(g)
+                  return (
+                    <button
+                      key={g}
+                      className={`filter-btn ${active ? 'active' : ''}`}
+                      onClick={() => toggleGenre(g)}
+                    >
+                      {active && <span className="filter-check">✓</span>}
+                      {g}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         <button

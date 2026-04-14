@@ -15,13 +15,18 @@ function seededRandom(seed) {
   }
 }
 
-export function fetchTopRatedMovies(roomId, platforms = []) {
-  const pool = platforms.length === 0
+export function fetchTopRatedMovies(roomId, platforms = [], genres = []) {
+  let pool = platforms.length === 0
     ? [...MOVIES_WITH_GENRES]
     : MOVIES_WITH_GENRES.filter(m => {
         const mp = MOVIE_PLATFORMS[m.id]
         return mp && mp.some(p => platforms.includes(p))
       })
+
+  if (genres.length > 0) {
+    const filtered = pool.filter(m => m.genre && genres.some(g => m.genre.includes(g)))
+    if (filtered.length >= 10) pool = filtered
+  }
 
   const source = pool.length >= 10 ? pool : [...MOVIES_WITH_GENRES] // fallback if too few
   const shuffled = [...source]

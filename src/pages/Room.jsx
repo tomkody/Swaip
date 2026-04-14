@@ -11,6 +11,17 @@ import ActivityRoom from '../components/ActivityRoom'
 import RankingView from '../components/RankingView'
 import './Room.css'
 
+function parseRoomFilters(raw) {
+  if (!raw) return { platforms: [], genres: [] }
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) return { platforms: parsed, genres: [] } // legacy
+    return { platforms: parsed.platforms || [], genres: parsed.genres || [] }
+  } catch {
+    return { platforms: [], genres: [] }
+  }
+}
+
 export default function Room() {
   const { roomId } = useParams()
   const navigate = useNavigate()
@@ -46,11 +57,11 @@ export default function Room() {
         }
         setRoom(roomData)
 
-        const platforms = roomData.platforms ? JSON.parse(roomData.platforms) : []
+        const { platforms, genres } = parseRoomFilters(roomData.platforms)
         if (roomData.type === 'movies') {
-          setMovies(fetchTopRatedMovies(roomData.id, platforms))
+          setMovies(fetchTopRatedMovies(roomData.id, platforms, genres))
         } else if (roomData.type === 'series') {
-          setMovies(fetchTopRatedSeries(roomData.id, platforms))
+          setMovies(fetchTopRatedSeries(roomData.id, platforms, genres))
         }
       } catch (err) {
         setError('Failed to load room')
@@ -243,10 +254,12 @@ export default function Room() {
         <span className="room-genre">
           {room.type === 'series' ? '📺' : '🎬'}
           {(() => {
-            const platforms = room.platforms ? JSON.parse(room.platforms) : []
-            if (!platforms.length) return ' Top Rated'
-            const names = platforms.map(id => PLATFORMS.find(p => p.id === id)?.name).filter(Boolean)
-            return ' ' + names.join(' · ')
+            const { platforms, genres } = parseRoomFilters(room.platforms)
+            const parts = [
+              ...platforms.map(id => PLATFORMS.find(p => p.id === id)?.name).filter(Boolean),
+              ...genres,
+            ]
+            return parts.length ? ' ' + parts.join(' · ') : ' Top Rated'
           })()}
         </span>
         <span className="room-progress">

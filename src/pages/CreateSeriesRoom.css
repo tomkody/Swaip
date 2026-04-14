@@ -79,3 +79,122 @@
 .create-series .platform-btn:hover { border-color: var(--border-hover); color: var(--text); }
 .create-series .platform-btn.active { font-weight: 700; }
 .create-series .platform-check { font-size: 12px; font-weight: 800; }
+
+/* Collapsible filter sections — inherit from CreateMovieRoom.css pattern */
+.create-series .filter-section {
+  margin-bottom: 12px;
+  text-align: left;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+}
+
+.create-series .filter-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  gap: 8px;
+  transition: background 0.15s;
+}
+.create-series .filter-header:hover { background: var(--bg-card-hover); }
+
+.create-series .filter-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.create-series .filter-icon { font-size: 16px; flex-shrink: 0; }
+
+.create-series .filter-header-title {
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.create-series .filter-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.create-series .filter-arrow {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+.create-series .filter-arrow.open { transform: rotate(180deg); }
+
+.create-series .filter-body {
+  padding: 0 14px 14px;
+  border-top: 1px solid var(--border);
+  animation: filterSlideDown 0.18s ease;
+}
+
+.create-series .filter-all-btn {
+  width: 100%;
+  padding: 10px 14px;
+  margin-top: 12px;
+  margin-bottom: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.create-series .filter-all-btn.active {
+  border-color: #6C5CE7;
+  color: #6C5CE7;
+  background: rgba(108, 92, 231, 0.1);
+}
+
+.create-series .filter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.create-series .filter-btn {
+  padding: 9px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: left;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.create-series .filter-btn:hover { border-color: var(--border-hover); color: var(--text); }
+.create-series .filter-btn.active { color: var(--text); font-weight: 700; }
+
+.create-series .filter-check {
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
