@@ -84,6 +84,42 @@ export async function createSeriesRoom(platforms = [], genres = []) {
   return { ...data, platforms: filters }
 }
 
+// Check for any mutual right-swipe on items matching a prefix (localStorage + Supabase)
+export async function checkMutualSwipesByPrefix(roomId, userToken, prefix) {
+  if (!supabase) {
+    const key = `swaip_swipes_${roomId}`
+    const swipes = JSON.parse(localStorage.getItem(key) || '[]')
+    const rightSwipes = swipes.filter(s => s.direction === 'right' && s.item_id.startsWith(prefix))
+    const byItem = {}
+    for (const s of rightSwipes) {
+      if (!byItem[s.item_id]) byItem[s.item_id] = new Set()
+      byItem[s.item_id].add(s.user_token)
+    }
+    for (const [itemId, tokens] of Object.entries(byItem)) {
+      if (tokens.size >= 2 || (tokens.size === 1 && !tokens.has(userToken))) {
+        return itemId
+      }
+    }
+    return null
+  }
+  const { data, error } = await supabase
+    .from('swipes')
+    .select('user_token, item_id')
+    .eq('room_id', roomId)
+    .eq('direction', 'right')
+    .like('item_id', `${prefix}%`)
+  if (error || !data) return null
+  const byItem = {}
+  for (const s of data) {
+    if (!byItem[s.item_id]) byItem[s.item_id] = new Set()
+    byItem[s.item_id].add(s.user_token)
+  }
+  for (const [itemId, tokens] of Object.entries(byItem)) {
+    if (tokens.size >= 2) return itemId
+  }
+  return null
+}
+
 // Create a food room
 export async function createFoodRoom() {
   const roomId = uuidv4().slice(0, 8)
