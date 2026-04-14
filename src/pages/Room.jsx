@@ -8,6 +8,7 @@ import SwipeCard from '../components/SwipeCard'
 import MatchModal from '../components/MatchModal'
 import ConversationRoom from '../components/ConversationRoom'
 import ActivityRoom from '../components/ActivityRoom'
+import FoodRoom from '../components/FoodRoom'
 import RankingView from '../components/RankingView'
 import './Room.css'
 
@@ -159,10 +160,11 @@ export default function Room() {
   // Joiner welcome screen
   if (!isCreator && !hasJoined) {
     const typeInfo = {
-      movies:        { emoji: '🎬', label: 'Movies',       desc: 'Swipe right on movies you want to watch. When you both like the same one — it\'s a match!' },
-      series:        { emoji: '📺', label: 'TV Series',    desc: 'Swipe right on shows you want to binge. When you both like the same one — it\'s a match!' },
+      movies:        { emoji: '🎬', label: 'Movies',        desc: 'Swipe right on movies you want to watch. When you both like the same one — it\'s a match!' },
+      series:        { emoji: '📺', label: 'TV Series',     desc: 'Swipe right on shows you want to binge. When you both like the same one — it\'s a match!' },
       conversations: { emoji: '💬', label: 'Conversations', desc: 'Pick the topics you\'d love to talk about. You\'ll only see topics you both chose.' },
-      activities:    { emoji: '🎯', label: 'Activities',   desc: 'Pick activities you\'re up for. You\'ll see which ones you both want to do.' },
+      activities:    { emoji: '🎯', label: 'Activities',    desc: 'Pick activities you\'re up for. You\'ll see which ones you both want to do.' },
+      food:          { emoji: '🍽️', label: 'Food & Dining', desc: 'Swipe on cuisines first, then on real restaurants nearby. Time to eat!' },
     }
     const info = typeInfo[room.type] || typeInfo.movies
 
@@ -213,7 +215,7 @@ export default function Room() {
             </button>
           </div>
           <button className="btn btn-secondary skip-wait" onClick={() => setPartnerJoined(true)}>
-            {room.type === 'movies' ? 'Start swiping solo' : 'Start solo'}
+            {room.type === 'movies' || room.type === 'series' || room.type === 'food' ? 'Start swiping solo' : 'Start solo'}
           </button>
         </div>
       </div>
@@ -228,6 +230,11 @@ export default function Room() {
   // Activities mode
   if (room.type === 'activities') {
     return <ActivityRoom room={room} onDone={() => navigate('/')} />
+  }
+
+  // Food mode
+  if (room.type === 'food') {
+    return <FoodRoom room={room} onDone={() => navigate('/')} />
   }
 
   // Movie/Series mode — done (all swiped or clicked "I'm done")
@@ -299,6 +306,8 @@ export default function Room() {
       {matchItem && (
         <MatchModal
           item={matchItem}
+          roomType={room.type}
+          swipeCount={currentIndex}
           onContinue={() => setMatchItem(null)}
           onDone={async () => {
             setMatchItem(null)

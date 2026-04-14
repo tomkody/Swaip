@@ -88,7 +88,7 @@ export default function SwipeCard({ item, onSwipe, active }) {
           <img src={item.poster} alt={item.title} className="card-poster" draggable={false} />
         ) : (
           <div className="card-poster card-poster-placeholder">
-            <span className="placeholder-icon">🎬</span>
+            <span className="placeholder-icon">{item.emoji || '🎬'}</span>
           </div>
         )}
 

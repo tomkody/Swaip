@@ -40,11 +40,51 @@
   z-index: 1;
 }
 
-/* Tight header — logo + brand text + tagline close together */
+/* Header with history button */
 .landing-header {
   text-align: center;
   margin-bottom: 24px;
   padding-top: 0;
+}
+
+.landing-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.landing-logo-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.landing-header-actions {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.history-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.2s;
+  backdrop-filter: blur(12px);
+}
+
+.history-btn:hover {
+  color: var(--text);
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
 }
 
 .logo-mark {
@@ -101,9 +141,17 @@
   margin-bottom: 24px;
 }
 
+/* Food card spans full width as 5th card */
+.category-card--food {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 400px) {
   .category-grid {
     grid-template-columns: 1fr;
+  }
+  .category-card--food {
+    grid-column: 1;
   }
 }
 
@@ -141,6 +189,7 @@
 .series-glow { background: #6C5CE7; }
 .conv-glow   { background: var(--accent); }
 .activity-glow { background: #00B894; }
+.food-glow     { background: #FF6B35; }
 
 .category-card:hover {
   border-color: var(--border-hover);

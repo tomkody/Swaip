@@ -84,6 +84,22 @@ export async function createSeriesRoom(platforms = [], genres = []) {
   return { ...data, platforms: filters }
 }
 
+// Create a food room
+export async function createFoodRoom() {
+  const roomId = uuidv4().slice(0, 8)
+  if (!supabase) {
+    const room = { id: roomId, type: 'food', created_at: new Date().toISOString(), status: 'waiting' }
+    localStorage.setItem(`swaip_room_${roomId}`, JSON.stringify(room))
+    return room
+  }
+  const { data, error } = await supabase
+    .from('rooms')
+    .insert({ id: roomId, type: 'food', status: 'waiting' })
+    .select().single()
+  if (error) throw error
+  return data
+}
+
 // Create an activity room
 export async function createActivityRoom() {
   const roomId = uuidv4().slice(0, 8)
