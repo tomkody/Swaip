@@ -122,13 +122,23 @@ export default function ConversationRoom({ room, onDone }) {
                 {Object.entries(groupByTopic(matchedSubs)).map(([topic, { emoji, items }]) => (
                   <div key={topic} className="result-group">
                     <div className="result-group-header">{emoji} {topic}</div>
-                    <div className="result-chips">
-                      {items.map((s) => (
-                        <div key={s.id} className="result-chip matched">
+                    {items.map((s) => (
+                      <div key={s.id} className="result-subtopic-block">
+                        <div className="result-chip matched">
                           {s.emoji} {s.name}
                         </div>
-                      ))}
-                    </div>
+                        {s.questions && s.questions.length > 0 && (
+                          <div className="result-questions">
+                            {s.questions.map((q, i) => (
+                              <div key={i} className="result-question">
+                                <span className="question-num">{i + 1}</span>
+                                <span>{q}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>

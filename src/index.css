@@ -7,21 +7,35 @@
   --success-glow: rgba(74, 222, 128, 0.15);
   --danger: #FF5C6A;
   --bg: #0D0B1A;
-  --bg-card: rgba(255, 255, 255, 0.04);
-  --bg-card-hover: rgba(255, 255, 255, 0.07);
-  --bg-surface: rgba(255, 255, 255, 0.06);
+  --bg-card: rgba(255, 255, 255, 0.05);
+  --bg-card-hover: rgba(255, 255, 255, 0.09);
+  --bg-surface: rgba(255, 255, 255, 0.07);
   --bg-glass: rgba(255, 255, 255, 0.05);
   --text: #F0EDF6;
   --text-muted: #9B95A8;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(255, 255, 255, 0.15);
+  --border: rgba(255, 255, 255, 0.09);
+  --border-hover: rgba(255, 255, 255, 0.18);
   --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   --shadow-glow: 0 0 40px var(--primary-glow);
   --radius: 20px;
   --radius-sm: 12px;
   --radius-pill: 50px;
-  --gradient-warm: linear-gradient(135deg, #FF5C6A 0%, #FFC84E 100%);
-  --gradient-bg: radial-gradient(ellipse at 50% 0%, rgba(255, 92, 106, 0.08) 0%, transparent 60%);
+  --gradient-warm: linear-gradient(135deg, #F74F5E 0%, #F5B83A 100%);
+  --gradient-bg: radial-gradient(ellipse at 50% 0%, rgba(255, 92, 106, 0.07) 0%, transparent 60%);
+}
+
+[data-theme="light"] {
+  --bg: #F2EFF9;
+  --bg-card: rgba(255, 255, 255, 0.72);
+  --bg-card-hover: rgba(255, 255, 255, 0.9);
+  --bg-surface: rgba(0, 0, 0, 0.05);
+  --bg-glass: rgba(255, 255, 255, 0.6);
+  --text: #1A1529;
+  --text-muted: #6B6480;
+  --border: rgba(0, 0, 0, 0.09);
+  --border-hover: rgba(0, 0, 0, 0.18);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --gradient-bg: radial-gradient(ellipse at 50% 0%, rgba(255, 92, 106, 0.06) 0%, transparent 60%);
 }
 
 * {

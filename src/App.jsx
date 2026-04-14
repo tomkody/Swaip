@@ -5,11 +5,13 @@ import CreateSeriesRoom from './pages/CreateSeriesRoom'
 import CreateConversationRoom from './pages/CreateConversationRoom'
 import CreateActivityRoom from './pages/CreateActivityRoom'
 import Room from './pages/Room'
+import ThemeToggle from './components/ThemeToggle'
 import './App.css'
 
 export default function App() {
   return (
     <div className="app">
+      <ThemeToggle />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/create/movies" element={<CreateMovieRoom />} />

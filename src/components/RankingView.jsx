@@ -205,16 +205,29 @@ export default function RankingView({ matches: initialMatches, room, movies = []
 
   // WAITING
   if (phase === 'wait') {
-    return (
-      <div className="rv-page rv-center">
-        <div className="rv-wait">
-          <div className="rv-icon" style={{ animation: 'pulse 2s ease infinite' }}>⏳</div>
-          <h2>Waiting for your partner…</h2>
-          <p>They're still picking their top picks</p>
+    const partnerTop3Items = partnerRanks
+      ? partnerRanks.map(id => matches.find(m => m.id === id)).filter(Boolean)
+      : null
 
-          {top3.length > 0 && (
-            <div className="rv-wait-list">
-              {top3.map((m, i) => (
+    return (
+      <div className="rv-page">
+        <div className="rv-wait-page">
+          <div className="rv-wait-header">
+            <div className="rv-icon">🔒</div>
+            <h2>Picks locked in!</h2>
+            <p>Waiting for your partner to lock in theirs…</p>
+          </div>
+
+          <div className="rv-screenshot-hint">
+            <span className="rv-screenshot-icon">📸</span>
+            <span>Make a screenshot and send it to your friend!</span>
+          </div>
+
+          <div className="rv-wait-cols">
+            {/* My picks */}
+            <div className="rv-wait-col">
+              <p className="rv-wait-col-label">Your picks</p>
+              {top3.length > 0 ? top3.map((m, i) => (
                 <div key={m.id} className="rv-wait-item">
                   <span className="rv-wait-rank">#{i + 1}</span>
                   {m.poster
@@ -222,9 +235,30 @@ export default function RankingView({ matches: initialMatches, room, movies = []
                     : <div className="rv-thumb rv-thumb-empty">{emoji}</div>}
                   <span className="rv-wait-title">{m.title}</span>
                 </div>
-              ))}
+              )) : <p className="rv-wait-none">No picks</p>}
             </div>
-          )}
+
+            {/* Partner picks */}
+            <div className="rv-wait-col">
+              <p className="rv-wait-col-label">Their picks</p>
+              {partnerTop3Items ? partnerTop3Items.map((m, i) => (
+                <div key={m.id} className="rv-wait-item rv-wait-partner">
+                  <span className="rv-wait-rank rv-wait-rank-partner">#{i + 1}</span>
+                  {m.poster
+                    ? <img src={m.poster} alt={m.title} className="rv-thumb" />
+                    : <div className="rv-thumb rv-thumb-empty">{emoji}</div>}
+                  <span className="rv-wait-title">{m.title}</span>
+                </div>
+              )) : (
+                <div className="rv-wait-pending">
+                  <div className="rv-wait-dots">
+                    <span /><span /><span />
+                  </div>
+                  <p>Still picking…</p>
+                </div>
+              )}
+            </div>
+          </div>
 
           <div className="rv-refresh-row">
             <button className="rv-refresh-btn" onClick={handleRefresh} disabled={refreshing}>
@@ -232,11 +266,11 @@ export default function RankingView({ matches: initialMatches, room, movies = []
             </button>
             {lastRefresh && (
               <span className="rv-refresh-hint">
-                Last checked {lastRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                Checked {lastRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
           </div>
-          <p className="rv-refresh-hint" style={{ marginTop: 8 }}>Auto-checks every 15 seconds</p>
+          <p className="rv-refresh-hint" style={{ marginTop: 8, textAlign: 'center' }}>Auto-checks every 15 seconds</p>
         </div>
       </div>
     )

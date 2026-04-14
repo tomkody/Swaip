@@ -98,6 +98,7 @@ export default function SwipeCard({ item, onSwipe, active }) {
             {item.rating && <span className="card-rating">★ {item.rating}</span>}
             {item.runtime && <span className="card-runtime">{item.runtime}</span>}
           </div>
+          {item.genre && <p className="card-genre">{item.genre}</p>}
           <h2 className="card-title">{item.title}</h2>
           <p className="card-overview">{item.overview}</p>
         </div>

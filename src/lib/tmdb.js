@@ -1,5 +1,8 @@
 import { MOVIES } from './movies'
 import { MOVIE_PLATFORMS } from './platforms'
+import { MOVIE_GENRES } from './movieGenres'
+
+const MOVIES_WITH_GENRES = MOVIES.map(m => ({ ...m, genre: MOVIE_GENRES[m.id] || '' }))
 
 function seededRandom(seed) {
   let s = 0
@@ -14,13 +17,13 @@ function seededRandom(seed) {
 
 export function fetchTopRatedMovies(roomId, platforms = []) {
   const pool = platforms.length === 0
-    ? [...MOVIES]
-    : MOVIES.filter(m => {
+    ? [...MOVIES_WITH_GENRES]
+    : MOVIES_WITH_GENRES.filter(m => {
         const mp = MOVIE_PLATFORMS[m.id]
         return mp && mp.some(p => platforms.includes(p))
       })
 
-  const source = pool.length >= 10 ? pool : [...MOVIES] // fallback if too few
+  const source = pool.length >= 10 ? pool : [...MOVIES_WITH_GENRES] // fallback if too few
   const shuffled = [...source]
   const rng = roomId ? seededRandom(roomId) : Math.random
   for (let i = shuffled.length - 1; i > 0; i--) {

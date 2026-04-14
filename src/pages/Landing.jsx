@@ -22,7 +22,7 @@ export default function Landing() {
         <header className="landing-header">
           <div className="logo-mark">S</div>
           <h1 className="logo-text">Swaip</h1>
-          <p className="tagline">Stop saying "I don't know, you pick"</p>
+          <p className="tagline">From "I don't know" to "Let's go!"</p>
         </header>
 
         <h2 className="landing-question">What are we deciding?</h2>
@@ -36,9 +36,8 @@ export default function Landing() {
             <span className="category-emoji">🍿</span>
             <span className="category-name">Movies</span>
             <span className="category-desc">
-              Swipe through 50 top-rated films.<br />Left = nope, right = yes.
+              Find your perfect film. Match, grab popcorn, and hit play.
             </span>
-            <span className="category-tag">Swipe</span>
           </button>
 
           <button
@@ -49,9 +48,8 @@ export default function Landing() {
             <span className="category-emoji">📺</span>
             <span className="category-name">TV Series</span>
             <span className="category-desc">
-              Swipe through 50 top-rated shows.<br />Find your next binge together.
+              Your next shared binge-watch awaits. Match on top-rated shows.
             </span>
-            <span className="category-tag">Swipe</span>
           </button>
 
           <button
@@ -62,9 +60,8 @@ export default function Landing() {
             <span className="category-emoji">💬</span>
             <span className="category-name">Conversations</span>
             <span className="category-desc">
-              Pick topics that interest you.<br />Find what you both want to talk about.
+              Skip the small talk. Match on deep dives, fun debates, and fresh topics.
             </span>
-            <span className="category-tag">Multi-pick</span>
           </button>
 
           <button
@@ -75,9 +72,8 @@ export default function Landing() {
             <span className="category-emoji">🎯</span>
             <span className="category-name">Activities</span>
             <span className="category-desc">
-              Board games, cooking, hiking...<br />Find what you both want to do.
+              Couch or outdoors? Discover your next shared adventure.
             </span>
-            <span className="category-tag">Multi-pick</span>
           </button>
         </div>
 
