@@ -1,45 +1,39 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches, subscribeToSwipes } from '../lib/room'
+import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import './RankingView.css'
 
 export default function RankingView({ matches: initialMatches, room, movies = [], onDone }) {
   const userToken = useRef(getUserToken())
   const [matches, setMatches] = useState(initialMatches)
   const [top3, setTop3] = useState([])
-  const [phase, setPhase] = useState('rank') // 'rank' | 'wait' | 'results'
+  const [phase, setPhase] = useState('rank') // 'rank' | 'results'
   const [partnerRanks, setPartnerRanks] = useState(null)
   const [submitting, setSubmitting] = useState(false)
-  const [refreshing, setRefreshing] = useState(false)
-  const [lastRefresh, setLastRefresh] = useState(null)
+  const [sharing, setSharing] = useState(false)
   const dragFrom = useRef(null)
 
+  // Check if partner already submitted + subscribe — results update in background
   const checkPartner = useCallback(async () => {
     const { partnerRanking, partnerSubmitted } = await getRankings(room.id, userToken.current)
-    if (partnerSubmitted) {
-      setPartnerRanks(partnerRanking)
-      return true
-    }
-    return false
+    if (partnerSubmitted) setPartnerRanks(partnerRanking)
   }, [room.id])
 
-  // Check if partner already submitted + subscribe
   useEffect(() => {
     checkPartner()
     const unsub = subscribeToRankings(room.id, userToken.current, () => checkPartner())
     return unsub
   }, [room.id, checkPartner])
 
-  // Auto-poll every 15s while waiting
+  // Keep polling for partner rankings every 15s while in results (they may still be picking)
   useEffect(() => {
-    if (phase !== 'wait') return
-    const interval = setInterval(() => checkPartner(), 15000)
+    if (phase !== 'results') return
+    const interval = setInterval(checkPartner, 15000)
     return () => clearInterval(interval)
   }, [phase, checkPartner])
 
-  // ── Real-time match updates ─────────────────────────────────────
-  // Subscribe to partner swipes so matches update even after we clicked "done"
+  // Real-time match updates — fires even after we're in results
   useEffect(() => {
-    if (phase === 'results') return
     const unsub = subscribeToSwipes(room.id, userToken.current, (itemId) => {
       const numId = Number(itemId)
       const matched = movies.find(m => m.id === numId || m.id === itemId)
@@ -48,11 +42,10 @@ export default function RankingView({ matches: initialMatches, room, movies = []
       }
     })
     return unsub
-  }, [room.id, movies, phase])
+  }, [room.id, movies])
 
-  // Poll for new matches every 12s while ranking or waiting (catches any missed realtime events)
+  // Poll for new matches every 12s
   useEffect(() => {
-    if (phase === 'results') return
     const poll = async () => {
       const ids = await fetchRoomMatches(room.id, userToken.current)
       if (ids !== null && ids.length > 0 && movies.length > 0) {
@@ -60,28 +53,10 @@ export default function RankingView({ matches: initialMatches, room, movies = []
         if (fresh.length > 0) setMatches(fresh)
       }
     }
-    poll() // immediate check on mount
+    poll()
     const interval = setInterval(poll, 12000)
     return () => clearInterval(interval)
-  }, [room.id, movies, phase])
-
-  // Move to results once partner submits (if we already submitted)
-  useEffect(() => {
-    if (partnerRanks && phase === 'wait') setPhase('results')
-  }, [partnerRanks, phase])
-
-  async function handleRefresh() {
-    setRefreshing(true)
-    // Re-fetch matches from DB
-    const ids = await fetchRoomMatches(room.id, userToken.current)
-    if (ids !== null && movies.length > 0) {
-      setMatches(movies.filter(m => ids.includes(m.id)))
-    }
-    // Check partner rankings
-    await checkPartner()
-    setLastRefresh(new Date())
-    setRefreshing(false)
-  }
+  }, [room.id, movies])
 
   function toggleItem(item) {
     setTop3(prev => {
@@ -96,8 +71,7 @@ export default function RankingView({ matches: initialMatches, room, movies = []
     setSubmitting(true)
     try {
       await submitRankings(room.id, userToken.current, top3.map(m => m.id))
-      if (partnerRanks) setPhase('results')
-      else setPhase('wait')
+      setPhase('results') // always go straight to results — no waiting screen
     } catch (e) {
       console.error(e)
     } finally {
@@ -124,195 +98,118 @@ export default function RankingView({ matches: initialMatches, room, movies = []
     dragFrom.current = null
   }
 
-  function getResults() {
+  async function handleShare() {
+    if (sharing) return
+    setSharing(true)
+    try {
+      const typeLabel = room.type === 'series' ? 'shows' : room.type === 'activities' ? 'activities' : 'movies'
+      const canvas = await generateShareImage({
+        title: matches.length === 1 ? matches[0].title : `${matches.length} ${typeLabel}`,
+        posterUrl: matches.length === 1 ? (matches[0].poster || null) : null,
+        items: matches.slice(0, 3),
+        swipeCount: matches.length,
+        mode: 'matches',
+        typeLabel,
+      })
+      downloadCanvas(canvas, `swaip-matches.png`)
+    } catch (err) { console.error('Share error:', err) }
+    finally { setSharing(false) }
+  }
+
+  const emoji = room.type === 'series' ? '📺' : room.type === 'activities' ? '🎯' : '🎬'
+  const typeLabel = room.type === 'series' ? 'shows' : room.type === 'activities' ? 'activities' : 'movies'
+
+  // ── RESULTS ──────────────────────────────────────────────────────
+  if (phase === 'results') {
     const myMap = {}
     top3.forEach((m, i) => { myMap[m.id] = i + 1 })
     const partnerMap = {}
     if (partnerRanks) partnerRanks.forEach((id, i) => { partnerMap[id] = i + 1 })
 
-    const allIds = [...new Set([...Object.keys(myMap).map(Number), ...(partnerRanks || []).map(Number)])]
-    const scored = allIds.map(id => {
-      const myRank = myMap[id] || null
-      const partnerRank = partnerMap[id] || null
-      const item = matches.find(m => m.id === id)
-      const score = (myRank ? 4 - myRank : 0) + (partnerRank ? 4 - partnerRank : 0)
-      return { item, myRank, partnerRank, score, both: !!(myRank && partnerRank) }
-    }).filter(r => r.item).sort((a, b) => b.score - a.score || (a.myRank || 99) - (b.myRank || 99))
-
-    const rankedIds = new Set(allIds)
-    const unranked = matches.filter(m => !rankedIds.has(m.id))
-    return { scored, unranked }
-  }
-
-  const emoji = room.type === 'series' ? '📺' : room.type === 'activities' ? '🎯' : '🎬'
-
-  // RESULTS
-  if (phase === 'results') {
-    const { scored, unranked } = getResults()
-    const combined = scored.filter(r => r.both)
-    const oneOnly = scored.filter(r => !r.both)
-    const hasRankings = scored.length > 0
-    const typeLabel = room.type === 'series' ? 'shows' : room.type === 'activities' ? 'activities' : 'movies'
+    // Sort: items ranked by both first, then by score
+    const sorted = [...matches].sort((a, b) => {
+      const aScore = (myMap[a.id] ? 4 - myMap[a.id] : 0) + (partnerMap[a.id] ? 4 - partnerMap[a.id] : 0)
+      const bScore = (myMap[b.id] ? 4 - myMap[b.id] : 0) + (partnerMap[b.id] ? 4 - partnerMap[b.id] : 0)
+      return bScore - aScore
+    })
 
     return (
       <div className="rv-page">
-        {/* Hero summary */}
+        {/* Hero */}
         <div className="rv-results-hero">
           <div className="rv-icon">🎉</div>
           <h2>You matched on {matches.length} {typeLabel}!</h2>
-          <p>{matches.length === 0 ? 'No matches this time.' : 'Here\'s everything you both agreed on:'}</p>
+          <p className="rv-hero-sub">
+            {matches.length === 0
+              ? 'No matches this time — try swiping more!'
+              : 'Here\'s everything you both want to watch:'}
+          </p>
         </div>
 
-        {/* ALL matched movies — always shown first */}
-        {matches.length > 0 && (
-          <div className="rv-match-list" style={{ paddingTop: 0 }}>
-            <p className="rv-label">All matches ({matches.length})</p>
-            {matches.map(m => {
-              const myRank = top3.findIndex(t => t.id === m.id) + 1 || null
-              const partnerRank = partnerRanks ? (partnerRanks.indexOf(m.id) + 1) || null : null
-              const isTopMatch = myRank && partnerRank
+        {/* Match list */}
+        {sorted.length > 0 && (
+          <div className="rv-match-list">
+            {sorted.map((m, idx) => {
+              const myRank = myMap[m.id] || null
+              const partnerRank = partnerRanks ? (partnerMap[m.id] || null) : null
+              const bothRanked = myRank && partnerRank
+              const topPick = idx === 0 && (myRank || partnerRank)
               return (
-                <div key={m.id} className={`rv-match-item rv-match-static ${isTopMatch ? 'rv-in-top3' : ''}`}>
-                  {m.poster
-                    ? <img src={m.poster} alt={m.title} className="rv-match-thumb" />
-                    : <div className="rv-match-thumb rv-match-thumb-empty">{emoji}</div>}
-                  <div className="rv-match-info">
-                    <strong>{m.title}</strong>
-                    <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
-                  </div>
-                  {(myRank || partnerRank) && (
-                    <div className="rv-rank-tags">
-                      {myRank && <span className="rv-rank-tag rv-rank-you">You #{myRank}</span>}
-                      {partnerRank && <span className="rv-rank-tag rv-rank-them">Them #{partnerRank}</span>}
+                <div key={m.id} className={`rv-result-card ${bothRanked ? 'rv-result-both' : ''} ${topPick ? 'rv-result-top' : ''}`}>
+                  {topPick && <div className="rv-top-badge">🏆 Top Pick</div>}
+                  <div className="rv-result-card-inner">
+                    {m.poster
+                      ? <img src={m.poster} alt={m.title} className="rv-result-poster" />
+                      : <div className="rv-result-poster rv-result-poster-empty">{emoji}</div>}
+                    <div className="rv-result-info">
+                      <strong>{m.title}</strong>
+                      <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                      {(myRank || partnerRank) && (
+                        <div className="rv-rank-tags">
+                          {myRank && <span className="rv-rank-tag rv-rank-you">You #{myRank}</span>}
+                          {partnerRank && <span className="rv-rank-tag rv-rank-them">Them #{partnerRank}</span>}
+                        </div>
+                      )}
                     </div>
-                  )}
+                    {bothRanked && <span className="rv-both-badge">✓ Both</span>}
+                  </div>
                 </div>
               )
             })}
           </div>
         )}
 
-        {/* Priority rankings — shown only if someone ranked */}
-        {hasRankings && (
-          <div className="rv-match-list" style={{ paddingTop: 0 }}>
-            <p className="rv-label" style={{ marginTop: 8 }}>Priority picks</p>
-            {combined.length > 0 && combined.map((r, i) => (
-              <div key={r.item.id} className="rv-result-item rv-both">
-                <span className="rv-pos">#{i + 1}</span>
-                {r.item.poster
-                  ? <img src={r.item.poster} alt={r.item.title} className="rv-thumb" />
-                  : <div className="rv-thumb rv-thumb-empty">{emoji}</div>}
-                <div className="rv-result-info">
-                  <strong>{r.item.title}</strong>
-                  <span>You #{r.myRank} · Them #{r.partnerRank}</span>
-                </div>
-                <span className="rv-both-badge">✓ Both</span>
-              </div>
-            ))}
-            {oneOnly.map(r => (
-              <div key={r.item.id} className="rv-result-item">
-                {r.item.poster
-                  ? <img src={r.item.poster} alt={r.item.title} className="rv-thumb" />
-                  : <div className="rv-thumb rv-thumb-empty">{emoji}</div>}
-                <div className="rv-result-info">
-                  <strong>{r.item.title}</strong>
-                  <span>{r.myRank ? `You #${r.myRank}` : '—'} · {r.partnerRank ? `Them #${r.partnerRank}` : '—'}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* Partner still picking note */}
+        {!partnerRanks && matches.length > 0 && (
+          <p className="rv-partner-note">Partner's rankings will appear here when they're done</p>
         )}
 
-        {matches.length === 0 && <p className="rv-empty" style={{ padding: '0 20px' }}>Try swiping more next time!</p>}
-
-        <div className="rv-footer">
-          <button className="btn btn-primary rv-submit" onClick={onDone}>Start New Room</button>
+        {/* Action buttons */}
+        <div className="rv-results-actions">
+          <button
+            className="btn rv-share-btn"
+            onClick={handleShare}
+            disabled={sharing || matches.length === 0}
+          >
+            {sharing ? '⏳ Generating…' : '📸 Share Results'}
+          </button>
+          <button className="btn btn-primary rv-submit" onClick={onDone}>
+            Start New Room
+          </button>
         </div>
       </div>
     )
   }
 
-  // WAITING
-  if (phase === 'wait') {
-    const partnerTop3Items = partnerRanks
-      ? partnerRanks.map(id => matches.find(m => m.id === id)).filter(Boolean)
-      : null
-
-    return (
-      <div className="rv-page">
-        <div className="rv-wait-page">
-          <div className="rv-wait-header">
-            <div className="rv-icon">🔒</div>
-            <h2>Picks locked in!</h2>
-            <p>Waiting for your partner to lock in theirs…</p>
-          </div>
-
-          <div className="rv-screenshot-hint">
-            <span className="rv-screenshot-icon">📸</span>
-            <span>Make a screenshot and send it to your friend!</span>
-          </div>
-
-          <div className="rv-wait-cols">
-            {/* My picks */}
-            <div className="rv-wait-col">
-              <p className="rv-wait-col-label">Your picks</p>
-              {top3.length > 0 ? top3.map((m, i) => (
-                <div key={m.id} className="rv-wait-item">
-                  <span className="rv-wait-rank">#{i + 1}</span>
-                  {m.poster
-                    ? <img src={m.poster} alt={m.title} className="rv-thumb" />
-                    : <div className="rv-thumb rv-thumb-empty">{emoji}</div>}
-                  <span className="rv-wait-title">{m.title}</span>
-                </div>
-              )) : <p className="rv-wait-none">No picks</p>}
-            </div>
-
-            {/* Partner picks */}
-            <div className="rv-wait-col">
-              <p className="rv-wait-col-label">Their picks</p>
-              {partnerTop3Items ? partnerTop3Items.map((m, i) => (
-                <div key={m.id} className="rv-wait-item rv-wait-partner">
-                  <span className="rv-wait-rank rv-wait-rank-partner">#{i + 1}</span>
-                  {m.poster
-                    ? <img src={m.poster} alt={m.title} className="rv-thumb" />
-                    : <div className="rv-thumb rv-thumb-empty">{emoji}</div>}
-                  <span className="rv-wait-title">{m.title}</span>
-                </div>
-              )) : (
-                <div className="rv-wait-pending">
-                  <div className="rv-wait-dots">
-                    <span /><span /><span />
-                  </div>
-                  <p>Still picking…</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="rv-refresh-row">
-            <button className="rv-refresh-btn" onClick={handleRefresh} disabled={refreshing}>
-              {refreshing ? '⟳ Checking…' : '⟳ Refresh'}
-            </button>
-            {lastRefresh && (
-              <span className="rv-refresh-hint">
-                Checked {lastRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            )}
-          </div>
-          <p className="rv-refresh-hint" style={{ marginTop: 8, textAlign: 'center' }}>Auto-checks every 15 seconds</p>
-        </div>
-      </div>
-    )
-  }
-
-  // RANKING
+  // ── RANKING ───────────────────────────────────────────────────────
+  const maxPicks = Math.min(matches.length, 3)
   const isInTop3 = id => top3.some(m => m.id === id)
   const rankOf = id => top3.findIndex(m => m.id === id) + 1
 
   return (
     <div className="rv-page">
       <div className="rv-ranking-header">
-        <h2>Pick Your Top {matches.length >= 3 ? 3 : matches.length}</h2>
+        <h2>Pick Your Top {maxPicks > 0 ? maxPicks : ''}</h2>
         <p>{matches.length} match{matches.length !== 1 ? 'es' : ''} · tap to rank · drag to reorder</p>
       </div>
 
@@ -327,11 +224,7 @@ export default function RankingView({ matches: initialMatches, room, movies = []
           >
             <span className="rv-slot-num">#{i + 1}</span>
             {top3[i] ? (
-              <div
-                className="rv-slot-content"
-                draggable
-                onDragStart={e => onDragStart(e, i)}
-              >
+              <div className="rv-slot-content" draggable onDragStart={e => onDragStart(e, i)}>
                 {top3[i].poster
                   ? <img src={top3[i].poster} alt={top3[i].title} className="rv-slot-poster" />
                   : <div className="rv-slot-poster rv-slot-poster-empty">{emoji}</div>}

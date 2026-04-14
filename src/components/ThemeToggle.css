@@ -1,6 +1,6 @@
 .theme-toggle {
   position: fixed;
-  top: 16px;
+  top: 64px; /* below the header bookmark button — no overlap */
   right: 16px;
   z-index: 100;
   width: 40px;

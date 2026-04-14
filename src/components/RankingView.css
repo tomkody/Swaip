@@ -405,19 +405,104 @@
 /* Results hero */
 .rv-results-hero {
   text-align: center;
-  padding: 24px 20px 16px;
+  padding: 28px 20px 16px;
 }
 .rv-results-hero h2 {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 900;
-  margin: 0 0 6px;
-  letter-spacing: -0.3px;
+  margin: 0 0 8px;
+  letter-spacing: -0.5px;
 }
-.rv-results-hero p {
+.rv-hero-sub {
   font-size: 14px;
   color: var(--text-muted);
   margin: 0;
 }
+
+/* Result cards */
+.rv-result-card {
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  transition: border-color 0.2s;
+}
+.rv-result-card-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+}
+.rv-result-both {
+  border-color: rgba(74, 222, 128, 0.4);
+  background: rgba(74, 222, 128, 0.04);
+}
+.rv-result-top {
+  border-color: var(--primary);
+  background: rgba(255, 92, 106, 0.05);
+}
+.rv-top-badge {
+  background: var(--gradient-warm);
+  color: #0D0B1A;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 12px;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+.rv-result-poster {
+  width: 52px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+.rv-result-poster-empty {
+  width: 52px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  background: var(--bg-surface);
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+
+/* Partner note */
+.rv-partner-note {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 8px 20px 0;
+  margin: 0;
+}
+
+/* Results action buttons */
+.rv-results-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 16px 120px;
+}
+.rv-share-btn {
+  width: 100%;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+  padding: 14px;
+  border-radius: var(--radius-pill);
+  transition: all 0.2s;
+}
+.rv-share-btn:hover:not(:disabled) {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+.rv-share-btn:disabled { opacity: 0.5; cursor: default; }
 
 .rv-match-static { cursor: default; }
 .rv-match-static:hover { border-color: var(--border) !important; }
