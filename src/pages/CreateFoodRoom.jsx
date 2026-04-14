@@ -33,25 +33,16 @@ export default function CreateFoodRoom() {
         <div className="food-hero-icon">🍽️</div>
         <h1>Food & Dining</h1>
         <p className="subtitle">
-          End the "what's for dinner?" debate. Swipe on cuisines, then match on real restaurants nearby.
+          End the "what's for dinner?" debate. Swipe through cuisines — when you both say yes, it's a match!
         </p>
 
         <div className="food-preview">
-          <div className="food-phase">
-            <div className="food-phase-num">1</div>
-            <div className="food-phase-body">
-              <div className="food-phase-title">Pick a cuisine</div>
-              <div className="food-phase-emojis">🍝 🍱 🌮 🍔 🍜</div>
-            </div>
-          </div>
-          <div className="food-phase-arrow">↓</div>
-          <div className="food-phase">
-            <div className="food-phase-num">2</div>
-            <div className="food-phase-body">
-              <div className="food-phase-title">Swipe on local spots</div>
-              <div className="food-phase-desc">Top-rated restaurants near you</div>
-            </div>
-          </div>
+          <span>🍕</span>
+          <span>🍔</span>
+          <span>🍝</span>
+          <span>🌮</span>
+          <span>🍣</span>
+          <span>🥡</span>
         </div>
 
         <button
@@ -59,7 +50,7 @@ export default function CreateFoodRoom() {
           disabled={loading}
           onClick={handleCreate}
         >
-          {loading ? 'Creating...' : 'Create Room'}
+          {loading ? 'Creating…' : 'Create Room'}
         </button>
       </div>
     </div>

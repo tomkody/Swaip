@@ -1,350 +1,189 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import confetti from 'canvas-confetti'
-import { getUserToken, recordSwipe, fetchRoomMatches } from '../lib/room'
+import { getUserToken, recordSwipe, subscribeToSwipes, fetchRoomMatches } from '../lib/room'
+import { getFoodItems } from '../lib/foodItems'
 import { saveMatch } from '../lib/savedMatches'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import SwipeCard from './SwipeCard'
 import './FoodRoom.css'
 
-const CUISINES = [
-  { id: 901, title: 'Italian',  emoji: '🍝', overview: 'Pasta, pizza, risotto, tiramisu…' },
-  { id: 902, title: 'Sushi',    emoji: '🍱', overview: 'Fresh rolls, sashimi, miso, edamame…' },
-  { id: 903, title: 'Burgers',  emoji: '🍔', overview: 'Juicy patties, crispy fries, milkshakes…' },
-  { id: 904, title: 'Indian',   emoji: '🍛', overview: 'Curries, naan, biryani, samosas…' },
-  { id: 905, title: 'Mexican',  emoji: '🌮', overview: 'Tacos, burritos, guac, churros…' },
-  { id: 906, title: 'Chinese',  emoji: '🥟', overview: 'Dim sum, dumplings, noodles, Peking duck…' },
-  { id: 907, title: 'French',   emoji: '🥐', overview: 'Croissants, coq au vin, crème brûlée…' },
-  { id: 908, title: 'Thai',     emoji: '🍜', overview: 'Pad thai, green curry, mango sticky rice…' },
-  { id: 909, title: 'Pizza',    emoji: '🍕', overview: 'Margherita, pepperoni, calzone, garlic bread…' },
-]
-const CUISINE_IDS = CUISINES.map(c => c.id)
-
-const GOOGLE_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY
-
-const DEMO_RESTAURANTS = {
-  Italian: [
-    { id: 951, title: 'La Bella Trattoria',  overview: 'Classic Italian comfort food', emoji: '🍝', rating: '4.7' },
-    { id: 952, title: 'Piccolo Roma',         overview: 'Authentic Roman cuisine',      emoji: '🫙', rating: '4.5' },
-    { id: 953, title: 'Pasta e Basta',        overview: 'Fresh pasta made daily',       emoji: '🍕', rating: '4.4' },
-  ],
-  Sushi: [
-    { id: 954, title: 'Sakura Sushi Bar', overview: 'Premium fresh fish daily',   emoji: '🍱', rating: '4.8' },
-    { id: 955, title: 'Maki House',       overview: 'Creative rolls & classics',  emoji: '🥢', rating: '4.6' },
-    { id: 956, title: 'Tokyo Bites',      overview: 'Omakase & à la carte',       emoji: '🍣', rating: '4.5' },
-  ],
-  Burgers: [
-    { id: 957, title: 'The Burger Lab',     overview: 'Science-backed smash burgers', emoji: '🍔', rating: '4.7' },
-    { id: 958, title: 'Smash & Grill',      overview: 'Double smash, crispy edges',   emoji: '🧀', rating: '4.6' },
-    { id: 959, title: 'Old School Burgers', overview: 'Classic diner vibes',          emoji: '🥓', rating: '4.5' },
-  ],
-  Indian: [
-    { id: 960, title: 'Spice Garden',      overview: 'Rich curries & tandoor',  emoji: '🍛', rating: '4.7' },
-    { id: 961, title: 'Taj Mahal Kitchen', overview: 'Northern Indian classics', emoji: '🌶️', rating: '4.6' },
-    { id: 962, title: 'Curry House',       overview: 'Homestyle Indian cooking', emoji: '🫓', rating: '4.5' },
-  ],
-  Mexican: [
-    { id: 963, title: 'El Rancho',      overview: 'Street-style tacos & mezcal', emoji: '🌮', rating: '4.7' },
-    { id: 964, title: 'Taqueria Local', overview: 'Authentic al pastor',          emoji: '🌯', rating: '4.6' },
-    { id: 965, title: 'Casa Mexica',    overview: 'Modern Mexican kitchen',       emoji: '🥑', rating: '4.5' },
-  ],
-  Chinese: [
-    { id: 966, title: 'Golden Dragon',  overview: 'Cantonese dim sum & mains', emoji: '🥟', rating: '4.7' },
-    { id: 967, title: 'Dim Sum Palace', overview: 'Weekend dim sum specialist', emoji: '🍜', rating: '4.6' },
-    { id: 968, title: 'Wonton House',   overview: 'Hand-pulled noodles & soup', emoji: '🫕', rating: '4.5' },
-  ],
-  French: [
-    { id: 969, title: 'Café de Paris', overview: 'Parisian bistro classics',  emoji: '🥐', rating: '4.8' },
-    { id: 970, title: 'Bistro Lyon',   overview: 'Lyonnaise cuisine & wine',  emoji: '🍷', rating: '4.6' },
-    { id: 971, title: 'Le Petit Four', overview: 'Fine French patisserie',    emoji: '🧁', rating: '4.5' },
-  ],
-  Thai: [
-    { id: 972, title: 'Thai Orchid',     overview: 'Aromatic curries & stir-fry', emoji: '🍜', rating: '4.7' },
-    { id: 973, title: 'Pad Thai Palace', overview: 'Street food favorites',       emoji: '🥜', rating: '4.6' },
-    { id: 974, title: 'Bangkok Spice',   overview: 'Authentic Thai heat levels',  emoji: '🌿', rating: '4.5' },
-  ],
-  Pizza: [
-    { id: 975, title: 'Napoli Wood Fire', overview: 'Neapolitan DOC pizza',        emoji: '🍕', rating: '4.8' },
-    { id: 976, title: 'Slice of Life',    overview: 'New York style by the slice', emoji: '🧀', rating: '4.6' },
-    { id: 977, title: 'The Pizza Lab',    overview: 'Experimental toppings',       emoji: '🫙', rating: '4.5' },
-  ],
-}
-
-function getDemoRestaurants(cuisineTitle) {
-  return (DEMO_RESTAURANTS[cuisineTitle] || DEMO_RESTAURANTS.Burgers).map(r => ({ ...r, poster: null }))
-}
-
 export default function FoodRoom({ room, onDone }) {
-  const [phase, setPhase] = useState('cuisine')
-  const [cuisineIndex, setCuisineIndex] = useState(0)
-  const [matchedCuisine, setMatchedCuisine] = useState(null)
-  const [restaurants, setRestaurants] = useState([])
-  const [restaurantIndex, setRestaurantIndex] = useState(0)
-  const [finalMatch, setFinalMatch] = useState(null)
-  const [locationNote, setLocationNote] = useState(null)
-  const [sharing, setSharing] = useState(false)
-  const [swipeCount, setSwipeCount] = useState(0)
-  // liked* tracks which items THIS user voted right on
-  const likedCuisineIds = useRef(new Set())
-  const likedRestaurantIds = useRef(new Set())
-
-  const restaurantsRef = useRef([])
-  const phaseRef = useRef('cuisine')
-  const matchedRef = useRef(false)
   const userToken = useRef(getUserToken())
+  const items = useRef(getFoodItems(room.id))
 
-  useEffect(() => { restaurantsRef.current = restaurants }, [restaurants])
-  useEffect(() => { phaseRef.current = phase }, [phase])
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [matches, setMatches] = useState([])
+  const [matchItem, setMatchItem] = useState(null)
+  const [isDone, setIsDone] = useState(false)
+  const [doneMatches, setDoneMatches] = useState(null)
+  const [fetchingDone, setFetchingDone] = useState(false)
+  const [sharing, setSharing] = useState(false)
+  const swipeCount = useRef(0)
 
-  // ── Match handlers ─────────────────────────────────────────────
-  const triggerCuisineMatch = useCallback((cuisine) => {
-    if (matchedRef.current) return
-    matchedRef.current = true
-    setMatchedCuisine(cuisine)
-    setPhase('locating')
-    fetchRestaurants(cuisine.title)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const triggerRestaurantMatch = useCallback((restaurant) => {
-    if (phaseRef.current === 'matched') return
-    setFinalMatch(restaurant)
-    setPhase('matched')
-    saveMatch({ id: restaurant.id, title: restaurant.title, category: 'food', image: restaurant.poster || null, rating: restaurant.rating || null })
-    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
-  }, [])
-
-  // ── Polling: cuisine phase ─────────────────────────────────────
-  // Uses fetchRoomMatches — the same function that works for movies/series
+  // Subscribe to partner swipes — same pattern as Room.jsx
   useEffect(() => {
-    if (phase !== 'cuisine') return
-    const interval = setInterval(async () => {
-      if (matchedRef.current) { clearInterval(interval); return }
-      try {
-        const mutualIds = await fetchRoomMatches(room.id, userToken.current)
-        if (!mutualIds) return // null = localStorage mode, handled inline
-        const hit = mutualIds.find(id => CUISINE_IDS.includes(Number(id)))
-        if (hit) {
-          clearInterval(interval)
-          const cuisine = CUISINES.find(c => c.id === Number(hit))
-          if (cuisine) triggerCuisineMatch(cuisine)
-        }
-      } catch (err) { console.warn('Cuisine poll error:', err) }
-    }, 1500)
-    return () => clearInterval(interval)
-  }, [phase, room.id, triggerCuisineMatch])
-
-  // ── Polling: restaurant phase ──────────────────────────────────
-  useEffect(() => {
-    if (phase !== 'restaurant') return
-    const interval = setInterval(async () => {
-      if (phaseRef.current === 'matched') { clearInterval(interval); return }
-      const list = restaurantsRef.current
-      if (!list.length) return
-      const restIds = new Set(list.map(r => r.id))
-      try {
-        const mutualIds = await fetchRoomMatches(room.id, userToken.current)
-        if (!mutualIds) return
-        const hit = mutualIds.find(id => restIds.has(Number(id)))
-        if (hit) {
-          clearInterval(interval)
-          const restaurant = list.find(r => r.id === Number(hit))
-          if (restaurant) triggerRestaurantMatch(restaurant)
-        }
-      } catch (err) { console.warn('Restaurant poll error:', err) }
-    }, 1500)
-    return () => clearInterval(interval)
-  }, [phase, room.id, triggerRestaurantMatch])
-
-  // ── Swipe handlers ─────────────────────────────────────────────
-  // Uses recordSwipe — the exact same function that works for movies
-  const handleCuisineSwipe = useCallback(async (direction) => {
-    const cuisine = CUISINES[cuisineIndex]
-    if (!cuisine || matchedRef.current) return
-    setSwipeCount(n => n + 1)
-    try {
-      const isMatch = await recordSwipe(room.id, userToken.current, cuisine.id, direction)
-      if (isMatch && direction === 'right') {
-        likedCuisineIds.current.add(cuisine.id)
-        triggerCuisineMatch(cuisine)
-        return
+    const unsub = subscribeToSwipes(room.id, userToken.current, (itemId) => {
+      const matched = items.current.find(m => m.id === Number(itemId))
+      if (matched) {
+        setMatchItem(matched)
+        setMatches(prev => [...prev, matched])
+        saveMatch({ id: matched.id, title: matched.title, category: 'food', image: null })
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
       }
-    } catch (err) { console.error('recordSwipe (cuisine) error:', err) }
-    if (direction === 'right') likedCuisineIds.current.add(cuisine.id)
-    setCuisineIndex(i => i + 1)
-  }, [cuisineIndex, room.id, triggerCuisineMatch])
+    })
+    return unsub
+  }, [room.id])
 
-  const handleRestaurantSwipe = useCallback(async (direction) => {
-    const restaurant = restaurantsRef.current[restaurantIndex]
-    if (!restaurant || phaseRef.current === 'matched') return
-    setSwipeCount(n => n + 1)
+  const handleSwipe = useCallback(async (direction) => {
+    const item = items.current[currentIndex]
+    if (!item) return
+    swipeCount.current += 1
+
     try {
-      const isMatch = await recordSwipe(room.id, userToken.current, restaurant.id, direction)
+      const isMatch = await recordSwipe(room.id, userToken.current, item.id, direction)
       if (isMatch && direction === 'right') {
-        likedRestaurantIds.current.add(restaurant.id)
-        triggerRestaurantMatch(restaurant)
-        return
+        setMatchItem(item)
+        setMatches(prev => [...prev, item])
+        saveMatch({ id: item.id, title: item.title, category: 'food', image: null })
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
       }
-    } catch (err) { console.error('recordSwipe (restaurant) error:', err) }
-    if (direction === 'right') likedRestaurantIds.current.add(restaurant.id)
-    setRestaurantIndex(i => i + 1)
-  }, [restaurantIndex, room.id, triggerRestaurantMatch])
-
-  // ── Fetch restaurants ──────────────────────────────────────────
-  async function fetchRestaurants(cuisineTitle) {
-    if (!GOOGLE_KEY) {
-      setLocationNote('No Google API key — showing demo restaurants.')
-      setRestaurants(getDemoRestaurants(cuisineTitle))
-      setPhase('restaurant')
-      return
-    }
-    try {
-      const pos = await new Promise((resolve, reject) =>
-        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
-      )
-      const { latitude: lat, longitude: lng } = pos.coords
-      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': GOOGLE_KEY,
-          'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.rating,places.photos,places.priceLevel,places.currentOpeningHours',
-        },
-        body: JSON.stringify({
-          textQuery: `${cuisineTitle} restaurant`,
-          locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: 5000 } },
-          maxResultCount: 15,
-        }),
-      })
-      const data = await res.json()
-      if (data.places?.length > 0) {
-        setRestaurants(data.places.map((p, i) => ({
-          id: 1001 + i,
-          title: p.displayName?.text || 'Restaurant',
-          overview: [p.formattedAddress, p.currentOpeningHours?.openNow ? '🟢 Open now' : ''].filter(Boolean).join(' · '),
-          rating: p.rating ? p.rating.toFixed(1) : null,
-          poster: p.photos?.[0] ? `https://places.googleapis.com/v1/${p.photos[0].name}/media?maxWidthPx=400&key=${GOOGLE_KEY}` : null,
-          emoji: '🍽️',
-        })))
-        setPhase('restaurant')
-      } else throw new Error('No results')
     } catch (err) {
-      console.warn('Places API error:', err.message)
-      setLocationNote('Could not get your location — showing popular spots instead.')
-      setRestaurants(getDemoRestaurants(cuisineTitle))
-      setPhase('restaurant')
+      console.error('recordSwipe error:', err)
     }
+
+    setCurrentIndex(i => i + 1)
+  }, [currentIndex, room.id])
+
+  async function handleDone() {
+    setFetchingDone(true)
+    const ids = await fetchRoomMatches(room.id, userToken.current)
+    if (ids !== null) {
+      setDoneMatches(items.current.filter(m => ids.includes(m.id)))
+    }
+    setFetchingDone(false)
+    setIsDone(true)
   }
 
-  async function handleShare() {
-    if (!finalMatch || sharing) return
+  async function handleShare(item) {
+    if (sharing) return
     setSharing(true)
     try {
-      const canvas = await generateShareImage({ title: finalMatch.title, posterUrl: finalMatch.poster, swipeCount })
-      downloadCanvas(canvas, `swaip-${finalMatch.title.replace(/\s+/g, '-').toLowerCase()}.png`)
+      const canvas = await generateShareImage({ title: item.title, posterUrl: null, swipeCount: swipeCount.current })
+      downloadCanvas(canvas, `swaip-${item.title.replace(/\s+/g, '-').toLowerCase()}.png`)
     } catch (err) { console.error('Share error:', err) }
     finally { setSharing(false) }
   }
 
-  // ── Render ─────────────────────────────────────────────────────
-
-  if (phase === 'cuisine') {
-    const current = CUISINES[cuisineIndex]
-    if (!current) {
-      return (
-        <div className="food-center">
-          <div className="food-done-all">
-            <div className="food-done-icon">⏳</div>
-            <h2>Waiting for your partner…</h2>
-            <p>You've voted on all cuisines. Waiting for your partner to vote — a match will appear automatically!</p>
-            <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={onDone}>Go home</button>
-          </div>
-        </div>
-      )
-    }
+  // ── Match modal ────────────────────────────────────────────────
+  if (matchItem) {
     return (
-      <div className="food-room">
-        <div className="food-header">
-          <span className="food-phase-label">🍽️ Pick a Cuisine</span>
-          <span className="food-progress">{cuisineIndex + 1} / {CUISINES.length}</span>
-        </div>
-        <div className="food-cards">
-          <SwipeCard key={current.id} item={current} onSwipe={handleCuisineSwipe} active />
-        </div>
-      </div>
-    )
-  }
+      <div className="food-match-overlay">
+        <div className="food-match-modal">
+          <span className="food-match-emoji-big">🎉</span>
+          <h1>It's a Match!</h1>
+          <p className="food-match-subtitle">You both picked the same thing</p>
 
-  if (phase === 'locating') {
-    return (
-      <div className="food-center">
-        <div className="food-locating">
-          <div className="food-locating-icon">📍</div>
-          <h2>You both love <span>{matchedCuisine?.title}</span>!</h2>
-          <p>Finding the best {matchedCuisine?.title?.toLowerCase()} restaurants near you…</p>
-          <div className="food-locating-dots"><span /><span /><span /></div>
-        </div>
-      </div>
-    )
-  }
-
-  if (phase === 'restaurant') {
-    const current = restaurants[restaurantIndex]
-    if (!current) {
-      return (
-        <div className="food-center">
-          <div className="food-done-all">
-            <div className="food-done-icon">⏳</div>
-            <h2>Waiting for your partner…</h2>
-            <p>You've rated all {matchedCuisine?.title?.toLowerCase()} spots. A match will appear automatically!</p>
-            <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={onDone}>Go home</button>
-          </div>
-        </div>
-      )
-    }
-    return (
-      <div className="food-room">
-        {locationNote && <div className="food-location-note">{locationNote}</div>}
-        <div className="food-header">
-          <span className="food-phase-label">{matchedCuisine?.emoji} {matchedCuisine?.title} spots</span>
-          <span className="food-progress">{restaurantIndex + 1} / {restaurants.length}</span>
-        </div>
-        <div className="food-cards">
-          <SwipeCard key={current.id} item={current} onSwipe={handleRestaurantSwipe} active />
-        </div>
-      </div>
-    )
-  }
-
-  if (phase === 'matched' && finalMatch) {
-    return (
-      <div className="food-matched-overlay">
-        <div className="food-matched-modal">
-          <div className="food-matched-header">
-            <span className="food-matched-emoji">🎉</span>
-            <h1>It's a Match!</h1>
-            <p>You're both going to <strong>{finalMatch.title}</strong>!</p>
-          </div>
-          <div className="food-matched-card">
-            {finalMatch.poster ? (
-              <img src={finalMatch.poster} alt={finalMatch.title} className="food-matched-img" />
-            ) : (
-              <div className="food-matched-img food-matched-placeholder">{finalMatch.emoji || '🍽️'}</div>
-            )}
-            <div className="food-matched-info">
-              <h2>{finalMatch.title}</h2>
-              {finalMatch.rating && <div className="food-matched-rating">⭐ {finalMatch.rating}</div>}
-              {finalMatch.overview && <p className="food-matched-address">{finalMatch.overview}</p>}
+          <div className="food-match-card">
+            <div className="food-match-item-emoji">{matchItem.emoji}</div>
+            <div className="food-match-item-info">
+              <h2>{matchItem.title}</h2>
+              <p>{matchItem.overview}</p>
             </div>
           </div>
-          <div className="food-matched-actions">
-            <button className="btn food-share-btn" onClick={handleShare} disabled={sharing}>
-              {sharing ? 'Generating…' : '📸 Share to Stories'}
+
+          <button
+            className="food-share-btn"
+            onClick={() => handleShare(matchItem)}
+            disabled={sharing}
+          >
+            {sharing ? 'Generating…' : '📸 Share to Stories'}
+          </button>
+
+          <div className="food-match-actions">
+            <button className="btn btn-primary" onClick={() => setMatchItem(null)}>
+              Keep Swiping
             </button>
-            <button className="btn btn-primary" onClick={onDone}>Done</button>
+            <button className="btn btn-secondary" onClick={handleDone}>
+              Done
+            </button>
           </div>
         </div>
       </div>
     )
   }
 
-  return null
+  // ── Fetching done ──────────────────────────────────────────────
+  if (fetchingDone) {
+    return (
+      <div className="food-center">
+        <div className="food-loader" />
+        <p style={{ color: 'var(--text-muted)', marginTop: 12 }}>Finding your matches…</p>
+      </div>
+    )
+  }
+
+  // ── Results ────────────────────────────────────────────────────
+  if (isDone || currentIndex >= items.current.length) {
+    const results = doneMatches ?? matches
+    return (
+      <div className="food-results">
+        <div className="food-results-inner">
+          {results.length > 0 ? (
+            <>
+              <div className="food-results-icon">🎊</div>
+              <h2 className="food-results-title">Your food matches!</h2>
+              <p className="food-results-sub">You both agreed on {results.length} option{results.length !== 1 ? 's' : ''}.</p>
+              <div className="food-results-list">
+                {results.map(item => (
+                  <div key={item.id} className="food-result-item">
+                    <span className="food-result-emoji">{item.emoji}</span>
+                    <div>
+                      <div className="food-result-title">{item.title}</div>
+                      <div className="food-result-desc">{item.overview}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="food-results-icon">😅</div>
+              <h2 className="food-results-title">No matches yet</h2>
+              <p className="food-results-sub">You didn't agree on any cuisine this time. Try again!</p>
+            </>
+          )}
+          <button className="btn btn-primary" style={{ width: '100%', marginTop: 24 }} onClick={onDone}>
+            Go home
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Swipe ──────────────────────────────────────────────────────
+  const current = items.current[currentIndex]
+
+  return (
+    <div className="food-room">
+      <div className="food-header">
+        <span className="food-phase-label">🍽️ Food & Dining</span>
+        <div className="food-header-right">
+          {matches.length > 0 && (
+            <span className="food-match-count">{matches.length} match{matches.length !== 1 ? 'es' : ''}</span>
+          )}
+          <span className="food-progress">{currentIndex + 1} / {items.current.length}</span>
+        </div>
+      </div>
+
+      <div className="food-cards">
+        <SwipeCard key={current.id} item={current} onSwipe={handleSwipe} active />
+      </div>
+
+      <div className="food-footer">
+        <button className="done-early-btn" onClick={handleDone}>
+          I'm done swiping{matches.length > 0 ? ` · ${matches.length} match${matches.length !== 1 ? 'es' : ''}` : ''}
+        </button>
+      </div>
+    </div>
+  )
 }
