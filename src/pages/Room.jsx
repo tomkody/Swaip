@@ -57,7 +57,7 @@ export default function Room() {
         }
         setRoom(roomData)
 
-        const { platforms, genres } = parseRoomFilters(roomData.platforms)
+        const { platforms, genres } = parseRoomFilters(roomData.platforms ?? roomData.topic_id)
         if (roomData.type === 'movies') {
           setMovies(fetchTopRatedMovies(roomData.id, platforms, genres))
         } else if (roomData.type === 'series') {
@@ -254,7 +254,7 @@ export default function Room() {
         <span className="room-genre">
           {room.type === 'series' ? '📺' : '🎬'}
           {(() => {
-            const { platforms, genres } = parseRoomFilters(room.platforms)
+            const { platforms, genres } = parseRoomFilters(room.platforms ?? room.topic_id)
             const parts = [
               ...platforms.map(id => PLATFORMS.find(p => p.id === id)?.name).filter(Boolean),
               ...genres,
