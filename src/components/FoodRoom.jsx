@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import confetti from 'canvas-confetti'
-import { getUserToken, recordFoodVote, checkFoodMatches } from '../lib/room'
+import { getUserToken, recordSwipe, fetchRoomMatches } from '../lib/room'
 import { saveMatch } from '../lib/savedMatches'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import SwipeCard from './SwipeCard'
@@ -84,8 +84,8 @@ export default function FoodRoom({ room, onDone }) {
   const [sharing, setSharing] = useState(false)
   const [swipeCount, setSwipeCount] = useState(0)
   // liked* tracks which items THIS user voted right on
-  const [likedCuisineIds, setLikedCuisineIds] = useState([])
-  const [likedRestaurantIds, setLikedRestaurantIds] = useState([])
+  const likedCuisineIds = useRef(new Set())
+  const likedRestaurantIds = useRef(new Set())
 
   const restaurantsRef = useRef([])
   const phaseRef = useRef('cuisine')
@@ -113,16 +113,18 @@ export default function FoodRoom({ room, onDone }) {
   }, [])
 
   // ── Polling: cuisine phase ─────────────────────────────────────
-  // Polls every 1.5s using conversation_selections (text IDs, no FK issues)
+  // Uses fetchRoomMatches — the same function that works for movies/series
   useEffect(() => {
     if (phase !== 'cuisine') return
     const interval = setInterval(async () => {
       if (matchedRef.current) { clearInterval(interval); return }
       try {
-        const matches = await checkFoodMatches(room.id, userToken.current, CUISINE_IDS)
-        if (matches.length > 0) {
+        const mutualIds = await fetchRoomMatches(room.id, userToken.current)
+        if (!mutualIds) return // null = localStorage mode, handled inline
+        const hit = mutualIds.find(id => CUISINE_IDS.includes(Number(id)))
+        if (hit) {
           clearInterval(interval)
-          const cuisine = CUISINES.find(c => c.id === matches[0])
+          const cuisine = CUISINES.find(c => c.id === Number(hit))
           if (cuisine) triggerCuisineMatch(cuisine)
         }
       } catch (err) { console.warn('Cuisine poll error:', err) }
@@ -133,49 +135,58 @@ export default function FoodRoom({ room, onDone }) {
   // ── Polling: restaurant phase ──────────────────────────────────
   useEffect(() => {
     if (phase !== 'restaurant') return
-    const list = restaurantsRef.current
-    if (!list.length) return
-    const restIds = list.map(r => r.id)
     const interval = setInterval(async () => {
       if (phaseRef.current === 'matched') { clearInterval(interval); return }
+      const list = restaurantsRef.current
+      if (!list.length) return
+      const restIds = new Set(list.map(r => r.id))
       try {
-        const matches = await checkFoodMatches(room.id, userToken.current, restIds)
-        if (matches.length > 0) {
+        const mutualIds = await fetchRoomMatches(room.id, userToken.current)
+        if (!mutualIds) return
+        const hit = mutualIds.find(id => restIds.has(Number(id)))
+        if (hit) {
           clearInterval(interval)
-          const restaurant = list.find(r => r.id === matches[0])
+          const restaurant = list.find(r => r.id === Number(hit))
           if (restaurant) triggerRestaurantMatch(restaurant)
         }
       } catch (err) { console.warn('Restaurant poll error:', err) }
     }, 1500)
     return () => clearInterval(interval)
-  }, [phase, room.id, triggerRestaurantMatch]) // restaurants populated before phase changes
+  }, [phase, room.id, triggerRestaurantMatch])
 
   // ── Swipe handlers ─────────────────────────────────────────────
+  // Uses recordSwipe — the exact same function that works for movies
   const handleCuisineSwipe = useCallback(async (direction) => {
     const cuisine = CUISINES[cuisineIndex]
     if (!cuisine || matchedRef.current) return
     setSwipeCount(n => n + 1)
-    if (direction === 'right') {
-      setLikedCuisineIds(prev => [...prev, cuisine.id])
-      try {
-        await recordFoodVote(room.id, userToken.current, cuisine.id)
-      } catch (err) { console.error('recordFoodVote error:', err) }
-    }
+    try {
+      const isMatch = await recordSwipe(room.id, userToken.current, cuisine.id, direction)
+      if (isMatch && direction === 'right') {
+        likedCuisineIds.current.add(cuisine.id)
+        triggerCuisineMatch(cuisine)
+        return
+      }
+    } catch (err) { console.error('recordSwipe (cuisine) error:', err) }
+    if (direction === 'right') likedCuisineIds.current.add(cuisine.id)
     setCuisineIndex(i => i + 1)
-  }, [cuisineIndex, room.id])
+  }, [cuisineIndex, room.id, triggerCuisineMatch])
 
   const handleRestaurantSwipe = useCallback(async (direction) => {
     const restaurant = restaurantsRef.current[restaurantIndex]
     if (!restaurant || phaseRef.current === 'matched') return
     setSwipeCount(n => n + 1)
-    if (direction === 'right') {
-      setLikedRestaurantIds(prev => [...prev, restaurant.id])
-      try {
-        await recordFoodVote(room.id, userToken.current, restaurant.id)
-      } catch (err) { console.error('recordFoodVote error:', err) }
-    }
+    try {
+      const isMatch = await recordSwipe(room.id, userToken.current, restaurant.id, direction)
+      if (isMatch && direction === 'right') {
+        likedRestaurantIds.current.add(restaurant.id)
+        triggerRestaurantMatch(restaurant)
+        return
+      }
+    } catch (err) { console.error('recordSwipe (restaurant) error:', err) }
+    if (direction === 'right') likedRestaurantIds.current.add(restaurant.id)
     setRestaurantIndex(i => i + 1)
-  }, [restaurantIndex, room.id])
+  }, [restaurantIndex, room.id, triggerRestaurantMatch])
 
   // ── Fetch restaurants ──────────────────────────────────────────
   async function fetchRestaurants(cuisineTitle) {
