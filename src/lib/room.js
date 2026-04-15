@@ -84,62 +84,6 @@ export async function createSeriesRoom(platforms = [], genres = []) {
   return { ...data, platforms: filters }
 }
 
-// Check for any mutual right-swipe on items matching a prefix (localStorage + Supabase)
-// ── Food-specific swipe storage ────────────────────────────────
-// Uses conversation_selections table (text subtopic_id, no FK constraints)
-// so food item IDs never conflict with the integer swipes.item_id column.
-// Local key prefix: "food_" + itemId
-
-export async function recordFoodVote(roomId, userToken, itemId) {
-  const subtopicId = 'food_' + itemId
-  if (!supabase) {
-    const key = `swaip_conv_${roomId}`
-    const existing = JSON.parse(localStorage.getItem(key) || '{}')
-    if (!existing[userToken]) existing[userToken] = []
-    if (!existing[userToken].includes(subtopicId)) existing[userToken].push(subtopicId)
-    localStorage.setItem(key, JSON.stringify(existing))
-    return
-  }
-  // Upsert-style: ignore duplicate errors
-  await supabase.from('conversation_selections').insert({
-    room_id: roomId,
-    user_token: userToken,
-    subtopic_id: subtopicId,
-  }).throwOnError().catch(() => {})
-}
-
-export async function checkFoodMatches(roomId, userToken, itemIds) {
-  const prefixed = itemIds.map(id => 'food_' + id)
-  if (!supabase) {
-    const key = `swaip_conv_${roomId}`
-    const data = JSON.parse(localStorage.getItem(key) || '{}')
-    const users = Object.keys(data)
-    if (users.length < 2) return []
-    const mySet = new Set(data[userToken] || [])
-    const otherUser = users.find(u => u !== userToken)
-    const theirVotes = data[otherUser] || []
-    return theirVotes
-      .filter(v => mySet.has(v) && prefixed.includes(v))
-      .map(v => Number(v.replace('food_', '')))
-  }
-  const { data, error } = await supabase
-    .from('conversation_selections')
-    .select('user_token, subtopic_id')
-    .eq('room_id', roomId)
-    .in('subtopic_id', prefixed)
-  if (error || !data) return []
-  const byItem = {}
-  for (const row of data) {
-    if (!byItem[row.subtopic_id]) byItem[row.subtopic_id] = new Set()
-    byItem[row.subtopic_id].add(row.user_token)
-  }
-  const matched = []
-  for (const [sub, tokens] of Object.entries(byItem)) {
-    if (tokens.size >= 2) matched.push(Number(sub.replace('food_', '')))
-  }
-  return matched
-}
-
 // Check for any mutual right-swipe among a given list of numeric item IDs
 export async function checkMutualSwipesByIds(roomId, userToken, itemIds) {
   if (!itemIds || itemIds.length === 0) return null

@@ -10,7 +10,8 @@ import {
 import './ConversationRoom.css'
 
 export default function ConversationRoom({ room, onDone }) {
-  const topicIds = JSON.parse(room.topic_id)
+  let topicIds
+  try { topicIds = JSON.parse(room.topic_id) } catch { topicIds = [] }
   const allSubtopics = getSubtopicsForTopics(topicIds)
 
   const [selected, setSelected] = useState(new Set())

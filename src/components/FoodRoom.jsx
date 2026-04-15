@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import confetti from 'canvas-confetti'
-import { getUserToken, recordSwipe, subscribeToSwipes, fetchRoomMatches, checkFoodMatches } from '../lib/room'
+import { getUserToken, recordSwipe, subscribeToSwipes, fetchRoomMatches } from '../lib/room'
 import { getFoodItems } from '../lib/foodItems'
 import { saveMatch } from '../lib/savedMatches'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
@@ -43,17 +43,26 @@ export default function FoodRoom({ room, onDone }) {
     return unsub
   }, [room.id])
 
-  // Poll for new food matches every 12s (both before and after done — partner may finish later)
+  // Poll for new food matches every 12s (reads from swipes table — same table recordSwipe writes to)
   useEffect(() => {
     const poll = async () => {
-      const matched = await checkFoodMatches(room.id, userToken.current, items.current.map(i => i.id))
-      if (matched.length > 0) {
-        const matchedItems = items.current.filter(i => matched.includes(i.id))
-        setMatches(matchedItems)
-        setDoneMatches(prev => {
-          if (prev === null) return prev
-          return matchedItems
-        })
+      const ids = await fetchRoomMatches(room.id, userToken.current)
+      if (ids !== null && ids.length > 0) {
+        const matchedItems = items.current.filter(i => ids.includes(i.id))
+        if (matchedItems.length > 0) {
+          // Merge with existing matches (don't overwrite — dedupe by id)
+          setMatches(prev => {
+            const map = new Map(prev.map(m => [m.id, m]))
+            for (const m of matchedItems) map.set(m.id, m)
+            return [...map.values()]
+          })
+          setDoneMatches(prev => {
+            if (prev === null) return prev
+            const map = new Map(prev.map(m => [m.id, m]))
+            for (const m of matchedItems) map.set(m.id, m)
+            return [...map.values()]
+          })
+        }
       }
     }
     const interval = setInterval(poll, 12000)
@@ -84,15 +93,18 @@ export default function FoodRoom({ room, onDone }) {
     // Close modal and go to results immediately — no async blocking
     setMatchItem(null)
     setIsDone(true)
-    // Fetch authoritative matches in background and update if better
-    checkFoodMatches(room.id, userToken.current, items.current.map(i => i.id))
-      .then(matched => {
-        if (matched.length > 0) {
-          setDoneMatches(items.current.filter(i => matched.includes(i.id)))
-        } else {
-          // Fallback to whatever real-time matches we already have
-          setDoneMatches(prev => prev ?? matches)
+    // Fetch authoritative matches from swipes table in background
+    fetchRoomMatches(room.id, userToken.current)
+      .then(ids => {
+        if (ids !== null && ids.length > 0) {
+          const matched = items.current.filter(i => ids.includes(i.id))
+          if (matched.length > 0) {
+            setDoneMatches(matched)
+            return
+          }
         }
+        // Fallback to whatever real-time matches we already have
+        setDoneMatches(prev => prev ?? matches)
       })
       .catch(() => {
         setDoneMatches(prev => prev ?? matches)
