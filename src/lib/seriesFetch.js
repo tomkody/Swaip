@@ -30,10 +30,10 @@ export function fetchTopRatedSeries(roomId, platforms = [], genres = []) {
 
   if (genres.length > 0) {
     const filtered = pool.filter(s => s.genre && genres.some(g => s.genre.includes(g)))
-    if (filtered.length >= 10) pool = filtered
+    if (filtered.length > 0) pool = filtered
   }
 
-  const source = pool.length >= 10 ? pool : [...SERIES_WITH_GENRES]
+  const source = pool.length > 0 ? pool : [...SERIES_WITH_GENRES]
   const shuffled = [...source]
   const rng = roomId ? seededRandom(roomId) : Math.random
   for (let i = shuffled.length - 1; i > 0; i--) {

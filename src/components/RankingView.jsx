@@ -69,11 +69,12 @@ export default function RankingView({ matches: initialMatches, room, movies = []
 
   async function handleSubmit() {
     setSubmitting(true)
+    // Always show results regardless of DB success
+    setPhase('results')
     try {
       await submitRankings(room.id, userToken.current, top3.map(m => m.id))
-      setPhase('results') // always go straight to results — no waiting screen
     } catch (e) {
-      console.error(e)
+      console.error('Failed to save rankings:', e)
     } finally {
       setSubmitting(false)
     }
@@ -121,67 +122,86 @@ export default function RankingView({ matches: initialMatches, room, movies = []
 
   // ── RESULTS ──────────────────────────────────────────────────────
   if (phase === 'results') {
-    const myMap = {}
-    top3.forEach((m, i) => { myMap[m.id] = i + 1 })
-    const partnerMap = {}
-    if (partnerRanks) partnerRanks.forEach((id, i) => { partnerMap[id] = i + 1 })
-
-    // Sort: items ranked by both first, then by score
-    const sorted = [...matches].sort((a, b) => {
-      const aScore = (myMap[a.id] ? 4 - myMap[a.id] : 0) + (partnerMap[a.id] ? 4 - partnerMap[a.id] : 0)
-      const bScore = (myMap[b.id] ? 4 - myMap[b.id] : 0) + (partnerMap[b.id] ? 4 - partnerMap[b.id] : 0)
-      return bScore - aScore
-    })
+    const hasMyPicks = top3.length > 0
+    const rest = matches.filter(m => !top3.some(t => t.id === m.id))
 
     return (
       <div className="rv-page">
         {/* Hero */}
         <div className="rv-results-hero">
-          <div className="rv-icon">🎉</div>
-          <h2>You matched on {matches.length} {typeLabel}!</h2>
+          <div className="rv-icon">{matches.length > 0 ? '🎉' : '😅'}</div>
+          <h2>{matches.length > 0
+            ? `You matched on ${matches.length} ${typeLabel}!`
+            : `No matches this time`
+          }</h2>
           <p className="rv-hero-sub">
             {matches.length === 0
-              ? 'No matches this time — try swiping more!'
-              : 'Here\'s everything you both want to watch:'}
+              ? 'Try swiping more next time!'
+              : hasMyPicks
+                ? `We swiped through ${movies.length} ${typeLabel} and ${top3.length === 1 ? 'this is my #1 pick' : `these are my top ${top3.length}`}:`
+                : `Here's everything you both want to watch:`}
           </p>
         </div>
 
-        {/* Match list */}
-        {sorted.length > 0 && (
+        {/* My Top Picks — shown prominently */}
+        {hasMyPicks && (
           <div className="rv-match-list">
-            {sorted.map((m, idx) => {
-              const myRank = myMap[m.id] || null
-              const partnerRank = partnerRanks ? (partnerMap[m.id] || null) : null
-              const bothRanked = myRank && partnerRank
-              const topPick = idx === 0 && (myRank || partnerRank)
-              return (
-                <div key={m.id} className={`rv-result-card ${bothRanked ? 'rv-result-both' : ''} ${topPick ? 'rv-result-top' : ''}`}>
-                  {topPick && <div className="rv-top-badge">🏆 Top Pick</div>}
-                  <div className="rv-result-card-inner">
-                    {m.poster
-                      ? <img src={m.poster} alt={m.title} className="rv-result-poster" />
-                      : <div className="rv-result-poster rv-result-poster-empty">{emoji}</div>}
-                    <div className="rv-result-info">
-                      <strong>{m.title}</strong>
-                      <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
-                      {(myRank || partnerRank) && (
-                        <div className="rv-rank-tags">
-                          {myRank && <span className="rv-rank-tag rv-rank-you">You #{myRank}</span>}
-                          {partnerRank && <span className="rv-rank-tag rv-rank-them">Them #{partnerRank}</span>}
-                        </div>
-                      )}
-                    </div>
-                    {bothRanked && <span className="rv-both-badge">✓ Both</span>}
+            <p className="rv-label">🏆 My Top {top3.length}</p>
+            {top3.map((m, i) => (
+              <div key={m.id} className={`rv-result-card ${i === 0 ? 'rv-result-top' : ''}`}>
+                {i === 0 && <div className="rv-top-badge">🏆 #1 Pick</div>}
+                <div className="rv-result-card-inner">
+                  <span className="rv-pick-num">#{i + 1}</span>
+                  {m.poster
+                    ? <img src={m.poster} alt={m.title} className="rv-result-poster" />
+                    : <div className="rv-result-poster rv-result-poster-empty">{emoji}</div>}
+                  <div className="rv-result-info">
+                    <strong>{m.title}</strong>
+                    <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
                   </div>
                 </div>
-              )
-            })}
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Partner still picking note */}
-        {!partnerRanks && matches.length > 0 && (
-          <p className="rv-partner-note">Partner's rankings will appear here when they're done</p>
+        {/* Other matches */}
+        {rest.length > 0 && (
+          <div className="rv-match-list">
+            <p className="rv-label">All Matches ({matches.length})</p>
+            {rest.map(m => (
+              <div key={m.id} className="rv-result-card">
+                <div className="rv-result-card-inner">
+                  {m.poster
+                    ? <img src={m.poster} alt={m.title} className="rv-result-poster" />
+                    : <div className="rv-result-poster rv-result-poster-empty">{emoji}</div>}
+                  <div className="rv-result-info">
+                    <strong>{m.title}</strong>
+                    <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* No picks — just show all matches flat */}
+        {!hasMyPicks && matches.length > 0 && (
+          <div className="rv-match-list">
+            {matches.map(m => (
+              <div key={m.id} className="rv-result-card">
+                <div className="rv-result-card-inner">
+                  {m.poster
+                    ? <img src={m.poster} alt={m.title} className="rv-result-poster" />
+                    : <div className="rv-result-poster rv-result-poster-empty">{emoji}</div>}
+                  <div className="rv-result-info">
+                    <strong>{m.title}</strong>
+                    <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
         {/* Action buttons */}

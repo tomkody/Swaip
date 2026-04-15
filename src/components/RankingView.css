@@ -470,6 +470,15 @@
   flex-shrink: 0;
 }
 
+/* Pick number in results */
+.rv-pick-num {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--primary);
+  min-width: 30px;
+  flex-shrink: 0;
+}
+
 /* Partner note */
 .rv-partner-note {
   text-align: center;

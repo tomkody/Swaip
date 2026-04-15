@@ -1,14 +1,14 @@
 .match-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(13, 11, 26, 0.9);
+  background: rgba(13, 11, 26, 0.92);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
   padding: 20px;
   animation: matchFadeIn 0.3s ease;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
 }
 
 @keyframes matchFadeIn {
@@ -17,43 +17,39 @@
 }
 
 @keyframes matchSlideUp {
-  from { transform: translateY(40px); opacity: 0; }
+  from { transform: translateY(30px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
 @keyframes matchPulse {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+  50% { transform: scale(1.12); }
 }
 
 .match-modal {
   background: var(--bg-glass);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 32px 24px;
+  padding: 28px 24px 20px;
   width: 100%;
-  max-width: 360px;
+  max-width: 320px;
   text-align: center;
   animation: matchSlideUp 0.4s ease 0.1s both;
   backdrop-filter: blur(20px);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), 0 0 80px var(--primary-glow);
-}
-
-.match-header {
-  margin-bottom: 24px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), 0 0 60px var(--primary-glow);
 }
 
 .match-emoji {
-  font-size: 48px;
+  font-size: 40px;
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   animation: matchPulse 1s ease infinite;
 }
 
 .match-title {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 800;
-  margin: 0 0 4px;
+  margin: 0 0 2px;
   background: var(--gradient-warm);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -63,8 +59,8 @@
 
 .match-subtitle {
   color: var(--text-muted);
-  font-size: 14px;
-  margin: 0;
+  font-size: 13px;
+  margin: 0 0 16px;
   font-weight: 500;
 }
 
@@ -73,117 +69,61 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   overflow: hidden;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .match-poster {
   width: 100%;
-  height: 180px;
+  height: 160px;
   object-fit: cover;
   display: block;
 }
 
 .match-poster-placeholder {
-  height: 180px;
+  height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48px;
+  font-size: 44px;
   background: linear-gradient(135deg, rgba(255, 92, 106, 0.05) 0%, rgba(255, 200, 78, 0.05) 100%);
 }
 
-.match-info {
-  padding: 16px;
-}
-
-.match-info h2 {
-  font-size: 20px;
+.match-item-title {
+  font-size: 18px;
   font-weight: 700;
-  margin: 0 0 4px;
+  margin: 10px 12px 2px;
   letter-spacing: -0.2px;
 }
 
 .match-meta {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
   font-size: 13px;
   color: var(--text-muted);
   font-weight: 500;
-}
-
-/* Watch it here */
-.match-watch {
-  margin-bottom: 14px;
-}
-
-.match-watch-label {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-  margin: 0 0 8px;
-  text-align: left;
-}
-
-.match-watch-btns {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-}
-
-.watch-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  border-radius: 99px;
-  font-size: 12px;
-  font-weight: 700;
-  background: var(--pill-bg);
-  border: 1px solid var(--pill-border);
-  color: var(--pill-color);
-  text-decoration: none;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.watch-pill:hover {
-  filter: brightness(1.15);
-  transform: translateY(-1px);
-}
-
-.watch-pill-icon {
-  opacity: 0.7;
-  flex-shrink: 0;
-}
-
-/* Share button */
-.match-share-btn {
-  width: 100%;
-  padding: 13px;
-  margin-bottom: 12px;
-  border-radius: var(--radius-pill);
-  font-size: 14px;
-  font-weight: 700;
-  background: linear-gradient(135deg, rgba(247,79,94,0.12), rgba(245,184,58,0.12));
-  border: 1px solid rgba(247, 79, 94, 0.3);
-  color: var(--primary);
-  transition: all 0.2s;
-}
-
-.match-share-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(247,79,94,0.2), rgba(245,184,58,0.2));
-}
-
-.match-share-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  margin: 0 12px 10px;
 }
 
 .match-actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+}
+
+.match-share-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+.match-share-btn:hover:not(:disabled) {
+  border-color: var(--border-hover);
+  color: var(--text);
+}
+.match-share-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

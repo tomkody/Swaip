@@ -30,10 +30,10 @@ export function fetchTopRatedMovies(roomId, platforms = [], genres = []) {
 
   if (genres.length > 0) {
     const filtered = pool.filter(m => m.genre && genres.some(g => m.genre.includes(g)))
-    if (filtered.length >= 10) pool = filtered
+    if (filtered.length > 0) pool = filtered
   }
 
-  const source = pool.length >= 10 ? pool : [...MOVIES_WITH_GENRES] // fallback if too few
+  const source = pool.length > 0 ? pool : [...MOVIES_WITH_GENRES] // fallback only if completely empty
   const shuffled = [...source]
   const rng = roomId ? seededRandom(roomId) : Math.random
   for (let i = shuffled.length - 1; i > 0; i--) {
