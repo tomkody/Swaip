@@ -9,10 +9,10 @@ export default function SwipeCard({ item, onSwipe, active }) {
   const cardRef = useRef(null)
   const startPos = useRef({ x: 0, y: 0 })
   const hasMoved = useRef(false)
-  const isDraggingRef = useRef(false)   // ref = always in sync inside event handlers
-  const currentOffset = useRef({ x: 0, y: 0 }) // ref so handleEnd reads latest value
+  const isDraggingRef = useRef(false)
+  const currentOffset = useRef({ x: 0, y: 0 })
   const [offset, setOffset] = useState({ x: 0, y: 0 })
-  const [dragging, setDragging] = useState(false) // state only for CSS transition
+  const [dragging, setDragging] = useState(false)
   const [leaving, setLeaving] = useState(null)
   const [flipped, setFlipped] = useState(false)
 
@@ -22,45 +22,49 @@ export default function SwipeCard({ item, onSwipe, active }) {
     startPos.current = { x: point.clientX, y: point.clientY }
     hasMoved.current = false
     currentOffset.current = { x: 0, y: 0 }
-    isDraggingRef.current = true   // synchronous — visible immediately
+    isDraggingRef.current = true
     setDragging(true)
   }
 
   function handleMove(e) {
-    if (!isDraggingRef.current) return   // synchronous check, never stale
+    if (!isDraggingRef.current) return
     const point = e.touches ? e.touches[0] : e
     const dx = point.clientX - startPos.current.x
     const dy = point.clientY - startPos.current.y
-    currentOffset.current = { x: dx, y: dy }  // keep ref in sync
-    if (Math.sqrt(dx * dx + dy * dy) > TAP_MAX_MOVE) {
+    const dist = Math.sqrt(dx * dx + dy * dy)
+
+    if (dist > TAP_MAX_MOVE) {
       hasMoved.current = true
-      // Un-flip while dragging so stamps are visible
       if (flipped) setFlipped(false)
     }
-    setOffset({ x: dx, y: dy })
+
+    // Only visually move the card once we've confirmed it's a real drag.
+    // This prevents any wibble/jitter on taps.
+    if (hasMoved.current) {
+      currentOffset.current = { x: dx, y: dy }
+      setOffset({ x: dx, y: dy })
+    }
   }
 
   function handleEnd() {
-    if (!isDraggingRef.current) return   // synchronous check
+    if (!isDraggingRef.current) return
     isDraggingRef.current = false
     setDragging(false)
 
-    const ox = currentOffset.current.x  // use ref — guaranteed up-to-date
+    const ox = currentOffset.current.x
 
     if (Math.abs(ox) > SWIPE_THRESHOLD) {
       // Genuine swipe
       const direction = ox > 0 ? 'right' : 'left'
       setLeaving(direction)
       setTimeout(() => onSwipe(direction), 300)
-    } else if (!hasMoved.current) {
-      // Tap — toggle flip
-      setFlipped(f => !f)
-      setOffset({ x: 0, y: 0 })
-      currentOffset.current = { x: 0, y: 0 }
-    } else {
+    } else if (hasMoved.current) {
       // Drag short of threshold — snap back
       setOffset({ x: 0, y: 0 })
       currentOffset.current = { x: 0, y: 0 }
+    } else {
+      // Tap — flip the card
+      setFlipped(f => !f)
     }
   }
 
@@ -83,7 +87,6 @@ export default function SwipeCard({ item, onSwipe, active }) {
         transition: dragging ? 'none' : 'transform 0.3s ease',
       }
 
-  // Overlay opacity tied directly to drag distance
   const yesOpacity = Math.max(0, Math.min(1, offset.x / SWIPE_THRESHOLD))
   const nopeOpacity = Math.max(0, Math.min(1, -offset.x / SWIPE_THRESHOLD))
 
@@ -137,7 +140,6 @@ export default function SwipeCard({ item, onSwipe, active }) {
           {/* BACK — details */}
           <div className="card-face card-back">
             <div className="card-back-inner">
-              {/* Blurred poster as bg */}
               {item.poster && (
                 <img src={item.poster} alt="" className="card-back-bg" draggable={false} />
               )}
