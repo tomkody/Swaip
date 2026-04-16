@@ -3,14 +3,16 @@ import './SwipeCard.css'
 
 const SWIPE_THRESHOLD = 100
 const ROTATION_FACTOR = 0.15
-const TAP_MAX_MOVE = 14 // px — below this = tap, above = drag
+const TAP_MAX_MOVE = 14 // px total travel — below this = tap
 
 export default function SwipeCard({ item, onSwipe, active }) {
   const cardRef = useRef(null)
   const startPos = useRef({ x: 0, y: 0 })
   const hasMoved = useRef(false)
+  const isDraggingRef = useRef(false)   // ref = always in sync inside event handlers
+  const currentOffset = useRef({ x: 0, y: 0 }) // ref so handleEnd reads latest value
   const [offset, setOffset] = useState({ x: 0, y: 0 })
-  const [dragging, setDragging] = useState(false)
+  const [dragging, setDragging] = useState(false) // state only for CSS transition
   const [leaving, setLeaving] = useState(null)
   const [flipped, setFlipped] = useState(false)
 
@@ -19,38 +21,46 @@ export default function SwipeCard({ item, onSwipe, active }) {
     const point = e.touches ? e.touches[0] : e
     startPos.current = { x: point.clientX, y: point.clientY }
     hasMoved.current = false
+    currentOffset.current = { x: 0, y: 0 }
+    isDraggingRef.current = true   // synchronous — visible immediately
     setDragging(true)
   }
 
   function handleMove(e) {
-    if (!dragging) return
+    if (!isDraggingRef.current) return   // synchronous check, never stale
     const point = e.touches ? e.touches[0] : e
     const dx = point.clientX - startPos.current.x
     const dy = point.clientY - startPos.current.y
+    currentOffset.current = { x: dx, y: dy }  // keep ref in sync
     if (Math.sqrt(dx * dx + dy * dy) > TAP_MAX_MOVE) {
       hasMoved.current = true
-      // Un-flip while dragging so overlays are visible
+      // Un-flip while dragging so stamps are visible
       if (flipped) setFlipped(false)
     }
     setOffset({ x: dx, y: dy })
   }
 
   function handleEnd() {
-    if (!dragging) return
+    if (!isDraggingRef.current) return   // synchronous check
+    isDraggingRef.current = false
     setDragging(false)
 
-    if (Math.abs(offset.x) > SWIPE_THRESHOLD) {
+    const ox = currentOffset.current.x  // use ref — guaranteed up-to-date
+
+    if (Math.abs(ox) > SWIPE_THRESHOLD) {
       // Genuine swipe
-      const direction = offset.x > 0 ? 'right' : 'left'
+      const direction = ox > 0 ? 'right' : 'left'
       setLeaving(direction)
       setTimeout(() => onSwipe(direction), 300)
     } else if (!hasMoved.current) {
       // Tap — toggle flip
       setFlipped(f => !f)
       setOffset({ x: 0, y: 0 })
+      currentOffset.current = { x: 0, y: 0 }
     } else {
-      // Drag released short of threshold — snap back
+      // Drag short of threshold — snap back
       setOffset({ x: 0, y: 0 })
+      currentOffset.current = { x: 0, y: 0 }
     }
   }
 
@@ -86,7 +96,7 @@ export default function SwipeCard({ item, onSwipe, active }) {
         onMouseDown={handleStart}
         onMouseMove={handleMove}
         onMouseUp={handleEnd}
-        onMouseLeave={() => dragging && handleEnd()}
+        onMouseLeave={() => isDraggingRef.current && handleEnd()}
         onTouchStart={handleStart}
         onTouchMove={handleMove}
         onTouchEnd={handleEnd}
