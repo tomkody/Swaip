@@ -1,2002 +1,252 @@
 export const MOVIES = [
-  {
-    "id": 1,
-    "title": "The Shawshank Redemption",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMDAyY2FhYjctNDc5OS00MDNlLThiMGUtY2UxYWVkNGY2ZjljXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "9.3",
-    "year": "1994",
-    "runtime": "2h 22m"
-  },
-  {
-    "id": 2,
-    "title": "The Godfather",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNGEwYjgwOGQtYjg5ZS00Njc1LTk2ZGEtM2QwZWQ2NjdhZTE5XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "9.2",
-    "year": "1972",
-    "runtime": "2h 55m"
-  },
-  {
-    "id": 3,
-    "title": "The Dark Knight",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_QL75_UX500.jpg",
-    "rating": "9.1",
-    "year": "2008",
-    "runtime": "2h 32m"
-  },
-  {
-    "id": 4,
-    "title": "The Godfather Part II",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMDIxMzBlZDktZjMxNy00ZGI4LTgxNDEtYWRlNzRjMjJmOGQ1XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "9.0",
-    "year": "1974",
-    "runtime": "3h 22m"
-  },
-  {
-    "id": 5,
-    "title": "12 Angry Men",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYjE4NzdmOTYtYjc5Yi00YzBiLWEzNDEtNTgxZGQ2MWVkN2NiXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "9.0",
-    "year": "1957",
-    "runtime": "1h 36m"
-  },
-  {
-    "id": 6,
-    "title": "The Lord of the Rings: The Return of the King",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTZkMjBjNWMtZGI5OC00MGU0LTk4ZTItODg2NWM3NTVmNWQ4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "9.0",
-    "year": "2003",
-    "runtime": "3h 21m"
-  },
-  {
-    "id": 7,
-    "title": "Schindler's List",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTg3MDc4ODgyOF5BMl5BanBnXkFtZTgwNzY1ODIyNjM@._V1_QL75_UX500.jpg",
-    "rating": "9.0",
-    "year": "1993",
-    "runtime": "3h 15m"
-  },
-  {
-    "id": 8,
-    "title": "The Lord of the Rings: The Fellowship of the Ring",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNzIxMDQ2YTctNDY4MC00ZTRhLTk4ODQtMTVlOWY4NTdiYmMwXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.9",
-    "year": "2001",
-    "runtime": "2h 58m"
-  },
-  {
-    "id": 9,
-    "title": "Pulp Fiction",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYTViYTE3ZGQtNDBlMC00ZTAyLTkyODMtZGRiZDg0MjA2YThkXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.8",
-    "year": "1994",
-    "runtime": "2h 34m"
-  },
-  {
-    "id": 10,
-    "title": "The Good, the Bad and the Ugly",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMWM5ZjQxM2YtNDlmYi00ZDNhLWI4MWUtN2VkYjBlMTY1ZTkwXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.8",
-    "year": "1966",
-    "runtime": "2h 28m"
-  },
-  {
-    "id": 11,
-    "title": "The Lord of the Rings: The Two Towers",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMGQxMDdiOWUtYjc1Ni00YzM1LWE2NjMtZTg3Y2JkMjEzMTJjXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.8",
-    "year": "2002",
-    "runtime": "2h 59m"
-  },
-  {
-    "id": 12,
-    "title": "Forrest Gump",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNDYwNzVjMTItZmU5YS00YjQ5LTljYjgtMjY2NDVmYWMyNWFmXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.8",
-    "year": "1994",
-    "runtime": "2h 22m"
-  },
-  {
-    "id": 13,
-    "title": "Fight Club",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOTgyOGQ1NDItNGU3Ny00MjU3LTg2YWEtNmEyYjBiMjI1Y2M5XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.8",
-    "year": "1999",
-    "runtime": "2h 19m"
-  },
-  {
-    "id": 14,
-    "title": "Inception",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_QL75_UX500.jpg",
-    "rating": "8.8",
-    "year": "2010",
-    "runtime": "2h 28m"
-  },
-  {
-    "id": 15,
-    "title": "Star Wars: Episode V - The Empire Strikes Back",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTkxNGFlNDktZmJkNC00MDdhLTg0MTEtZjZiYWI3MGE5NWIwXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.7",
-    "year": "1980",
-    "runtime": "2h 4m"
-  },
-  {
-    "id": 16,
-    "title": "The Matrix",
-    "poster": "https://m.media-amazon.com/images/M/MV5BN2NmN2VhMTQtMDNiOS00NDlhLTliMjgtODE2ZTY0ODQyNDRhXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.7",
-    "year": "1999",
-    "runtime": "2h 16m"
-  },
-  {
-    "id": 17,
-    "title": "GoodFellas",
-    "poster": "https://m.media-amazon.com/images/M/MV5BN2E5NzI2ZGMtY2VjNi00YTRjLWI1MDUtZGY5OWU1MWJjZjRjXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.7",
-    "year": "1990",
-    "runtime": "2h 25m"
-  },
-  {
-    "id": 18,
-    "title": "Interstellar",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYzdjMDAxZGItMjI2My00ODA1LTlkNzItOWFjMDU5ZDJlYWY3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.7",
-    "year": "2014",
-    "runtime": "2h 49m"
-  },
-  {
-    "id": 19,
-    "title": "One Flew Over the Cuckoo's Nest",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYjBkMjgzMzYtNzRiMS00NDc3LWE4YTUtZjYxYjZhNjNhYzhhXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.6",
-    "year": "1975",
-    "runtime": "2h 13m"
-  },
-  {
-    "id": 20,
-    "title": "Seven",
-    "poster": "https://m.media-amazon.com/images/M/MV5BY2IzNzMxZjctZjUxZi00YzAxLTk3ZjMtODFjODdhMDU5NDM1XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.6",
-    "year": "1995",
-    "runtime": "2h 7m"
-  },
-  {
-    "id": 21,
-    "title": "It's a Wonderful Life",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMDM4OWFhYjEtNTE5Yy00NjcyLTg5N2UtZDQwNDZlYjlmNDU5XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.6",
-    "year": "1946",
-    "runtime": "2h 10m"
-  },
-  {
-    "id": 22,
-    "title": "The Silence of the Lambs",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNDdhOGJhYzctYzYwZC00YmI2LWI0MjctYjg4ODdlMDExYjBlXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.6",
-    "year": "1991",
-    "runtime": "1h 58m"
-  },
-  {
-    "id": 23,
-    "title": "Seven Samurai",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZjliMWExOTMtZDQ3ZS00NWU3LWIyN2EtMjllNzk3ZTNlYzg4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.6",
-    "year": "1954",
-    "runtime": "3h 27m"
-  },
-  {
-    "id": 24,
-    "title": "Saving Private Ryan",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZGZhZGQ1ZWUtZTZjYS00MDJhLWFkYjctN2ZlYjE5NWYwZDM2XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.6",
-    "year": "1998",
-    "runtime": "2h 49m"
-  },
-  {
-    "id": 25,
-    "title": "The Green Mile",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTUxMzQyNjA5MF5BMl5BanBnXkFtZTYwOTU2NTY3._V1_QL75_UX500.jpg",
-    "rating": "8.6",
-    "year": "1999",
-    "runtime": "3h 9m"
-  },
-  {
-    "id": 26,
-    "title": "City of God",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYjY4NGI5OTUtY2ZlZS00Zjk4LTk5N2MtN2JmYWVjNGNmMGRlXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.6",
-    "year": "2002",
-    "runtime": "2h 10m"
-  },
-  {
-    "id": 27,
-    "title": "Life Is Beautiful",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZTBhOGYzZjQtYzE0Mi00MGIwLWE0MWYtNzMxNTM2OTFkM2NjXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.6",
-    "year": "1997",
-    "runtime": "1h 56m"
-  },
-  {
-    "id": 28,
-    "title": "Terminator 2: Judgment Day",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNGMyMGNkMDUtMjc2Ni00NWFlLTgyODEtZTY2MzBiZTg0OWZiXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.6",
-    "year": "1991",
-    "runtime": "2h 17m"
-  },
-  {
-    "id": 29,
-    "title": "Star Wars: Episode IV - A New Hope",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOGUwMDk0Y2MtNjBlNi00NmRiLTk2MWYtMGMyMDlhYmI4ZDBjXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.6",
-    "year": "1977",
-    "runtime": "2h 1m"
-  },
-  {
-    "id": 30,
-    "title": "Back to the Future",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZmM3ZjE0NzctNjBiOC00MDZmLTgzMTUtNGVlOWFlOTNiZDJiXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "1985",
-    "runtime": "1h 56m"
-  },
-  {
-    "id": 31,
-    "title": "Spirited Away",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNTEyNmEwOWUtYzkyOC00ZTQ4LTllZmUtMjk0Y2YwOGUzYjRiXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.6",
-    "year": "2001",
-    "runtime": "2h 4m"
-  },
-  {
-    "id": 32,
-    "title": "The Pianist",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjEwNmEwYjgtNTk3ZC00NjljLTg5ZDctZTY3ZGQwZjRkZmQxXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "2002",
-    "runtime": "2h 30m"
-  },
-  {
-    "id": 33,
-    "title": "Gladiator",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYWQ4YmNjYjEtOWE1Zi00Y2U4LWI4NTAtMTU0MjkxNWQ1ZmJiXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "2000",
-    "runtime": "2h 35m"
-  },
-  {
-    "id": 34,
-    "title": "Parasite",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYjk1Y2U4MjQtY2ZiNS00OWQyLWI3MmYtZWUwNmRjYWRiNWNhXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "2019",
-    "runtime": "2h 12m"
-  },
-  {
-    "id": 35,
-    "title": "Grave of the Fireflies",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNTY5MmE2OGMtN2IxNC00MDY4LTkwMGEtZDUzOTYyNWE0ZTNjXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "1988",
-    "runtime": "1h 28m"
-  },
-  {
-    "id": 36,
-    "title": "Psycho",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYjZhMzFiZjItODA3ZC00MmRhLWIzMGYtMmVjOWUwYTA3MTRjXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "1960",
-    "runtime": "1h 49m"
-  },
-  {
-    "id": 37,
-    "title": "The Lion King",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZGRiZDZhZjItM2M3ZC00Y2IyLTk3Y2MtMWY5YjliNDFkZTJlXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "1994",
-    "runtime": "1h 28m"
-  },
-  {
-    "id": 38,
-    "title": "Harakiri",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZThiZjU5ZDQtZDI4Mi00ZGYyLTkzOTktYmIzZTFlZTkxYzg5XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.6",
-    "year": "1962",
-    "runtime": "2h 13m"
-  },
-  {
-    "id": 39,
-    "title": "The Departed",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTI1MTY2OTIxNV5BMl5BanBnXkFtZTYwNjQ4NjY3._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "2006",
-    "runtime": "2h 31m"
-  },
-  {
-    "id": 40,
-    "title": "Whiplash",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMDFjOWFkYzktYzhhMC00NmYyLTkwY2EtYjViMDhmNzg0OGFkXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "2014",
-    "runtime": "1h 46m"
-  },
-  {
-    "id": 41,
-    "title": "Kill Bill: The Whole Bloody Affair",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZDc2YzhkODAtZmRmZS00YzcxLWJkYWEtM2ZhZjY3MmMyZmJiXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.8",
-    "year": "2004",
-    "runtime": "4h 13m"
-  },
-  {
-    "id": 42,
-    "title": "The Prestige",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNTZjMzljYTktMWEwZC00YzNjLWIzOTQtZTViNzYyY2Q5NDBmXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "2006",
-    "runtime": "2h 10m"
-  },
-  {
-    "id": 43,
-    "title": "American History X",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMzhiOTQ0NDItOTg0Zi00OGVmLWE0OGEtMTI4NDM0NWMxZWU4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "1998",
-    "runtime": "1h 59m"
-  },
-  {
-    "id": 44,
-    "title": "Leon",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNGRkYTNhOWQtYmI0Ni00MjZhLWJmMzAtMTA2Mjg4NGNiNDU0XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "1994",
-    "runtime": "1h 50m"
-  },
-  {
-    "id": 45,
-    "title": "Spider-Man: Across the Spider-Verse",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNThiZjA3MjItZGY5Ni00ZmJhLWEwN2EtOTBlYTA4Y2E0M2ZmXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "2023",
-    "runtime": "2h 20m"
-  },
-  {
-    "id": 46,
-    "title": "Cinema Paradiso",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTljNzc4YWEtYTZlMS00ODMyLWIwMTAtNWQxY2VkMDEwYTk5XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "1988",
-    "runtime": "2h 54m"
-  },
-  {
-    "id": 47,
-    "title": "Casablanca",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNWEzN2U1YTYtYTQyMS00NTVkLWE2NGQtZWFlMmM0MDNjMmRiXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "1942",
-    "runtime": "1h 42m"
-  },
-  {
-    "id": 48,
-    "title": "Untouchable",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTYxNDA3MDQwNl5BMl5BanBnXkFtZTcwNTU4Mzc1Nw@@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "2011",
-    "runtime": "1h 52m"
-  },
-  {
-    "id": 49,
-    "title": "The Usual Suspects",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOTE5MDUxZDUtZWZmZC00NDVmLWFhOGQtNWI2YTc4NzY3MGQ0XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "1995",
-    "runtime": "1h 46m"
-  },
-  {
-    "id": 50,
-    "title": "Alien",
-    "poster": "https://m.media-amazon.com/images/M/MV5BN2NhMDk2MmEtZDQzOC00MmY5LThhYzAtMDdjZGFjOGZjMjdjXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "1979",
-    "runtime": "1h 57m"
-  },
-  {
-    "id": 51,
-    "title": "Django Unchained",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjIyNTQ5NjQ1OV5BMl5BanBnXkFtZTcwODg1MDU4OA@@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "2012",
-    "runtime": "2h 45m"
-  },
-  {
-    "id": 52,
-    "title": "Rear Window",
-    "poster": "https://m.media-amazon.com/images/M/MV5BODZhOWI1ODgtMzdiOS00YjNkLTgwOGUtYmIyZDg5ZmQwMzQ1XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "1954",
-    "runtime": "1h 52m"
-  },
-  {
-    "id": 53,
-    "title": "Modern Times",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjA4MDU2NDQwN15BMl5BanBnXkFtZTgwODUwNDI2MzE@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "1936",
-    "runtime": "1h 27m"
-  },
-  {
-    "id": 54,
-    "title": "Once Upon a Time in the West",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZjYyNGY1MDEtN2I1MC00MGVhLTljZTYtODQ1NzQ0ODc2NzZlXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "1968",
-    "runtime": "2h 46m"
-  },
-  {
-    "id": 55,
-    "title": "City Lights",
-    "poster": "https://m.media-amazon.com/images/M/MV5BM2U4NjgzODUtODkyOC00YTE2LTlhNTItYzFlYmM1NTEzZDA2XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.5",
-    "year": "1931",
-    "runtime": "1h 27m"
-  },
-  {
-    "id": 56,
-    "title": "Apocalypse Now",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZDhiMTljYjYtODc1Yy00MmEwLTg2OTYtYmE1YTRmNDE4MmEwXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "1979",
-    "runtime": "2h 27m"
-  },
-  {
-    "id": 57,
-    "title": "WALL·E",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjExMTg5OTU0NF5BMl5BanBnXkFtZTcwMjMxMzMzMw@@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "2008",
-    "runtime": "1h 38m"
-  },
-  {
-    "id": 58,
-    "title": "Memento",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMGQ3Y2Q4NjktN2E4Ny00Y2Q2LTliZDUtZTNiNjRhY2I0NGIyXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "2000",
-    "runtime": "1h 53m"
-  },
-  {
-    "id": 59,
-    "title": "Dune: Part Two",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNTc0YmQxMjEtODI5MC00NjFiLTlkMWUtOGQ5NjFmYWUyZGJhXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "2024",
-    "runtime": "2h 46m"
-  },
-  {
-    "id": 60,
-    "title": "Raiders of the Lost Ark",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOGNhMjg2ZjgtYzk4Ni00MTViLTg1MmUtYzM2MDZiYjZlMmU3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "1981",
-    "runtime": "1h 55m"
-  },
-  {
-    "id": 61,
-    "title": "Avengers: Infinity War",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjMxNjY2MDU1OV5BMl5BanBnXkFtZTgwNzY1MTUwNTM@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "2018",
-    "runtime": "2h 29m"
-  },
-  {
-    "id": 62,
-    "title": "The Lives of Others",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYjM1N2Q0YWEtN2E5MC00NDM3LTk2NTEtMTc1NTk5OTA5ZGIzXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "2006",
-    "runtime": "2h 17m"
-  },
-  {
-    "id": 63,
-    "title": "Spider-Man: Into the Spider-Verse",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjMwNDkxMTgzOF5BMl5BanBnXkFtZTgwNTkwNTQ3NjM@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "2018",
-    "runtime": "1h 57m"
-  },
-  {
-    "id": 64,
-    "title": "Sunset Boulevard",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTU0NTkyNzYwMF5BMl5BanBnXkFtZTgwMDU0NDk5MTI@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "1950",
-    "runtime": "1h 50m"
-  },
-  {
-    "id": 65,
-    "title": "Witness for the Prosecution",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNjRhNTQzMzQtMWViMi00ODQ1LTg0MTEtYWE4ZWZlYjM4YjJhXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "1957",
-    "runtime": "1h 56m"
-  },
-  {
-    "id": 66,
-    "title": "Paths of Glory",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNmQ2NmI2ODYtMDQzNS00NzQyLTkzZjgtZmZlYTQ5MTc1OWU3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "1957",
-    "runtime": "1h 28m"
-  },
-  {
-    "id": 67,
-    "title": "The Shining",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNmM5ZThhY2ItOGRjOS00NzZiLWEwYTItNDgyMjFkOTgxMmRiXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "1980",
-    "runtime": "2h 26m"
-  },
-  {
-    "id": 68,
-    "title": "The Great Dictator",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjc4ZjEwNDUtMjlmZS00NzQ4LTg2N2MtMGI3ZjMyMmM3ZDM2XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "1940",
-    "runtime": "2h 5m"
-  },
-  {
-    "id": 69,
-    "title": "Inglourious Basterds",
-    "poster": "https://m.media-amazon.com/images/M/MV5BODZhMWJlNjYtNDExNC00MTIzLTllM2ItOGQ2NGVjNDQ3MzkzXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "2009",
-    "runtime": "2h 33m"
-  },
-  {
-    "id": 70,
-    "title": "12th Fail",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNTE3OTIxZDYtNjA0NC00N2YxLTg1NGQtOTYxNmZkMDkwOWNjXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.7",
-    "year": "2023",
-    "runtime": "2h 27m"
-  },
-  {
-    "id": 71,
-    "title": "Aliens",
-    "poster": "https://m.media-amazon.com/images/M/MV5BODJlYzRjODUtNzBhOS00MTA5LTgzOWItMTg3YzcyOTNmNzQxXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "1986",
-    "runtime": "2h 17m"
-  },
-  {
-    "id": 72,
-    "title": "High and Low",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMGJiNzllYjktODAzNS00OGUzLTlmY2MtMjA2ZTZhYTY1OTc4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "1963",
-    "runtime": "2h 23m"
-  },
-  {
-    "id": 73,
-    "title": "Good Will Hunting",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNDdjZGQ5YzEtNTc2My00Mjc0LWFlMTctYzkwMzZlNzdiZWYzXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "1997",
-    "runtime": "2h 6m"
-  },
-  {
-    "id": 74,
-    "title": "Avengers: Endgame",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "2019",
-    "runtime": "3h 1m"
-  },
-  {
-    "id": 75,
-    "title": "The Dark Knight Rises",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTk4ODQzNDY3Ml5BMl5BanBnXkFtZTcwODA0NTM4Nw@@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "2012",
-    "runtime": "2h 44m"
-  },
-  {
-    "id": 76,
-    "title": "Coco",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMDIyM2E2NTAtMzlhNy00ZGUxLWI1NjgtZDY5MzhiMDc5NGU3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "2017",
-    "runtime": "1h 45m"
-  },
-  {
-    "id": 77,
-    "title": "Amadeus",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMzc2MjM0NTMtOGY4NC00NzY1LWE2ODUtZjMzY2RhNGNkZDAyXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "1984",
-    "runtime": "2h 40m"
-  },
-  {
-    "id": 78,
-    "title": "Toy Story",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZTA3OWVjOWItNjE1NS00NzZiLWE1MjgtZDZhMWI1ZTlkNzYwXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1995",
-    "runtime": "1h 21m"
-  },
-  {
-    "id": 79,
-    "title": "Your Name.",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjI1ODZkYTgtYTY3Yy00ZTJkLWFkOTgtZDUyYWM4MzQwNjk0XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "2016",
-    "runtime": "1h 46m"
-  },
-  {
-    "id": 80,
-    "title": "Das Boot",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNGU0MWZlMTUtM2Y3Ny00NGNmLWE5NmEtN2YxOWQzMGM3ZWYzXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1981",
-    "runtime": "2h 29m"
-  },
-  {
-    "id": 81,
-    "title": "Oldboy",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTAwNzNjYWItZmI0Ni00ZTcyLWIwNWMtZjlmNGMxZTEyYTJmXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "2003",
-    "runtime": "2h"
-  },
-  {
-    "id": 82,
-    "title": "Braveheart",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNGMxZDBhNGQtYTZlNi00N2UzLWI4NDEtNmUzNWM2NTdmZDA0XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1995",
-    "runtime": "2h 58m"
-  },
-  {
-    "id": 83,
-    "title": "Princess Mononoke",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZTcyN2Y0MDYtMGI1NC00MWQ1LWFhZGMtN2U4NTcxZGYyNjljXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1997",
-    "runtime": "2h 13m"
-  },
-  {
-    "id": 84,
-    "title": "Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjFjYzBlOTktMTI2OS00ZWVhLTgxMDUtNzAwODY2NmI3YTAzXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1964",
-    "runtime": "1h 35m"
-  },
-  {
-    "id": 85,
-    "title": "Project Hail Mary",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNTkwNzJiYTctNzI3NC00NjE1LTlhYjktY2Q5MTdmMWFmNzcxXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "2026",
-    "runtime": "2h 36m"
-  },
-  {
-    "id": 86,
-    "title": "3 Idiots",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNzc4ZWQ3NmYtODE0Ny00YTQ4LTlkZWItNTBkMGQ0MmUwMmJlXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "2009",
-    "runtime": "2h 50m"
-  },
-  {
-    "id": 87,
-    "title": "American Beauty",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMDI1MDE0OTMtMmI2MS00Yjc2LTg2MTItMWExYTg5NzA1OGUzXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1999",
-    "runtime": "2h 2m"
-  },
-  {
-    "id": 88,
-    "title": "Capernaum",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYzEyMzQ1OTktZTljZi00OWQzLWE2ZmUtZjQyNzBjYjE1NTc0XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "2018",
-    "runtime": "2h 6m"
-  },
-  {
-    "id": 89,
-    "title": "Singin' in the Rain",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMGQzZDFjZWUtZDU4ZS00ZjM3LTgyYmItYjA3YmIwYzRkZWY3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1952",
-    "runtime": "1h 43m"
-  },
-  {
-    "id": 90,
-    "title": "Joker",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNzY3OWQ5NDktNWQ2OC00ZjdlLThkMmItMDhhNDk3NTFiZGU4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "2019",
-    "runtime": "2h 2m"
-  },
-  {
-    "id": 91,
-    "title": "Once Upon a Time in America",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMDQ0ZTg2OGUtZjMyOC00M2M5LThkMmItZmM2MmUzMmIxMWJhXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1984",
-    "runtime": "3h 49m"
-  },
-  {
-    "id": 92,
-    "title": "Come and See",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNDlkZmVkZDAtZGFmMS00OWIzLWJkY2YtNWE5NjNhNjhiZGE3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1985",
-    "runtime": "2h 22m"
-  },
-  {
-    "id": 93,
-    "title": "Star Wars: Episode VI - Return of the Jedi",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNWEwOTI0MmUtMGNmNy00ODViLTlkZDQtZTg1YmQ3MDgyNTUzXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1983",
-    "runtime": "2h 11m"
-  },
-  {
-    "id": 94,
-    "title": "Requiem for a Dream",
-    "poster": "https://m.media-amazon.com/images/M/MV5BN2ZlMjIzZjctYzA2My00ZWYyLWI4ZjctMGI2NWYyNzFiZjAwXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "2000",
-    "runtime": "1h 42m"
-  },
-  {
-    "id": 95,
-    "title": "Toy Story 3",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTgxOTY4Mjc0MF5BMl5BanBnXkFtZTcwNTA4MDQyMw@@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "2010",
-    "runtime": "1h 43m"
-  },
-  {
-    "id": 96,
-    "title": "Ikiru",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMmNlZTk4ZjQtY2I5NS00NmNiLTlkNmUtYTc3YmE0ZTk3OGNiXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1952",
-    "runtime": "2h 23m"
-  },
-  {
-    "id": 97,
-    "title": "The Hunt",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTg2NDg3ODg4NF5BMl5BanBnXkFtZTcwNzk3NTc3Nw@@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "2012",
-    "runtime": "1h 55m"
-  },
-  {
-    "id": 98,
-    "title": "Incendies",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYWFmMjdmNjctNzhhOC00ZmMzLTkwOGItMmVmZDU4MjE2MTYwXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "2010",
-    "runtime": "2h 11m"
-  },
-  {
-    "id": 99,
-    "title": "Eternal Sunshine of the Spotless Mind",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNThjYzI5M2ItNjAxMi00MjFlLWFlNmItMzRhZmVjYWE4MWU3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "2004",
-    "runtime": "1h 48m"
-  },
-  {
-    "id": 100,
-    "title": "The Apartment",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNDdhMzVhOWQtNDU2Mi00ZmZmLWJiZDMtY2QxMjhjY2Y1ZTI5XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1960",
-    "runtime": "2h 5m"
-  },
-  {
-    "id": 101,
-    "title": "Lawrence of Arabia",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYjY0YTQ1OTAtYjEyNy00NTQ4LThlMTQtM2QwYTVhYWFhNjU5XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1962",
-    "runtime": "3h 47m"
-  },
-  {
-    "id": 102,
-    "title": "Heat",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTkxYjU1OTMtYWViZC00ZjAzLWI3MDktZGQ2N2VmMjVjNDRlXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1995",
-    "runtime": "2h 50m"
-  },
-  {
-    "id": 103,
-    "title": "Scarface",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNDUzYjY0NmUtMDM4OS00Y2Q5LWJiODYtNTk0ZTk0YjZhMTg1XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1983",
-    "runtime": "2h 50m"
-  },
-  {
-    "id": 104,
-    "title": "2001: A Space Odyssey",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNjU0NDFkMTQtZWY5OS00MmZhLTg3Y2QtZmJhMzMzMWYyYjc2XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1968",
-    "runtime": "2h 29m"
-  },
-  {
-    "id": 105,
-    "title": "Reservoir Dogs",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMmMzYjg4NDctYWY0Mi00OGViLWIzMTMtYWNlZGY5ZDJmYjk3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1992",
-    "runtime": "1h 39m"
-  },
-  {
-    "id": 106,
-    "title": "Up",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTgyMzE3Nzg2OF5BMl5BanBnXkFtZTcwMzg0Mjc4Mg@@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "2009",
-    "runtime": "1h 36m"
-  },
-  {
-    "id": 107,
-    "title": "Double Indemnity",
-    "poster": "https://m.media-amazon.com/images/M/MV5BM2YwNjZlZDktNTlmNS00ODQwLWJmNmUtYmE1NTBhYjc1YTY5XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1944",
-    "runtime": "1h 47m"
-  },
-  {
-    "id": 108,
-    "title": "North by Northwest",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZWIzODI2OGItMzM0Ny00OGRmLTlkNmItMDQxMTFmMTk3YmQwXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1959",
-    "runtime": "2h 16m"
-  },
-  {
-    "id": 109,
-    "title": "Like Stars on Earth",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNjVmMTlkNGYtYTM2OC00Yjc2LWIyYmQtMDY4ZmU1MWRlMjA3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "2007",
-    "runtime": "2h 42m"
-  },
-  {
-    "id": 110,
-    "title": "Full Metal Jacket",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYWUzNzZkNzUtNDdiYy00Nzk5LTgxMmItNTk0MjRjNjdjNDA0XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1987",
-    "runtime": "1h 56m"
-  },
-  {
-    "id": 111,
-    "title": "M",
-    "poster": "https://m.media-amazon.com/images/M/MV5BODA4ODk3OTEzMF5BMl5BanBnXkFtZTgwMTQ2ODMwMzE@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1931",
-    "runtime": "1h 57m"
-  },
-  {
-    "id": 112,
-    "title": "Amélie",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOTNmYzY0MWQtZGZmNy00Y2Y4LWFmMDQtMTZjYTdiYzEwZGQ2XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "2001",
-    "runtime": "2h 2m"
-  },
-  {
-    "id": 113,
-    "title": "Vertigo",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNzEyZTUxMWItMGVhYy00Y2NlLTljYTMtYzBmMzI1YmUyMDBkXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1958",
-    "runtime": "2h 8m"
-  },
-  {
-    "id": 114,
-    "title": "Citizen Kane",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYjk1ZDJlMmUtOWQ0Zi00MDM5LTk1OGYtODczNjFmMGYwZGVkXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1941",
-    "runtime": "1h 59m"
-  },
-  {
-    "id": 115,
-    "title": "A Separation",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMDM0ZWRmMzctM2M5ZS00ZjU0LWIxN2MtNWNlNGY1ZDhjMDVhXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "2011",
-    "runtime": "2h 3m"
-  },
-  {
-    "id": 116,
-    "title": "Die Hard",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMGNlYmM1NmQtYWExMS00NmRjLTg5ZmEtMmYyYzJkMzljYWMxXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1988",
-    "runtime": "2h 12m"
-  },
-  {
-    "id": 117,
-    "title": "To Kill a Mockingbird",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZTlkYWU4MGEtZmQyYi00OWEzLTgzY2EtYzVjOTEzYzAyNTk1XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1962",
-    "runtime": "2h 9m"
-  },
-  {
-    "id": 118,
-    "title": "Indiana Jones and the Last Crusade",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNGIxNzQ0YzYtMjNmYi00YjBlLWFjNzEtNGE3ZGFmYTczM2MwXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1989",
-    "runtime": "2h 7m"
-  },
-  {
-    "id": 119,
-    "title": "The Sting",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZGI4OTk4MDMtYmQ1Ni00YTUzLTkyYTktZGUwMjMyN2M4NjQ5XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1973",
-    "runtime": "2h 9m"
-  },
-  {
-    "id": 120,
-    "title": "A Clockwork Orange",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTY3MjM1Mzc4N15BMl5BanBnXkFtZTgwODM0NzAxMDE@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1971",
-    "runtime": "2h 16m"
-  },
-  {
-    "id": 121,
-    "title": "Metropolis",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjhjMGYyMjAtMzJkYy00NzhlLWIwY2MtMWQ2ODIxZDUyOGYyXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1927",
-    "runtime": "2h 33m"
-  },
-  {
-    "id": 122,
-    "title": "1917",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYzkxZjg2NDQtMGVjMy00NWZkLTk0ZDEtZWE3NDYwYjAyMTg1XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2019",
-    "runtime": "1h 59m"
-  },
-  {
-    "id": 123,
-    "title": "Snatch",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYzk5NjJkMTQtN2IyNC00YWM5LTlhZmMtNGI3MWNhMTU1YTc4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2000",
-    "runtime": "1h 44m"
-  },
-  {
-    "id": 124,
-    "title": "The Wolf of Wall Street",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjIxMjgxNTk0MF5BMl5BanBnXkFtZTgwNjIyOTg2MDE@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2013",
-    "runtime": "3h"
-  },
-  {
-    "id": 125,
-    "title": "L.A. Confidential",
-    "poster": "https://m.media-amazon.com/images/M/MV5BODdiMjY1OGYtNDk0NC00NGQ1LWI4MDItOTJhMTM0YjE1YTAzXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1997",
-    "runtime": "2h 18m"
-  },
-  {
-    "id": 126,
-    "title": "Downfall",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTU0NTU5NTAyMl5BMl5BanBnXkFtZTYwNzYwMDg2._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2004",
-    "runtime": "2h 36m"
-  },
-  {
-    "id": 127,
-    "title": "The Truman Show",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNzA3ZjZlNzYtMTdjMy00NjMzLTk5ZGYtMTkyYzNiOGM1YmM3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1998",
-    "runtime": "1h 43m"
-  },
-  {
-    "id": 128,
-    "title": "Dangal",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTQ4MzQzMzM2Nl5BMl5BanBnXkFtZTgwMTQ1NzU3MDI@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "2016",
-    "runtime": "2h 41m"
-  },
-  {
-    "id": 129,
-    "title": "Bicycle Thieves",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjIzMzAyMzg1Nl5BMl5BanBnXkFtZTgwMzMyNzk0MTE@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1948",
-    "runtime": "1h 29m"
-  },
-  {
-    "id": 130,
-    "title": "Green Book",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYTMxMzNlMDYtYzhlMS00ODMxLWFlM2MtY2U4NzJmOGM3ZTljXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2018",
-    "runtime": "2h 10m"
-  },
-  {
-    "id": 131,
-    "title": "Oppenheimer",
-    "poster": "https://m.media-amazon.com/images/M/MV5BN2JkMDc5MGQtZjg3YS00NmFiLWIyZmQtZTJmNTM5MjVmYTQ4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2023",
-    "runtime": "3h"
-  },
-  {
-    "id": 132,
-    "title": "Shutter Island",
-    "poster": "https://m.media-amazon.com/images/M/MV5BN2FjNWExYzEtY2YzOC00YjNlLTllMTQtNmIwM2Q1YzBhOWM1XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2010",
-    "runtime": "2h 18m"
-  },
-  {
-    "id": 133,
-    "title": "Judgment at Nuremberg",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNDc2ODQ5NTE2MV5BMl5BanBnXkFtZTcwODExMjUyNA@@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "1961",
-    "runtime": "2h 59m"
-  },
-  {
-    "id": 134,
-    "title": "Batman Begins",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMzA2NDQzZDEtNDU5Ni00YTlkLTg2OWEtYmQwM2Y1YTBjMjFjXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2005",
-    "runtime": "2h 20m"
-  },
-  {
-    "id": 135,
-    "title": "I Swear",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNWQxYTMyZTktZDg5Yi00Y2YwLWI4YzQtMjkyYmYxNmFjYThmXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "2025",
-    "runtime": "2h"
-  },
-  {
-    "id": 136,
-    "title": "Hamilton",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYTc3MWIyMzAtMTZmNC00YmNjLWIyZTgtMmU4NjZkYzZkOThkXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "2020",
-    "runtime": "2h 40m"
-  },
-  {
-    "id": 137,
-    "title": "For a Few Dollars More",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNTRmOTcyYmYtMTIwNi00ZGYyLTk4YjYtZGJlZTgwZGY0NGQyXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1965",
-    "runtime": "2h 12m"
-  },
-  {
-    "id": 138,
-    "title": "Jurassic Park",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjM2MDgxMDg0Nl5BMl5BanBnXkFtZTgwNTM2OTM5NDE@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1993",
-    "runtime": "2h 7m"
-  },
-  {
-    "id": 139,
-    "title": "Taxi Driver",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZDNhMGYwM2UtMTdlZS00MGQ1LWI2YzAtODY5YWI1MjYyNzRmXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1976",
-    "runtime": "1h 54m"
-  },
-  {
-    "id": 140,
-    "title": "Some Like It Hot",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZTllZDYyNjEtY2RmMS00NmJhLWI4ODAtMTQ0NWFiZTJhZjA0XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1959",
-    "runtime": "2h 1m"
-  },
-  {
-    "id": 141,
-    "title": "There Will Be Blood",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjAxODQ4MDU5NV5BMl5BanBnXkFtZTcwMDU4MjU1MQ@@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2007",
-    "runtime": "2h 38m"
-  },
-  {
-    "id": 142,
-    "title": "The Father",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYzUxMDAyMDAtNzIyZi00OGQ1LTllMjEtYzRjOThkZTUxNTliXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2020",
-    "runtime": "1h 37m"
-  },
-  {
-    "id": 143,
-    "title": "The Kid",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNjkxMzY1NTQtN2YwOS00NmIwLTlkNTMtMjNkMzk1ZTk3ZDU2XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1921",
-    "runtime": "58m"
-  },
-  {
-    "id": 144,
-    "title": "All About Eve",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTY2MTAzODI5NV5BMl5BanBnXkFtZTgwMjM4NzQ0MjE@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1950",
-    "runtime": "2h 18m"
-  },
-  {
-    "id": 145,
-    "title": "The Sixth Sense",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZWQ2OTY0M2UtMTQxNC00MmIzLTllNDQtNDQ0MTQyYzI2M2ZiXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1999",
-    "runtime": "1h 47m"
-  },
-  {
-    "id": 146,
-    "title": "Ran",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZDk2NDY5YjktMjEyMC00OTJhLTkzM2EtY2Q4Y2RjYzc2Yjk4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1985",
-    "runtime": "2h 40m"
-  },
-  {
-    "id": 147,
-    "title": "Casino",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMDRlZWZjZjYtYzY2NS00ZWVjLTkwYzAtZTA2ZDAzMGRiYmYwXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1995",
-    "runtime": "2h 58m"
-  },
-  {
-    "id": 148,
-    "title": "No Country for Old Men",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjA5Njk3MjM4OV5BMl5BanBnXkFtZTcwMTc5MTE1MQ@@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2007",
-    "runtime": "2h 2m"
-  },
-  {
-    "id": 149,
-    "title": "The Thing",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYTA3NDU5MWEtNTk4Yy00ZDNkLThmZTQtMjU3ZGVhYzAyMzU4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1982",
-    "runtime": "1h 49m"
-  },
-  {
-    "id": 150,
-    "title": "Prisoners",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTg0NTIzMjQ1NV5BMl5BanBnXkFtZTcwNDc3MzM5OQ@@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2013",
-    "runtime": "2h 33m"
-  },
-  {
-    "id": 151,
-    "title": "Top Gun: Maverick",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMDBkZDNjMWEtOTdmMi00NmExLTg5MmMtNTFlYTJlNWY5YTdmXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2022",
-    "runtime": "2h 10m"
-  },
-  {
-    "id": 152,
-    "title": "Kill Bill: Vol. 1",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZmMyYzJlZmYtY2I3NC00NjAyLTkyZWItZjdjZDI1YTYyYTEwXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2003",
-    "runtime": "1h 51m"
-  },
-  {
-    "id": 153,
-    "title": "Pan's Labyrinth",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOTc1NTAxMWItMWFlNy00MmU2LTkwMTMtNzMwOTg5OTQ5YTFiXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2006",
-    "runtime": "1h 58m"
-  },
-  {
-    "id": 154,
-    "title": "Unforgiven",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNmZmMzM3YWMtZjg5Yi00M2MxLTg3ZGItNGU4YjQxNDAxM2Q4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1992",
-    "runtime": "2h 10m"
-  },
-  {
-    "id": 155,
-    "title": "Attack on Titan: The Last Attack",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNzVjOWEwYjEtNDJhOC00YjUyLThjMWItMDQwZGY1ODM4YzI3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "9.1",
-    "year": "2024",
-    "runtime": "2h 25m"
-  },
-  {
-    "id": 156,
-    "title": "A Beautiful Mind",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYjgzNjFkMmItOGJhNi00NWM3LWJlYTUtNDExMGQ3ZTI3NjJkXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2001",
-    "runtime": "2h 15m"
-  },
-  {
-    "id": 157,
-    "title": "Howl's Moving Castle",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNzlhNzlmZjktMTkyNC00ODBkLTlkZjctODAyMGRiYzQyMThmXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2004",
-    "runtime": "1h 59m"
-  },
-  {
-    "id": 158,
-    "title": "The Treasure of the Sierra Madre",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOWM1YjFmODEtMWNhMC00YmI1LWI0Y2EtYzg0YTBhZWI4ODE3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1948",
-    "runtime": "2h 6m"
-  },
-  {
-    "id": 159,
-    "title": "Finding Nemo",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTc5NjExNTA5OV5BMl5BanBnXkFtZTYwMTQ0ODY2._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2003",
-    "runtime": "1h 40m"
-  },
-  {
-    "id": 160,
-    "title": "Klaus",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZDA4ODhlMzctNGRmYi00NmViLTkxZGYtZjRkNGQ5YzYwYWVlXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2019",
-    "runtime": "1h 36m"
-  },
-  {
-    "id": 161,
-    "title": "Yojimbo",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYzFkODA1N2QtY2UyMC00NTMwLWEyNzctMmE3YjIzNzE1MzY4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1961",
-    "runtime": "1h 50m"
-  },
-  {
-    "id": 162,
-    "title": "The Great Escape",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMDRhNmJjMzEtMWU5MC00YmEyLTg3ZmYtNzYxZTI1ZGU4ZjI1XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1963",
-    "runtime": "2h 52m"
-  },
-  {
-    "id": 163,
-    "title": "The Elephant Man",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMGE3MDZhNmMtMmUxZS00MDJmLTgxYmQtOGU4ODU0Y2JmNDI1XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1980",
-    "runtime": "2h 4m"
-  },
-  {
-    "id": 164,
-    "title": "Monty Python and the Holy Grail",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYWY4YmUzZmUtMzQ0ZS00N2Y2LWJlODQtN2IwMDc1MWQwMmU3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1975",
-    "runtime": "1h 31m"
-  },
-  {
-    "id": 165,
-    "title": "Dial M for Murder",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZmYzNDgzYjgtNmU3Ny00YzUxLWE3OWUtMjIxZmNkYTVhNDZmXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1954",
-    "runtime": "1h 45m"
-  },
-  {
-    "id": 166,
-    "title": "Demon Slayer: Kimetsu No Yaiba Infinity Castle",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOGQ3YWUzYjEtMTJiYy00ZjQ0LWI0YjktYjhiNGVhNGExYTM3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "2025",
-    "runtime": "2h 35m"
-  },
-  {
-    "id": 167,
-    "title": "The Best of Youth",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYzcxMTE2YjUtMzIyMy00NDNjLWE3ZWYtODQzYmNhNDVhNDZmXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "2003",
-    "runtime": "6h 14m"
-  },
-  {
-    "id": 168,
-    "title": "The Secret in Their Eyes",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTgwNTI3OTczOV5BMl5BanBnXkFtZTcwMTM3MTUyMw@@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2009",
-    "runtime": "2h 9m"
-  },
-  {
-    "id": 169,
-    "title": "Gone with the Wind",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYmYxZTE3YzMtYmE2Yy00NmFlLTkzYTAtYTAzN2IzNDFkN2E0XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1939",
-    "runtime": "3h 58m"
-  },
-  {
-    "id": 170,
-    "title": "Lock, Stock and Two Smoking Barrels",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMmY1M2M5ZmMtYzllZC00YzAxLTk4MjktZDJkNjA1MTUwMGQ4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1998",
-    "runtime": "1h 47m"
-  },
-  {
-    "id": 171,
-    "title": "Chinatown",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNmRmZTE0NmUtZjhiZi00MzQ3LTk3ZjctN2Q3ODYzY2U3MDk3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1974",
-    "runtime": "2h 10m"
-  },
-  {
-    "id": 172,
-    "title": "V for Vendetta",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOTI5ODc3NzExNV5BMl5BanBnXkFtZTcwNzYxNzQzMw@@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2005",
-    "runtime": "2h 12m"
-  },
-  {
-    "id": 173,
-    "title": "Catch Me If You Can",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTY5MzYzNjc5NV5BMl5BanBnXkFtZTYwNTUyNTc2._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2002",
-    "runtime": "2h 21m"
-  },
-  {
-    "id": 174,
-    "title": "Inside Out",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOTgxMDQwMDk0OF5BMl5BanBnXkFtZTgwNjU5OTg2NDE@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2015",
-    "runtime": "1h 35m"
-  },
-  {
-    "id": 175,
-    "title": "Rashomon",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZTdmNjhmNzQtYzlkZC00ZDM2LTk0NjUtMTY3NWE3NWI3YTI2XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1950",
-    "runtime": "1h 28m"
-  },
-  {
-    "id": 176,
-    "title": "Three Billboards Outside Ebbing, Missouri",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjI0ODcxNzM1N15BMl5BanBnXkFtZTgwMzIwMTEwNDI@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2017",
-    "runtime": "1h 55m"
-  },
-  {
-    "id": 177,
-    "title": "Trainspotting",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYmVkNGJkMzQtYWQwOS00OTZmLThjODQtZjNjNzllYzRiNTE0XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1996",
-    "runtime": "1h 33m"
-  },
-  {
-    "id": 178,
-    "title": "The Bridge on the River Kwai",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNzdkYmU2YmItNmZiYy00OWQyLTg0YWYtZmUxM2U3YTRiNTQ1XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1957",
-    "runtime": "2h 41m"
-  },
-  {
-    "id": 179,
-    "title": "Harry Potter and the Deathly Hallows: Part 2",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOTA1Mzc2N2ItZWRiNS00MjQzLTlmZDQtMjU0NmY1YWRkMGQ4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2011",
-    "runtime": "2h 10m"
-  },
-  {
-    "id": 180,
-    "title": "Dead Poets Society",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMDYwNGVlY2ItMWYxMS00YjZiLWE5MTAtYWM5NWQ2ZWJjY2Q3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1989",
-    "runtime": "2h 8m"
-  },
-  {
-    "id": 181,
-    "title": "The Wild Robot",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZWNiZjVlZTUtNGUwYi00MjJmLTg2MDctNWEzYTJiMzY1ODc4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2024",
-    "runtime": "1h 42m"
-  },
-  {
-    "id": 182,
-    "title": "Warrior",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTk4ODk5MTMyNV5BMl5BanBnXkFtZTcwMDMyNTg0Ng@@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2011",
-    "runtime": "2h 20m"
-  },
-  {
-    "id": 183,
-    "title": "Barry Lyndon",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNmM2MGQ5Y2UtYzA3ZC00ZDJlLTkwNDYtMjBmZGExZDJiN2RlXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1975",
-    "runtime": "3h 5m"
-  },
-  {
-    "id": 184,
-    "title": "Ben-Hur",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNjg2M2E1YzYtOThmMC00NjAyLWI5MzgtMDEwOGFiODdlOGUzXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1959",
-    "runtime": "3h 32m"
-  },
-  {
-    "id": 185,
-    "title": "Fargo",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNjg4MWE0MjEtODFhNy00MjA5LTg5ODktMzgwNWFmZTAwNjBlXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1996",
-    "runtime": "1h 38m"
-  },
-  {
-    "id": 186,
-    "title": "Million Dollar Baby",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTkxNzA1NDQxOV5BMl5BanBnXkFtZTcwNTkyMTIzMw@@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2004",
-    "runtime": "2h 12m"
-  },
-  {
-    "id": 187,
-    "title": "Raging Bull",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjlkYmYyZWQtNTZkOS00ZjA0LWEwNWUtNzE2ZGNiYjg0MjA2XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1980",
-    "runtime": "2h 9m"
-  },
-  {
-    "id": 188,
-    "title": "Mad Max: Fury Road",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZDRkODJhOTgtOTc1OC00NTgzLTk4NjItNDgxZDY4YjlmNDY2XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2015",
-    "runtime": "2h"
-  },
-  {
-    "id": 189,
-    "title": "Hacksaw Ridge",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjQ1NjM3MTUxNV5BMl5BanBnXkFtZTgwMDc5MTY5OTE@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2016",
-    "runtime": "2h 19m"
-  },
-  {
-    "id": 190,
-    "title": "Children of Heaven",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZWZlMjNhNzgtZGRhOS00Y2U5LThjOTctODNjZTI0ZTBiYzBhXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "1997",
-    "runtime": "1h 29m"
-  },
-  {
-    "id": 191,
-    "title": "My Neighbour Totoro",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYWM3MDE3YjEtMzIzZC00ODE5LTgxNTItNmUyMTBkM2M2NmNiXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1988",
-    "runtime": "1h 26m"
-  },
-  {
-    "id": 192,
-    "title": "Gran Torino",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTc5NTk2OTU1Nl5BMl5BanBnXkFtZTcwMDc3NjAwMg@@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2008",
-    "runtime": "1h 56m"
-  },
-  {
-    "id": 193,
-    "title": "Ratatouille",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTMzODU0NTkxMF5BMl5BanBnXkFtZTcwMjQ4MzMzMw@@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2007",
-    "runtime": "1h 51m"
-  },
-  {
-    "id": 194,
-    "title": "12 Years a Slave",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjExMTEzODkyN15BMl5BanBnXkFtZTcwNTU4NTc4OQ@@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2013",
-    "runtime": "2h 14m"
-  },
-  {
-    "id": 195,
-    "title": "The Grand Budapest Hotel",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMzM5NjUxOTEyMl5BMl5BanBnXkFtZTgwNjEyMDM0MDE@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2014",
-    "runtime": "1h 39m"
-  },
-  {
-    "id": 196,
-    "title": "Before Sunrise",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZDZhZmI1ZTUtYWI3NC00NTMwLTk3NWMtNDc0OGNjM2I0ZjlmXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1995",
-    "runtime": "1h 41m"
-  },
-  {
-    "id": 197,
-    "title": "The Chaos Class Failed the Class",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZmY3MjVhMmQtOTcwYy00ZjcyLWFiZDgtN2JiODVjNjQzYWQyXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.4",
-    "year": "1975",
-    "runtime": "1h 35m"
-  },
-  {
-    "id": 198,
-    "title": "Memories of Murder",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYmRjOWE5NmMtYTdkYS00ODFlLWJiMTMtYzE2NDZlZjlkZDQ0XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2003",
-    "runtime": "2h 11m"
-  },
-  {
-    "id": 199,
-    "title": "How to Train Your Dragon",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjA5NDQyMjc2NF5BMl5BanBnXkFtZTcwMjg5ODcyMw@@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2010",
-    "runtime": "1h 38m"
-  },
-  {
-    "id": 200,
-    "title": "Blade Runner",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOWQ4YTBmNTQtMDYxMC00NGFjLTkwOGQtNzdhNmY1Nzc1MzUxXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1982",
-    "runtime": "1h 57m"
-  },
-  {
-    "id": 201,
-    "title": "Gone Girl",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTk0MDQ3MzAzOV5BMl5BanBnXkFtZTgwNzU1NzE3MjE@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2014",
-    "runtime": "2h 29m"
-  },
-  {
-    "id": 202,
-    "title": "Spider-Man: No Way Home",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMmFiZGZjMmEtMTA0Ni00MzA2LTljMTYtZGI2MGJmZWYzZTQ2XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2021",
-    "runtime": "2h 28m"
-  },
-  {
-    "id": 203,
-    "title": "Monsters, Inc.",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTY1NTI0ODUyOF5BMl5BanBnXkFtZTgwNTEyNjQ0MDE@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2001",
-    "runtime": "1h 32m"
-  },
-  {
-    "id": 204,
-    "title": "Jaws",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYjViNDQzNmUtYzkxZi00NTk5LTljMmItYjJlZmZkODIxNjU1XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1975",
-    "runtime": "2h 4m"
-  },
-  {
-    "id": 205,
-    "title": "Le Mans '66",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOTBjNTEyNjYtYjdkNi00YzE5LTljYzUtZjVlYmYwZmJmZWYxXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2019",
-    "runtime": "2h 32m"
-  },
-  {
-    "id": 206,
-    "title": "In the Name of the Father",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMGZiZDVjNzYtZWM4ZC00MzVkLThhNDEtMDJlOTBhYzVjMmNhXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1993",
-    "runtime": "2h 13m"
-  },
-  {
-    "id": 207,
-    "title": "Wild Tales",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNzAzMjA1ODAxOV5BMl5BanBnXkFtZTgwODg4NTQzNDE@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2014",
-    "runtime": "2h 2m"
-  },
-  {
-    "id": 208,
-    "title": "The Gold Rush",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOTE1MWFkOWQtOWM1NC00ZjA4LTk5NmUtZTFjZDFjMzEwYTQzXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1925",
-    "runtime": "1h 35m"
-  },
-  {
-    "id": 209,
-    "title": "Sherlock Jr.",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjQzM2E2NjYtYmRjMC00ZmVlLTljZTgtNmQ5MGZlNDYyZTc5XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1924",
-    "runtime": "45m"
-  },
-  {
-    "id": 210,
-    "title": "Mary and Max",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNzY2Mjc4NjMtNGY4Mi00NzM5LTk3ZTQtN2VkNzVkMzRmM2Y2XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2009",
-    "runtime": "1h 32m"
-  },
-  {
-    "id": 211,
-    "title": "The Deer Hunter",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZGI4YmVhMzMtMWExMS00MGZiLTg2MmItM2I2MWZjODAyM2U5XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1978",
-    "runtime": "3h 3m"
-  },
-  {
-    "id": 212,
-    "title": "The Wages of Fear",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOGE5OTg2ZDItNzEzOC00ZDVkLWJkZGUtMDI2MDRlODg3NWIwXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1953",
-    "runtime": "2h 36m"
-  },
-  {
-    "id": 213,
-    "title": "The General",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTVhM2Y1MDUtMDkxYi00Y2UxLWI2MTMtZjMzYTY4ODM4MGIzXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1926",
-    "runtime": "1h 18m"
-  },
-  {
-    "id": 214,
-    "title": "Logan",
-    "poster": "https://m.media-amazon.com/images/M/MV5BM2JjODdkMGMtNmY2YS00OGM2LThiY2YtZGYyNzE4Nzc2ODA0XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2017",
-    "runtime": "2h 17m"
-  },
-  {
-    "id": 215,
-    "title": "Rocky",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZDEyY2M2MGMtYjg5OC00ZWFjLWFkZDQtNmQzZTdiYmYzZTBkXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1976",
-    "runtime": "2h"
-  },
-  {
-    "id": 216,
-    "title": "Mr. Smith Goes to Washington",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMDU4ZjNmMjEtMjcxYi00NDAxLWFlMjQtNWIyNjg5NWUzNTdjXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1939",
-    "runtime": "2h 9m"
-  },
-  {
-    "id": 217,
-    "title": "Pirates of the Caribbean: The Curse of the Black Pearl",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNDhlMzEyNzItMTA5Mi00YWRhLThlNTktYTQyMTA0MDIyNDEyXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2003",
-    "runtime": "2h 23m"
-  },
-  {
-    "id": 218,
-    "title": "Tokyo Story",
-    "poster": "https://m.media-amazon.com/images/M/MV5BODdkNzcxZjItMDU2Yy00Y2JlLWFkYTQtNzIwM2Q4MWU5MTU2XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1953",
-    "runtime": "2h 17m"
-  },
-  {
-    "id": 219,
-    "title": "On the Waterfront",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZDJlYTM1ZGYtZTM4YS00MzFhLThiZjktYzQ0ZjAzMGYwZTU3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1954",
-    "runtime": "1h 48m"
-  },
-  {
-    "id": 220,
-    "title": "A Silent Voice: The Movie",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTRlNjA2N2YtM2FiMS00ZDc5LWJmY2MtNmMxZTgwNzRmZDBmXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2016",
-    "runtime": "2h 10m"
-  },
-  {
-    "id": 221,
-    "title": "La haine",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYmU2OWQwNGYtNDA1ZS00ZGJjLWFhMDAtZGI4MGRhYzY0ZDY4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1995",
-    "runtime": "1h 38m"
-  },
-  {
-    "id": 222,
-    "title": "Spotlight",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjIyOTM5OTIzNV5BMl5BanBnXkFtZTgwMDkzODE2NjE@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2015",
-    "runtime": "2h 9m"
-  },
-  {
-    "id": 223,
-    "title": "Wild Strawberries",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZWQ5MDllM2EtZWRmNS00MmZiLWI4ZWQtMjRiY2Q5MTAxODY4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1957",
-    "runtime": "1h 32m"
-  },
-  {
-    "id": 224,
-    "title": "The Terminator",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZmE0YzIxM2QtMGNlMi00MjRmLWE3MWMtOWQzMGVjMmU0YTFmXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1984",
-    "runtime": "1h 47m"
-  },
-  {
-    "id": 225,
-    "title": "The Sound of Music",
-    "poster": "https://m.media-amazon.com/images/M/MV5BYWJhYmU4MjQtZDJhYi00ZGVjLTlkNTEtNzkzNGVjOWQ3MjcwXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1965",
-    "runtime": "2h 54m"
-  },
-  {
-    "id": 226,
-    "title": "Jai Bhim",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZjEyNDIzNmEtMjdkYS00ZDAwLTljOWYtNDRhYTVhYTlmOTk1XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.6",
-    "year": "2021",
-    "runtime": "2h 44m"
-  },
-  {
-    "id": 227,
-    "title": "Maharaja",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOTFlMTIxOGItZTk0Zi00MTk2LWJiM2UtMzlhZWYzNjQ4N2Y3XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "2024",
-    "runtime": "2h 21m"
-  },
-  {
-    "id": 228,
-    "title": "The Third Man",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjMwNzMzMTQ0Ml5BMl5BanBnXkFtZTgwNjExMzUwNjE@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1949",
-    "runtime": "1h 44m"
-  },
-  {
-    "id": 229,
-    "title": "Chainsaw Man - The Movie: Reze Arc",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZmMzNGVhODktYmU5MS00MDg1LThlNTEtNTMyYTg5MDA0Njk4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "2025",
-    "runtime": "1h 40m"
-  },
-  {
-    "id": 230,
-    "title": "The Big Lebowski",
-    "poster": "https://m.media-amazon.com/images/M/MV5BY2E3OWQ5OWYtYTRkMC00NjVjLWIzZDQtNmRmM2ZiYTIyYmYxXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1998",
-    "runtime": "1h 57m"
-  },
-  {
-    "id": 231,
-    "title": "The Best Years of Our Lives",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNTgxMzUyODQtMDJmZC00ZGMyLWI3MzAtZTYwYjBjZjFmMzIxXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1946",
-    "runtime": "2h 50m"
-  },
-  {
-    "id": 232,
-    "title": "Before Sunset",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTQ1MjAwNTM5Ml5BMl5BanBnXkFtZTYwNDM0MTc3._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2004",
-    "runtime": "1h 20m"
-  },
-  {
-    "id": 233,
-    "title": "The Seventh Seal",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZDlmYTkzOWUtODQ0MS00MmM4LWE3ZjMtYTEwNGUwMmJkYzIxXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1957",
-    "runtime": "1h 36m"
-  },
-  {
-    "id": 234,
-    "title": "Room",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMjE4NzgzNzEwMl5BMl5BanBnXkFtZTgwMTMzMDE0NjE@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2015",
-    "runtime": "1h 58m"
-  },
-  {
-    "id": 235,
-    "title": "Hotel Rwanda",
-    "poster": "https://m.media-amazon.com/images/M/MV5BY2FmMWRmZmQtN2IzMS00OGVmLWFmNjktMTM0YWQzODcwYTEwXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2004",
-    "runtime": "2h 1m"
-  },
-  {
-    "id": 236,
-    "title": "The Incredibles",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTY5OTU0OTc2NV5BMl5BanBnXkFtZTcwMzU4MDcyMQ@@._V1_QL75_UX500.jpg",
-    "rating": "8.0",
-    "year": "2004",
-    "runtime": "1h 55m"
-  },
-  {
-    "id": 237,
-    "title": "Platoon",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZjE4YjllODAtZGMxZS00Mjg2LThkOWUtZjNkMjQ5YThiNDU4XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1986",
-    "runtime": "2h"
-  },
-  {
-    "id": 238,
-    "title": "Hachi: A Dog's Tale",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNTU5NjYyYTgtZGQ3My00MzRhLThjNGYtZmVjN2JjYjhkMjhhXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2009",
-    "runtime": "1h 33m"
-  },
-  {
-    "id": 239,
-    "title": "The Exorcist",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZjg3YjE4ZjAtYTdmYS00ZTBkLWE1ZjgtNzAzODUwNzRiYjlmXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1973",
-    "runtime": "2h 2m"
-  },
-  {
-    "id": 240,
-    "title": "Rush",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTZhOGQxM2ItNGQyYy00YzE5LWI5MjMtNmMzNGQzNDE1OTUzXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2013",
-    "runtime": "2h 3m"
-  },
-  {
-    "id": 241,
-    "title": "The Iron Giant",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZTc2ZjdhZTctZDRlNC00ZWI4LWEyYjItMjQ3MjNjMDVkNmMzXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1999",
-    "runtime": "1h 26m"
-  },
-  {
-    "id": 242,
-    "title": "The Wizard of Oz",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTcwZTJmMWUtYmVmNi00Y2ZkLWIyY2ItY2I1YWMxMmU2ZDcxXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1939",
-    "runtime": "1h 42m"
-  },
-  {
-    "id": 243,
-    "title": "Stand by Me",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNGJkNTUwM2MtZWE2MS00YjNkLWE3MjktNWQwZDQxMDIyZWVmXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1986",
-    "runtime": "1h 29m"
-  },
-  {
-    "id": 244,
-    "title": "My Father and My Son",
-    "poster": "https://m.media-amazon.com/images/M/MV5BZDE3MTBkNmQtNGFjMC00YTcwLWExY2ItN2MyMGZkNWJlMmFmXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2005",
-    "runtime": "1h 52m"
-  },
-  {
-    "id": 245,
-    "title": "The Battle of Algiers",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMTY2Mjk0OGEtYTM3Yy00ZWZiLWFhNjAtNGExMjEzNGVmMDMxXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1966",
-    "runtime": "2h 1m"
-  },
-  {
-    "id": 246,
-    "title": "The Passion of Joan of Arc",
-    "poster": "https://m.media-amazon.com/images/M/MV5BNTE1MDliZjgtYTU2Yy00YjAxLTljYTItNDE2ZGYwYTY1MGQ1XkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1928",
-    "runtime": "1h 50m"
-  },
-  {
-    "id": 247,
-    "title": "The Handmaiden",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOTllZDI1OGItOGUxNS00OGZhLWIzMjAtYzllZTY1YTA0ZmYwXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "2016",
-    "runtime": "2h 25m"
-  },
-  {
-    "id": 248,
-    "title": "Network",
-    "poster": "https://m.media-amazon.com/images/M/MV5BY2E4ZGJiNTMtZTAxZC00MmVlLWI1NjYtMGVhMjhkOGEwZDhjXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.1",
-    "year": "1976",
-    "runtime": "2h 1m"
-  },
-  {
-    "id": 249,
-    "title": "Drishyam",
-    "poster": "https://m.media-amazon.com/images/M/MV5BMDRlZWFkMjEtYmYyZi00MmE5LWIzMzUtYmM2N2M5Y2UxZDJjXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.2",
-    "year": "2015",
-    "runtime": "2h 43m"
-  },
-  {
-    "id": 250,
-    "title": "Laapataa Ladies",
-    "poster": "https://m.media-amazon.com/images/M/MV5BOWIyM2Q0MDgtZjVhYi00MWQwLTk3ZmItYzc0YmZmOGIyM2RhXkEyXkFqcGc@._V1_QL75_UX500.jpg",
-    "rating": "8.3",
-    "year": "2023",
-    "runtime": "2h 2m"
-  }
+  { id: 1, title: 'The Shawshank Redemption', poster: 'https://m.media-amazon.com/images/M/MV5BMDAyY2FhYjctNDc5OS00MDNlLThiMGUtY2UxYWVkNGY2ZjljXkEyXkFqcGc@._V1_QL75_UX500', rating: '9.3', year: '1994', runtime: '2h 22m', genre: 'Drama', overview: 'Over the course of several years, two convicts form a friendship, seeking consolation and, eventually, redemption through basic compassion.' },
+  { id: 2, title: 'The Godfather', poster: 'https://m.media-amazon.com/images/M/MV5BNGEwYjgwOGQtYjg5ZS00Njc1LTk2ZGEtM2QwZWQ2NjdhZTE5XkEyXkFqcGc@._V1_QL75_UX500', rating: '9.2', year: '1972', runtime: '2h 55m', genre: 'Crime, Drama', overview: 'The aging patriarch of an organized crime dynasty transfers control of his clandestine empire to his reluctant son.' },
+  { id: 3, title: 'The Dark Knight', poster: 'https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_QL75_UX500', rating: '9.1', year: '2008', runtime: '2h 32m', genre: 'Action, Crime, Drama', overview: 'When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.' },
+  { id: 4, title: 'The Godfather Part II', poster: 'https://m.media-amazon.com/images/M/MV5BMDIxMzBlZDktZjMxNy00ZGI4LTgxNDEtYWRlNzRjMjJmOGQ1XkEyXkFqcGc@._V1_QL75_UX500', rating: '9.0', year: '1974', runtime: '3h 22m', genre: 'Crime, Drama', overview: 'The early life and career of Vito Corleone in 1920s New York City is portrayed, while his son, Michael, expands and tightens his grip on the family crime syndicate.' },
+  { id: 5, title: '12 Angry Men', poster: 'https://m.media-amazon.com/images/M/MV5BYjE4NzdmOTYtYjc5Yi00YzBiLWEzNDEtNTgxZGQ2MWVkN2NiXkEyXkFqcGc@._V1_QL75_UX500', rating: '9.0', year: '1957', runtime: '1h 36m', genre: 'Crime, Drama', overview: 'The jury in a New York City murder trial is frustrated by a single member whose skeptical caution forces them to more carefully consider the evidence before jumping to a hasty verdict.' },
+  { id: 6, title: 'The Lord of the Rings: The Return of the King', poster: 'https://m.media-amazon.com/images/M/MV5BMTZkMjBjNWMtZGI5OC00MGU0LTk4ZTItODg2NWM3NTVmNWQ4XkEyXkFqcGc@._V1_QL75_UX500', rating: '9.0', year: '2003', runtime: '3h 21m', genre: 'Action, Adventure, Drama', overview: 'Gandalf and Aragorn lead the World of Men against Sauron\'s army to draw his gaze from Frodo and Sam as they approach Mount Doom with the One Ring.' },
+  { id: 7, title: 'Schindler\'s List', poster: 'https://m.media-amazon.com/images/M/MV5BMTg3MDc4ODgyOF5BMl5BanBnXkFtZTgwNzY1ODIyNjM@._V1_QL75_UX500', rating: '9.0', year: '1993', runtime: '3h 15m', genre: 'Biography, Drama, History', overview: 'In German-occupied Poland during World War II, industrialist Oskar Schindler gradually becomes concerned for his Jewish workforce after witnessing their persecution by the Nazis.' },
+  { id: 8, title: 'The Lord of the Rings: The Fellowship of the Ring', poster: 'https://m.media-amazon.com/images/M/MV5BNzIxMDQ2YTctNDY4MC00ZTRhLTk4ODQtMTVlOWY4NTdiYmMwXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.9', year: '2001', runtime: '2h 58m', genre: 'Action, Adventure, Drama', overview: 'A meek Hobbit from the Shire and eight companions set out on a journey to destroy the powerful One Ring and save Middle-earth from the Dark Lord Sauron.' },
+  { id: 9, title: 'Pulp Fiction', poster: 'https://m.media-amazon.com/images/M/MV5BYTViYTE3ZGQtNDBlMC00ZTAyLTkyODMtZGRiZDg0MjA2YThkXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.8', year: '1994', runtime: '2h 34m', genre: 'Crime, Drama', overview: 'The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.' },
+  { id: 10, title: 'The Good, the Bad and the Ugly', poster: 'https://m.media-amazon.com/images/M/MV5BMWM5ZjQxM2YtNDlmYi00ZDNhLWI4MWUtN2VkYjBlMTY1ZTkwXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.8', year: '1966', runtime: '2h 28m', genre: 'Adventure, Western', overview: 'A bounty hunting scam joins two men in an uneasy alliance against a third in a race to find a fortune in gold buried in a remote cemetery.' },
+  { id: 11, title: 'The Lord of the Rings: The Two Towers', poster: 'https://m.media-amazon.com/images/M/MV5BMGQxMDdiOWUtYjc1Ni00YzM1LWE2NjMtZTg3Y2JkMjEzMTJjXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.8', year: '2002', runtime: '2h 59m', genre: 'Action, Adventure, Drama', overview: 'While Frodo and Sam edge closer to Mordor with the help of the shifty Gollum, the divided fellowship makes a stand against Sauron\'s new ally, Saruman, and his hordes of Isengard.' },
+  { id: 12, title: 'Forrest Gump', poster: 'https://m.media-amazon.com/images/M/MV5BNDYwNzVjMTItZmU5YS00YjQ5LTljYjgtMjY2NDVmYWMyNWFmXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.8', year: '1994', runtime: '2h 22m', genre: 'Drama, Comedy, Romance', overview: 'The presidencies of Kennedy and Johnson, the Vietnam War, the Watergate scandal and other historical events unfold from the perspective of an Alabama man with an IQ of 75, whose only desire is to be reunited with his childhood sweetheart.' },
+  { id: 13, title: 'Fight Club', poster: 'https://m.media-amazon.com/images/M/MV5BOTgyOGQ1NDItNGU3Ny00MjU3LTg2YWEtNmEyYjBiMjI1Y2M5XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.8', year: '1999', runtime: '2h 19m', genre: 'Drama', overview: 'An insomniac office worker and a devil-may-care soap maker form an underground fight club that evolves into much more.' },
+  { id: 14, title: 'Inception', poster: 'https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_QL75_UX500', rating: '8.8', year: '2010', runtime: '2h 28m', genre: 'Action, Adventure, Sci-Fi', overview: 'A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O., but his tragic past may doom the project and his team to disaster.' },
+  { id: 15, title: 'Star Wars: Episode V - The Empire Strikes Back', poster: 'https://m.media-amazon.com/images/M/MV5BMTkxNGFlNDktZmJkNC00MDdhLTg0MTEtZjZiYWI3MGE5NWIwXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.7', year: '1980', runtime: '2h 4m', genre: 'Action, Adventure, Fantasy', overview: 'After the Rebels are overpowered by the Empire, Luke Skywalker begins Jedi training with Yoda, while his friends are pursued across the galaxy by Darth Vader.' },
+  { id: 16, title: 'The Matrix', poster: 'https://m.media-amazon.com/images/M/MV5BN2NmN2VhMTQtMDNiOS00NDlhLTliMjgtODE2ZTY0ODQyNDRhXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.7', year: '1999', runtime: '2h 16m', genre: 'Action, Sci-Fi', overview: 'When a beautiful stranger leads computer hacker Neo to a forbidding underworld, he discovers the shocking truth--the life he knows is the elaborate deception of an evil cyber-intelligence.' },
+  { id: 17, title: 'GoodFellas', poster: 'https://m.media-amazon.com/images/M/MV5BN2E5NzI2ZGMtY2VjNi00YTRjLWI1MDUtZGY5OWU1MWJjZjRjXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.7', year: '1990', runtime: '2h 25m', genre: 'Biography, Crime, Drama', overview: 'The story of Henry Hill and his life in the mob, covering his relationship with his wife Karen Hill and his mob partners Jimmy Conway and Tommy DeVito in the Italian-American crime syndicate.' },
+  { id: 18, title: 'Interstellar', poster: 'https://m.media-amazon.com/images/M/MV5BYzdjMDAxZGItMjI2My00ODA1LTlkNzItOWFjMDU5ZDJlYWY3XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.7', year: '2014', runtime: '2h 49m', genre: 'Adventure, Drama, Sci-Fi', overview: 'When Earth becomes uninhabitable in the future, a farmer and ex-NASA pilot, Joseph Cooper, is tasked to pilot a spacecraft, along with a team of researchers, to find a new planet for humans.' },
+  { id: 19, title: 'One Flew Over the Cuckoo\'s Nest', poster: 'https://m.media-amazon.com/images/M/MV5BYjBkMjgzMzYtNzRiMS00NDc3LWE4YTUtZjYxYjZhNjNhYzhhXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.6', year: '1975', runtime: '2h 13m', genre: 'Drama', overview: 'In the Fall of 1963, a Korean War veteran and criminal pleads insanity and is admitted to a mental institution, where he rallies up the scared patients against the tyrannical nurse.' },
+  { id: 20, title: 'Seven', poster: 'https://m.media-amazon.com/images/M/MV5BY2IzNzMxZjctZjUxZi00YzAxLTk3ZjMtODFjODdhMDU5NDM1XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.6', year: '1995', runtime: '2h 7m', genre: 'Crime, Drama, Mystery', overview: 'Two detectives, a rookie and a veteran, hunt a serial killer who uses the seven deadly sins as his motives.' },
+  { id: 21, title: 'It\'s a Wonderful Life', poster: 'https://m.media-amazon.com/images/M/MV5BMDM4OWFhYjEtNTE5Yy00NjcyLTg5N2UtZDQwNDZlYjlmNDU5XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.6', year: '1946', runtime: '2h 10m', genre: 'Drama, Family, Fantasy', overview: 'An angel is sent from Heaven to help a desperately frustrated businessman by showing him what life would have been like if he had never existed.' },
+  { id: 22, title: 'The Silence of the Lambs', poster: 'https://m.media-amazon.com/images/M/MV5BNDdhOGJhYzctYzYwZC00YmI2LWI0MjctYjg4ODdlMDExYjBlXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.6', year: '1991', runtime: '1h 58m', genre: 'Crime, Drama, Thriller', overview: 'A young F.B.I. cadet must receive the help of an incarcerated and manipulative cannibal killer to help catch another serial killer, a madman who skins his victims.' },
+  { id: 23, title: 'Seven Samurai', poster: 'https://m.media-amazon.com/images/M/MV5BZjliMWExOTMtZDQ3ZS00NWU3LWIyN2EtMjllNzk3ZTNlYzg4XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.6', year: '1954', runtime: '3h 27m', genre: 'Action, Drama', overview: 'Farmers from a village exploited by bandits hire a veteran samurai for protection, who gathers six other samurai to join him.' },
+  { id: 24, title: 'Saving Private Ryan', poster: 'https://m.media-amazon.com/images/M/MV5BZGZhZGQ1ZWUtZTZjYS00MDJhLWFkYjctN2ZlYjE5NWYwZDM2XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.6', year: '1998', runtime: '2h 49m', genre: 'Drama, War', overview: 'Following the Normandy Landings, a group of U.S. soldiers go behind enemy lines to retrieve a paratrooper whose brothers have been killed in action.' },
+  { id: 25, title: 'The Green Mile', poster: 'https://m.media-amazon.com/images/M/MV5BMTUxMzQyNjA5MF5BMl5BanBnXkFtZTYwOTU2NTY3._V1_QL75_UX500', rating: '8.6', year: '1999', runtime: '3h 9m', genre: 'Crime, Drama, Fantasy', overview: 'A tale set on death row in a Southern jail, where gentle giant John Coffey possesses the mysterious power to heal people\'s ailments.' },
+  { id: 26, title: 'City of God', poster: 'https://m.media-amazon.com/images/M/MV5BYjY4NGI5OTUtY2ZlZS00Zjk4LTk5N2MtN2JmYWVjNGNmMGRlXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.6', year: '2002', runtime: '2h 10m', genre: 'Crime, Drama', overview: 'In the slums of Rio, two kids\' paths diverge as one struggles to become a photographer and the other a kingpin.' },
+  { id: 27, title: 'Life Is Beautiful', poster: 'https://m.media-amazon.com/images/M/MV5BZTBhOGYzZjQtYzE0Mi00MGIwLWE0MWYtNzMxNTM2OTFkM2NjXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.6', year: '1997', runtime: '1h 56m', genre: 'Comedy, Drama, Romance', overview: 'When an open-minded Jewish waiter and his son become victims of the Holocaust, he uses a perfect mixture of will, humor and imagination to protect his son from the dangers around their camp.' },
+  { id: 28, title: 'Terminator 2: Judgment Day', poster: 'https://m.media-amazon.com/images/M/MV5BNGMyMGNkMDUtMjc2Ni00NWFlLTgyODEtZTY2MzBiZTg0OWZiXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.6', year: '1991', runtime: '2h 17m', genre: 'Action, Sci-Fi', overview: 'A cyborg, identical to the one who failed to kill Sarah Connor, must now protect her ten year old son John from a more advanced and powerful cyborg.' },
+  { id: 29, title: 'Star Wars: Episode IV - A New Hope', poster: 'https://m.media-amazon.com/images/M/MV5BOGUwMDk0Y2MtNjBlNi00NmRiLTk2MWYtMGMyMDlhYmI4ZDBjXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.6', year: '1977', runtime: '2h 1m', genre: 'Action, Adventure, Fantasy', overview: 'Luke Skywalker joins forces with a Jedi Knight, a cocky pilot, a Wookiee and two droids to save the galaxy from the Empire\'s world-destroying battle station.' },
+  { id: 30, title: 'Back to the Future', poster: 'https://m.media-amazon.com/images/M/MV5BZmM3ZjE0NzctNjBiOC00MDZmLTgzMTUtNGVlOWFlOTNiZDJiXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '1985', runtime: '1h 56m', genre: 'Adventure, Comedy, Sci-Fi', overview: 'Marty McFly, a 17-year-old high school student, is accidentally sent 30 years into the past in a time-traveling DeLorean invented by his close friend, the maverick scientist Doc Brown.' },
+  { id: 31, title: 'Spirited Away', poster: 'https://m.media-amazon.com/images/M/MV5BNTEyNmEwOWUtYzkyOC00ZTQ4LTllZmUtMjk0Y2YwOGUzYjRiXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.6', year: '2001', runtime: '2h 4m', genre: 'Animation, Adventure, Family', overview: 'During her family\'s move to the suburbs, a sullen 10-year-old girl wanders into a world ruled by gods, witches, and spirits, a world where humans are changed into beasts.' },
+  { id: 32, title: 'The Pianist', poster: 'https://m.media-amazon.com/images/M/MV5BMjEwNmEwYjgtNTk3ZC00NjljLTg5ZDctZTY3ZGQwZjRkZmQxXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '2002', runtime: '2h 30m', genre: 'Biography, Drama, Music', overview: 'A Polish Jewish musician struggles to survive the destruction of the Warsaw ghetto of World War II.' },
+  { id: 33, title: 'Gladiator', poster: 'https://m.media-amazon.com/images/M/MV5BYWQ4YmNjYjEtOWE1Zi00Y2U4LWI4NTAtMTU0MjkxNWQ1ZmJiXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '2000', runtime: '2h 35m', genre: 'Action, Adventure, Drama', overview: 'A former Roman General sets out to exact vengeance against the corrupt emperor who murdered his family and sent him into slavery.' },
+  { id: 34, title: 'Parasite', poster: 'https://m.media-amazon.com/images/M/MV5BYjk1Y2U4MjQtY2ZiNS00OWQyLWI3MmYtZWUwNmRjYWRiNWNhXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '2019', runtime: '2h 12m', genre: 'Drama, Thriller', overview: 'Greed and class discrimination threaten the newly formed symbiotic relationship between the wealthy Park family and the destitute Kim clan.' },
+  { id: 35, title: 'Grave of the Fireflies', poster: 'https://m.media-amazon.com/images/M/MV5BNTY5MmE2OGMtN2IxNC00MDY4LTkwMGEtZDUzOTYyNWE0ZTNjXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '1988', runtime: '1h 28m', genre: 'Animation, Drama, War', overview: 'A young boy and his little sister struggle to survive in Japan during World War II.' },
+  { id: 36, title: 'Psycho', poster: 'https://m.media-amazon.com/images/M/MV5BYjZhMzFiZjItODA3ZC00MmRhLWIzMGYtMmVjOWUwYTA3MTRjXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '1960', runtime: '1h 49m', genre: 'Horror, Mystery, Thriller', overview: 'A Phoenix secretary embezzles $40,000 from her employer\'s client, goes on the run and checks into a remote motel run by a young man under the domination of his mother.' },
+  { id: 37, title: 'The Lion King', poster: 'https://m.media-amazon.com/images/M/MV5BZGRiZDZhZjItM2M3ZC00Y2IyLTk3Y2MtMWY5YjliNDFkZTJlXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '1994', runtime: '1h 28m', genre: 'Animation, Adventure, Drama', overview: 'Lion prince Simba and his father are targeted by his bitter uncle, who wants to ascend the throne himself.' },
+  { id: 38, title: 'Harakiri', poster: 'https://m.media-amazon.com/images/M/MV5BZThiZjU5ZDQtZDI4Mi00ZGYyLTkzOTktYmIzZTFlZTkxYzg5XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.6', year: '1962', runtime: '2h 13m', genre: 'Action, Drama, Mystery', overview: 'When a ronin requesting seppuku at a feudal lord\'s palace is told of the suicidal detail of another samurai who previously arrived, he reveals how their pasts are intertwined.' },
+  { id: 39, title: 'The Departed', poster: 'https://m.media-amazon.com/images/M/MV5BMTI1MTY2OTIxNV5BMl5BanBnXkFtZTYwNjQ4NjY3._V1_QL75_UX500', rating: '8.5', year: '2006', runtime: '2h 31m', genre: 'Crime, Drama, Thriller', overview: 'An undercover cop and a mole in the police attempt to identify each other while infiltrating an Irish gang in South Boston.' },
+  { id: 40, title: 'Whiplash', poster: 'https://m.media-amazon.com/images/M/MV5BMDFjOWFkYzktYzhhMC00NmYyLTkwY2EtYjViMDhmNzg0OGFkXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '2014', runtime: '1h 46m', genre: 'Drama, Music', overview: 'A promising young drummer enrolls at a cut-throat music conservatory where his dreams of greatness are mentored by an instructor who will stop at nothing to realize a student\'s potential.' },
+  { id: 41, title: 'Kill Bill: The Whole Bloody Affair', poster: 'https://m.media-amazon.com/images/M/MV5BZDc2YzhkODAtZmRmZS00YzcxLWJkYWEtM2ZhZjY3MmMyZmJiXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.8', year: '2004', runtime: '4h 13m', genre: 'Action, Crime, Thriller', overview: 'The Bride awakens from a four-year coma. The child she carried in her womb is gone. Now she must wreak vengeance on the team of assassins who betrayed her.' },
+  { id: 42, title: 'The Prestige', poster: 'https://m.media-amazon.com/images/M/MV5BNTZjMzljYTktMWEwZC00YzNjLWIzOTQtZTViNzYyY2Q5NDBmXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '2006', runtime: '2h 10m', genre: 'Drama, Mystery, Sci-Fi', overview: 'After a tragic accident, two stage magicians in 1890s London engage in a battle to create the ultimate illusion while sacrificing everything they have to outwit each other.' },
+  { id: 43, title: 'American History X', poster: 'https://m.media-amazon.com/images/M/MV5BMzhiOTQ0NDItOTg0Zi00OGVmLWE0OGEtMTI4NDM0NWMxZWU4XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '1998', runtime: '1h 59m', genre: 'Drama', overview: 'A former neo-nazi skinhead tries to prevent his younger brother from going down the same wrong path that he did.' },
+  { id: 44, title: 'Leon', poster: 'https://m.media-amazon.com/images/M/MV5BNGRkYTNhOWQtYmI0Ni00MjZhLWJmMzAtMTA2Mjg4NGNiNDU0XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '1994', runtime: '1h 50m', genre: 'Action, Crime, Drama', overview: '12-year-old Mathilda is reluctantly taken in by Léon, a professional assassin, after her family is murdered.' },
+  { id: 45, title: 'Spider-Man: Across the Spider-Verse', poster: 'https://m.media-amazon.com/images/M/MV5BNThiZjA3MjItZGY5Ni00ZmJhLWEwN2EtOTBlYTA4Y2E0M2ZmXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '2023', runtime: '2h 20m', genre: 'Animation, Action, Adventure', overview: 'Miles Morales catapults across the Multiverse, where he encounters a team of Spider-People charged with protecting its very existence.' },
+  { id: 46, title: 'Cinema Paradiso', poster: 'https://m.media-amazon.com/images/M/MV5BMTljNzc4YWEtYTZlMS00ODMyLWIwMTAtNWQxY2VkMDEwYTk5XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '1988', runtime: '2h 54m', genre: 'Drama, Romance', overview: 'A filmmaker recalls his childhood when falling in love with the pictures at the cinema of his home village and forms a deep friendship with the cinema\'s projectionist.' },
+  { id: 47, title: 'Casablanca', poster: 'https://m.media-amazon.com/images/M/MV5BNWEzN2U1YTYtYTQyMS00NTVkLWE2NGQtZWFlMmM0MDNjMmRiXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '1942', runtime: '1h 42m', genre: 'Drama, Romance, War', overview: 'A cynical expatriate American cafe owner struggles to decide whether or not to help his former lover and her fugitive husband escape the Nazis in French Morocco.' },
+  { id: 48, title: 'Untouchable', poster: 'https://m.media-amazon.com/images/M/MV5BMTYxNDA3MDQwNl5BMl5BanBnXkFtZTcwNTU4Mzc1Nw@@._V1_QL75_UX500', rating: '8.5', year: '2011', runtime: '1h 52m', genre: 'Biography, Comedy, Drama', overview: 'After he becomes a quadriplegic from a paragliding accident, an aristocrat hires a young man from the projects to be his caregiver.' },
+  { id: 49, title: 'The Usual Suspects', poster: 'https://m.media-amazon.com/images/M/MV5BOTE5MDUxZDUtZWZmZC00NDVmLWFhOGQtNWI2YTc4NzY3MGQ0XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '1995', runtime: '1h 46m', genre: 'Crime, Mystery, Thriller', overview: 'A sole survivor tells of the twisty events leading up to a horrific gun battle on a boat, which began when five criminals met at a seemingly random police lineup.' },
+  { id: 50, title: 'Alien', poster: 'https://m.media-amazon.com/images/M/MV5BN2NhMDk2MmEtZDQzOC00MmY5LThhYzAtMDdjZGFjOGZjMjdjXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '1979', runtime: '1h 57m', genre: 'Horror, Sci-Fi', overview: 'The crew of a commercial spacecraft encounter a deadly lifeform after investigating an unknown transmission.' },
+  { id: 51, title: 'Django Unchained', poster: 'https://m.media-amazon.com/images/M/MV5BMjIyNTQ5NjQ1OV5BMl5BanBnXkFtZTcwODg1MDU4OA@@._V1_QL75_UX500', rating: '8.5', year: '2012', runtime: '2h 45m', genre: 'Drama, Western', overview: 'With the help of a German bounty-hunter, a freed slave sets out to rescue his wife from a brutal plantation-owner in Mississippi.' },
+  { id: 52, title: 'Rear Window', poster: 'https://m.media-amazon.com/images/M/MV5BODZhOWI1ODgtMzdiOS00YjNkLTgwOGUtYmIyZDg5ZmQwMzQ1XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '1954', runtime: '1h 52m', genre: 'Mystery, Thriller', overview: 'A wheelchair-bound photographer spies on his neighbors from his Greenwich Village courtyard apartment window, and becomes convinced one of them has committed murder.' },
+  { id: 53, title: 'Modern Times', poster: 'https://m.media-amazon.com/images/M/MV5BMjA4MDU2NDQwN15BMl5BanBnXkFtZTgwODUwNDI2MzE@._V1_QL75_UX500', rating: '8.5', year: '1936', runtime: '1h 27m', genre: 'Comedy, Drama, Family', overview: 'The Tramp struggles to live in modern industrial society with the help of a young homeless woman.' },
+  { id: 54, title: 'Once Upon a Time in the West', poster: 'https://m.media-amazon.com/images/M/MV5BZjYyNGY1MDEtN2I1MC00MGVhLTljZTYtODQ1NzQ0ODc2NzZlXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '1968', runtime: '2h 46m', genre: 'Western', overview: 'A mysterious stranger with a harmonica joins forces with a notorious desperado to protect a beautiful widow from a ruthless assassin working for the railroad.' },
+  { id: 55, title: 'City Lights', poster: 'https://m.media-amazon.com/images/M/MV5BM2U4NjgzODUtODkyOC00YTE2LTlhNTItYzFlYmM1NTEzZDA2XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.5', year: '1931', runtime: '1h 27m', genre: 'Comedy, Drama, Romance', overview: 'With the aid of a wealthy erratic tippler, a dewy-eyed tramp who has fallen in love with a sightless flower girl accumulates money to be able to help her medically.' },
+  { id: 56, title: 'Apocalypse Now', poster: 'https://m.media-amazon.com/images/M/MV5BZDhiMTljYjYtODc1Yy00MmEwLTg2OTYtYmE1YTRmNDE4MmEwXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '1979', runtime: '2h 27m', genre: 'Drama, Mystery, War', overview: 'A U.S. Army officer serving in Vietnam is tasked with assassinating a renegade Special Forces Colonel who sees himself as a god.' },
+  { id: 57, title: 'WALL·E', poster: 'https://m.media-amazon.com/images/M/MV5BMjExMTg5OTU0NF5BMl5BanBnXkFtZTcwMjMxMzMzMw@@._V1_QL75_UX500', rating: '8.4', year: '2008', runtime: '1h 38m', genre: 'Animation, Adventure, Family', overview: 'In the distant future, a small waste-collecting robot inadvertently embarks on a space journey that will ultimately decide the fate of mankind.' },
+  { id: 58, title: 'Memento', poster: 'https://m.media-amazon.com/images/M/MV5BMGQ3Y2Q4NjktN2E4Ny00Y2Q2LTliZDUtZTNiNjRhY2I0NGIyXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '2000', runtime: '1h 53m', genre: 'Mystery, Thriller', overview: 'A man with short-term memory loss attempts to track down his wife\'s murderer.' },
+  { id: 59, title: 'Dune: Part Two', poster: 'https://m.media-amazon.com/images/M/MV5BNTc0YmQxMjEtODI5MC00NjFiLTlkMWUtOGQ5NjFmYWUyZGJhXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '2024', runtime: '2h 46m', genre: 'Action, Adventure, Drama', overview: 'Paul Atreides unites with Chani and the Fremen while on a warpath of revenge against the conspirators who destroyed his family.' },
+  { id: 60, title: 'Raiders of the Lost Ark', poster: 'https://m.media-amazon.com/images/M/MV5BOGNhMjg2ZjgtYzk4Ni00MTViLTg1MmUtYzM2MDZiYjZlMmU3XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '1981', runtime: '1h 55m', genre: 'Action, Adventure', overview: 'In 1936, archaeologist and adventurer Indiana Jones is hired by the U.S. government to find the Ark of the Covenant before the Nazis can obtain its awesome powers.' },
+  { id: 61, title: 'Avengers: Infinity War', poster: 'https://m.media-amazon.com/images/M/MV5BMjMxNjY2MDU1OV5BMl5BanBnXkFtZTgwNzY1MTUwNTM@._V1_QL75_UX500', rating: '8.4', year: '2018', runtime: '2h 29m', genre: 'Action, Adventure, Sci-Fi', overview: 'The Avengers and their allies must be willing to sacrifice all in an attempt to defeat the powerful Thanos before his blitz of devastation and ruin puts an end to the universe.' },
+  { id: 62, title: 'The Lives of Others', poster: 'https://m.media-amazon.com/images/M/MV5BYjM1N2Q0YWEtN2E5MC00NDM3LTk2NTEtMTc1NTk5OTA5ZGIzXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '2006', runtime: '2h 17m', genre: 'Drama, Mystery, Thriller', overview: 'In 1984 East Berlin, an agent of the secret police, conducting surveillance on a writer and his lover, finds himself becoming increasingly absorbed by their lives.' },
+  { id: 63, title: 'Spider-Man: Into the Spider-Verse', poster: 'https://m.media-amazon.com/images/M/MV5BMjMwNDkxMTgzOF5BMl5BanBnXkFtZTgwNTkwNTQ3NjM@._V1_QL75_UX500', rating: '8.4', year: '2018', runtime: '1h 57m', genre: 'Animation, Action, Adventure', overview: 'Teen Miles Morales becomes the Spider-Man of his universe, and must join with five spider-powered individuals from other dimensions to stop a threat for all realities.' },
+  { id: 64, title: 'Sunset Boulevard', poster: 'https://m.media-amazon.com/images/M/MV5BMTU0NTkyNzYwMF5BMl5BanBnXkFtZTgwMDU0NDk5MTI@._V1_QL75_UX500', rating: '8.4', year: '1950', runtime: '1h 50m', genre: 'Drama, Film-Noir', overview: 'A screenwriter writes a screenplay for a former silent film star who has faded into Hollywood obscurity.' },
+  { id: 65, title: 'Witness for the Prosecution', poster: 'https://m.media-amazon.com/images/M/MV5BNjRhNTQzMzQtMWViMi00ODQ1LTg0MTEtYWE4ZWZlYjM4YjJhXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '1957', runtime: '1h 56m', genre: 'Crime, Drama, Mystery', overview: 'A veteran British barrister must defend his client in a murder trial that has surprise after surprise.' },
+  { id: 66, title: 'Paths of Glory', poster: 'https://m.media-amazon.com/images/M/MV5BNmQ2NmI2ODYtMDQzNS00NzQyLTkzZjgtZmZlYTQ5MTc1OWU3XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '1957', runtime: '1h 28m', genre: 'Drama, War', overview: 'After refusing to attack an enemy position, a general accuses the soldiers of cowardice and their commanding officer must defend them.' },
+  { id: 67, title: 'The Shining', poster: 'https://m.media-amazon.com/images/M/MV5BNmM5ZThhY2ItOGRjOS00NzZiLWEwYTItNDgyMjFkOTgxMmRiXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '1980', runtime: '2h 26m', genre: 'Drama, Horror', overview: 'A family heads to an isolated hotel for the winter where a sinister presence influences the father into violence, while his psychic son sees horrific forebodings from both past and future.' },
+  { id: 68, title: 'The Great Dictator', poster: 'https://m.media-amazon.com/images/M/MV5BMjc4ZjEwNDUtMjlmZS00NzQ4LTg2N2MtMGI3ZjMyMmM3ZDM2XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '1940', runtime: '2h 5m', genre: 'Comedy, Drama, War', overview: 'Dictator Adenoid Hynkel tries to expand his empire while a poor Jewish barber tries to avoid persecution from Hynkel\'s regime.' },
+  { id: 69, title: 'Inglourious Basterds', poster: 'https://m.media-amazon.com/images/M/MV5BODZhMWJlNjYtNDExNC00MTIzLTllM2ItOGQ2NGVjNDQ3MzkzXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '2009', runtime: '2h 33m', genre: 'Adventure, Drama, War', overview: 'In Nazi-occupied France during World War II, a plan to assassinate Nazi leaders by a group of Jewish U.S. soldiers coincides with a theatre owner\'s vengeful plans for the same.' },
+  { id: 70, title: '12th Fail', poster: 'https://m.media-amazon.com/images/M/MV5BNTE3OTIxZDYtNjA0NC00N2YxLTg1NGQtOTYxNmZkMDkwOWNjXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.7', year: '2023', runtime: '2h 27m', genre: 'Biography, Drama', overview: 'The real-life story of IPS Officer Manoj Kumar Sharma and IRS Officer Shraddha Joshi.' },
+  { id: 71, title: 'Aliens', poster: 'https://m.media-amazon.com/images/M/MV5BODJlYzRjODUtNzBhOS00MTA5LTgzOWItMTg3YzcyOTNmNzQxXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '1986', runtime: '2h 17m', genre: 'Action, Adventure, Sci-Fi', overview: 'Fifty-seven years after surviving an apocalyptic attack aboard her space vessel by pitiless space creatures, Officer Ripley awakens from hyper-sleep and tries to warn anyone who will listen about the predators.' },
+  { id: 72, title: 'High and Low', poster: 'https://m.media-amazon.com/images/M/MV5BMGJiNzllYjktODAzNS00OGUzLTlmY2MtMjA2ZTZhYTY1OTc4XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '1963', runtime: '2h 23m', genre: 'Crime, Drama, Mystery', overview: 'An executive of a Yokohama shoe company becomes a victim of extortion when his chauffeur\'s son is kidnapped by mistake and held for ransom.' },
+  { id: 73, title: 'Good Will Hunting', poster: 'https://m.media-amazon.com/images/M/MV5BNDdjZGQ5YzEtNTc2My00Mjc0LWFlMTctYzkwMzZlNzdiZWYzXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '1997', runtime: '2h 6m', genre: 'Drama, Romance', overview: 'Will Hunting, a janitor at M.I.T., has a gift for mathematics, but needs help from a psychologist to find direction in his life.' },
+  { id: 74, title: 'Avengers: Endgame', poster: 'https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_QL75_UX500', rating: '8.4', year: '2019', runtime: '3h 1m', genre: 'Action, Adventure, Drama', overview: 'After the devastating events of Infinity War, the Avengers assemble once more in order to reverse Thanos\' actions and restore balance to the universe.' },
+  { id: 75, title: 'The Dark Knight Rises', poster: 'https://m.media-amazon.com/images/M/MV5BMTk4ODQzNDY3Ml5BMl5BanBnXkFtZTcwODA0NTM4Nw@@._V1_QL75_UX500', rating: '8.4', year: '2012', runtime: '2h 44m', genre: 'Action, Drama, Thriller', overview: 'Eight years after the Joker\'s reign of chaos, Batman is coerced out of exile with the assistance of the mysterious Selina Kyle in order to defend Gotham City from the vicious guerrilla terrorist Bane.' },
+  { id: 76, title: 'Coco', poster: 'https://m.media-amazon.com/images/M/MV5BMDIyM2E2NTAtMzlhNy00ZGUxLWI1NjgtZDY5MzhiMDc5NGU3XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '2017', runtime: '1h 45m', genre: 'Animation, Adventure, Comedy', overview: 'Aspiring musician Miguel, confronted with his family\'s ancestral ban on music, enters the Land of the Dead to find his great-great-grandfather, a legendary singer.' },
+  { id: 77, title: 'Amadeus', poster: 'https://m.media-amazon.com/images/M/MV5BMzc2MjM0NTMtOGY4NC00NzY1LWE2ODUtZjMzY2RhNGNkZDAyXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '1984', runtime: '2h 40m', genre: 'Biography, Drama, Music', overview: 'The life, success and troubles of Wolfgang Amadeus Mozart, as told by Antonio Salieri, the contemporaneous composer who was insanely jealous of Mozart\'s talent and claimed to have murdered him.' },
+  { id: 78, title: 'Toy Story', poster: 'https://m.media-amazon.com/images/M/MV5BZTA3OWVjOWItNjE1NS00NzZiLWE1MjgtZDZhMWI1ZTlkNzYwXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1995', runtime: '1h 21m', genre: 'Animation, Adventure, Comedy', overview: 'A cowboy doll is profoundly threatened and jealous when a new spaceman action figure supplants him as top toy in a boy\'s bedroom.' },
+  { id: 79, title: 'Your Name.', poster: 'https://m.media-amazon.com/images/M/MV5BMjI1ODZkYTgtYTY3Yy00ZTJkLWFkOTgtZDUyYWM4MzQwNjk0XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '2016', runtime: '1h 46m', genre: 'Animation, Drama, Fantasy', overview: 'Two strangers find themselves linked in a bizarre way. When a connection forms, will distance be the only thing to keep them apart?' },
+  { id: 80, title: 'Das Boot', poster: 'https://m.media-amazon.com/images/M/MV5BNGU0MWZlMTUtM2Y3Ny00NGNmLWE5NmEtN2YxOWQzMGM3ZWYzXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1981', runtime: '2h 29m', genre: 'Drama, War', overview: 'The claustrophobic world of a WWII German U-boat; boredom, filth and sheer terror.' },
+  { id: 81, title: 'Oldboy', poster: 'https://m.media-amazon.com/images/M/MV5BMTAwNzNjYWItZmI0Ni00ZTcyLWIwNWMtZjlmNGMxZTEyYTJmXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '2003', runtime: '2h', genre: 'Action, Drama, Mystery', overview: 'After being kidnapped and imprisoned for fifteen years, Oh Dae-Su is released, only to find that he must find his captor in five days.' },
+  { id: 82, title: 'Braveheart', poster: 'https://m.media-amazon.com/images/M/MV5BNGMxZDBhNGQtYTZlNi00N2UzLWI4NDEtNmUzNWM2NTdmZDA0XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1995', runtime: '2h 58m', genre: 'Biography, Drama, History', overview: 'Scottish warrior William Wallace leads his countrymen in a rebellion to free his homeland from the tyranny of King Edward I of England.' },
+  { id: 83, title: 'Princess Mononoke', poster: 'https://m.media-amazon.com/images/M/MV5BZTcyN2Y0MDYtMGI1NC00MWQ1LWFhZGMtN2U4NTcxZGYyNjljXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1997', runtime: '2h 13m', genre: 'Animation, Action, Adventure', overview: 'On a journey to find the cure for a Tatarigami\'s curse, Ashitaka finds himself in the middle of a war between the forest gods and Tatara, a mining colony.' },
+  { id: 84, title: 'Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb', poster: 'https://m.media-amazon.com/images/M/MV5BMjFjYzBlOTktMTI2OS00ZWVhLTgxMDUtNzAwODY2NmI3YTAzXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1964', runtime: '1h 35m', genre: 'Comedy, War', overview: 'An unhinged American general orders a bombing run on the Soviet Union, triggering a path to nuclear holocaust that a war room full of politicians and generals frantically tries to stop.' },
+  { id: 85, title: 'Project Hail Mary', poster: 'https://m.media-amazon.com/images/M/MV5BNTkwNzJiYTctNzI3NC00NjE1LTlhYjktY2Q5MTdmMWFmNzcxXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '2026', runtime: '2h 36m', genre: 'Adventure, Sci-Fi', overview: 'Ryland Grace is the sole survivor on a desperate, last-chance mission—and if he fails, humanity and the earth itself will perish.' },
+  { id: 86, title: '3 Idiots', poster: 'https://m.media-amazon.com/images/M/MV5BNzc4ZWQ3NmYtODE0Ny00YTQ4LTlkZWItNTBkMGQ0MmUwMmJlXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '2009', runtime: '2h 50m', genre: 'Comedy, Drama', overview: 'Two friends are searching for their long lost companion. They revisit their college days and recall the memories of their friend who inspired them to think differently.' },
+  { id: 87, title: 'American Beauty', poster: 'https://m.media-amazon.com/images/M/MV5BMDI1MDE0OTMtMmI2MS00Yjc2LTg2MTItMWExYTg5NzA1OGUzXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1999', runtime: '2h 2m', genre: 'Drama', overview: 'A sexually frustrated suburban father has a mid-life crisis after becoming infatuated with his daughter\'s best friend.' },
+  { id: 88, title: 'Capernaum', poster: 'https://m.media-amazon.com/images/M/MV5BYzEyMzQ1OTktZTljZi00OWQzLWE2ZmUtZjQyNzBjYjE1NTc0XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '2018', runtime: '2h 6m', genre: 'Drama', overview: 'While serving a five-year sentence for a violent crime, a 12-year-old boy sues his parents for neglect.' },
+  { id: 89, title: 'Singin\' in the Rain', poster: 'https://m.media-amazon.com/images/M/MV5BMGQzZDFjZWUtZDU4ZS00ZjM3LTgyYmItYjA3YmIwYzRkZWY3XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1952', runtime: '1h 43m', genre: 'Comedy, Musical, Romance', overview: 'A silent film production company and cast make a difficult transition to sound.' },
+  { id: 90, title: 'Joker', poster: 'https://m.media-amazon.com/images/M/MV5BNzY3OWQ5NDktNWQ2OC00ZjdlLThkMmItMDhhNDk3NTFiZGU4XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '2019', runtime: '2h 2m', genre: 'Crime, Drama, Thriller', overview: 'In Gotham City, mentally troubled comedian Arthur Fleck is disregarded and mistreated by society. He then embarks on a downward spiral of revolution and bloody crime.' },
+  { id: 91, title: 'Once Upon a Time in America', poster: 'https://m.media-amazon.com/images/M/MV5BMDQ0ZTg2OGUtZjMyOC00M2M5LThkMmItZmM2MmUzMmIxMWJhXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1984', runtime: '3h 49m', genre: 'Crime, Drama', overview: 'A former Prohibition-era Jewish gangster returns to the Lower East Side of Manhattan over thirty years later, where he once again must confront the ghosts and regrets of his old life.' },
+  { id: 92, title: 'Come and See', poster: 'https://m.media-amazon.com/images/M/MV5BNDlkZmVkZDAtZGFmMS00OWIzLWJkY2YtNWE5NjNhNjhiZGE3XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1985', runtime: '2h 22m', genre: 'Drama, Thriller, War', overview: 'After finding an old rifle, a young boy joins the Soviet resistance movement against ruthless German forces and experiences the horrors of World War II.' },
+  { id: 93, title: 'Star Wars: Episode VI - Return of the Jedi', poster: 'https://m.media-amazon.com/images/M/MV5BNWEwOTI0MmUtMGNmNy00ODViLTlkZDQtZTg1YmQ3MDgyNTUzXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1983', runtime: '2h 11m', genre: 'Action, Adventure, Fantasy', overview: 'After a daring mission to rescue Han Solo from Jabba the Hutt, the Rebels dispatch to Endor to destroy the second Death Star.' },
+  { id: 94, title: 'Requiem for a Dream', poster: 'https://m.media-amazon.com/images/M/MV5BN2ZlMjIzZjctYzA2My00ZWYyLWI4ZjctMGI2NWYyNzFiZjAwXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '2000', runtime: '1h 42m', genre: 'Drama', overview: 'The drug-induced utopias of four Coney Island people are shattered when their addictions run deep.' },
+  { id: 95, title: 'Toy Story 3', poster: 'https://m.media-amazon.com/images/M/MV5BMTgxOTY4Mjc0MF5BMl5BanBnXkFtZTcwNTA4MDQyMw@@._V1_QL75_UX500', rating: '8.3', year: '2010', runtime: '1h 43m', genre: 'Animation, Adventure, Comedy', overview: 'The toys are mistakenly delivered to a day-care center instead of the attic right before Andy leaves for college.' },
+  { id: 96, title: 'Ikiru', poster: 'https://m.media-amazon.com/images/M/MV5BMmNlZTk4ZjQtY2I5NS00NmNiLTlkNmUtYTc3YmE0ZTk3OGNiXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1952', runtime: '2h 23m', genre: 'Drama', overview: 'A bureaucrat tries to find meaning in his life after he discovers he has terminal cancer.' },
+  { id: 97, title: 'The Hunt', poster: 'https://m.media-amazon.com/images/M/MV5BMTg2NDg3ODg4NF5BMl5BanBnXkFtZTcwNzk3NTc3Nw@@._V1_QL75_UX500', rating: '8.3', year: '2012', runtime: '1h 55m', genre: 'Drama', overview: 'A teacher lives a lonely life, all the while struggling over his son\'s custody. His life slowly gets better as he finds love and receives good news from his son, but his new luck is about to be brutally shattered by an innocent little lie.' },
+  { id: 98, title: 'Incendies', poster: 'https://m.media-amazon.com/images/M/MV5BYWFmMjdmNjctNzhhOC00ZmMzLTkwOGItMmVmZDU4MjE2MTYwXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '2010', runtime: '2h 11m', genre: 'Drama, Mystery, War', overview: 'Twins journey to the Middle East to discover their family history and fulfill their mother\'s last wishes.' },
+  { id: 99, title: 'Eternal Sunshine of the Spotless Mind', poster: 'https://m.media-amazon.com/images/M/MV5BNThjYzI5M2ItNjAxMi00MjFlLWFlNmItMzRhZmVjYWE4MWU3XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '2004', runtime: '1h 48m', genre: 'Drama, Romance, Sci-Fi', overview: 'When their relationship turns sour, a couple undergoes a medical procedure to have each other erased from their memories.' },
+  { id: 100, title: 'The Apartment', poster: 'https://m.media-amazon.com/images/M/MV5BNDdhMzVhOWQtNDU2Mi00ZmZmLWJiZDMtY2QxMjhjY2Y1ZTI5XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1960', runtime: '2h 5m', genre: 'Comedy, Drama, Romance', overview: 'A man tries to rise in his company by letting its executives use his apartment for trysts, but complications and a romance of his own ensue.' },
+  { id: 101, title: 'Lawrence of Arabia', poster: 'https://m.media-amazon.com/images/M/MV5BYjY0YTQ1OTAtYjEyNy00NTQ4LThlMTQtM2QwYTVhYWFhNjU5XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1962', runtime: '3h 47m', genre: 'Adventure, Biography, Drama', overview: 'The story of T.E. Lawrence, the English officer who successfully united and led the diverse, often warring, Arab tribes during World War I in order to fight the Turks.' },
+  { id: 102, title: 'Heat', poster: 'https://m.media-amazon.com/images/M/MV5BMTkxYjU1OTMtYWViZC00ZjAzLWI3MDktZGQ2N2VmMjVjNDRlXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1995', runtime: '2h 50m', genre: 'Crime, Drama, Thriller', overview: 'A group of high-end professional thieves start to feel the heat from the LAPD when they unknowingly leave a clue at their latest heist.' },
+  { id: 103, title: 'Scarface', poster: 'https://m.media-amazon.com/images/M/MV5BNDUzYjY0NmUtMDM4OS00Y2Q5LWJiODYtNTk0ZTk0YjZhMTg1XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1983', runtime: '2h 50m', genre: 'Crime, Drama', overview: 'In 1980 Miami, a determined Cuban immigrant takes over a drug cartel and succumbs to greed.' },
+  { id: 104, title: '2001: A Space Odyssey', poster: 'https://m.media-amazon.com/images/M/MV5BNjU0NDFkMTQtZWY5OS00MmZhLTg3Y2QtZmJhMzMzMWYyYjc2XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1968', runtime: '2h 29m', genre: 'Adventure, Sci-Fi', overview: 'After discovering a mysterious artifact buried beneath the Lunar surface, mankind sets off on a quest to find its origins with help from intelligent supercomputer H.A.L. 9000.' },
+  { id: 105, title: 'Reservoir Dogs', poster: 'https://m.media-amazon.com/images/M/MV5BMmMzYjg4NDctYWY0Mi00OGViLWIzMTMtYWNlZGY5ZDJmYjk3XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1992', runtime: '1h 39m', genre: 'Crime, Thriller', overview: 'When a simple jewelry heist goes horribly wrong, the surviving criminals begin to suspect that one of them is a police informant.' },
+  { id: 106, title: 'Up', poster: 'https://m.media-amazon.com/images/M/MV5BMTgyMzE3Nzg2OF5BMl5BanBnXkFtZTcwMzg0Mjc4Mg@@._V1_QL75_UX500', rating: '8.3', year: '2009', runtime: '1h 36m', genre: 'Animation, Adventure, Comedy', overview: '78-year-old Carl Fredricksen travels to Paradise Falls in his house equipped with balloons, inadvertently taking a young stowaway.' },
+  { id: 107, title: 'Double Indemnity', poster: 'https://m.media-amazon.com/images/M/MV5BM2YwNjZlZDktNTlmNS00ODQwLWJmNmUtYmE1NTBhYjc1YTY5XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1944', runtime: '1h 47m', genre: 'Crime, Drama, Film-Noir', overview: 'An insurance representative lets himself be talked into a murder/insurance fraud scheme that arouses the suspicion of an insurance investigator.' },
+  { id: 108, title: 'North by Northwest', poster: 'https://m.media-amazon.com/images/M/MV5BZWIzODI2OGItMzM0Ny00OGRmLTlkNmItMDQxMTFmMTk3YmQwXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '1959', runtime: '2h 16m', genre: 'Action, Adventure, Mystery', overview: 'A New York City advertising executive goes on the run after being mistaken for a government agent by a group of foreign spies.' },
+  { id: 109, title: 'Like Stars on Earth', poster: 'https://m.media-amazon.com/images/M/MV5BNjVmMTlkNGYtYTM2OC00Yjc2LWIyYmQtMDY4ZmU1MWRlMjA3XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '2007', runtime: '2h 42m', genre: 'Drama, Family', overview: 'An eight-year-old boy is thought to be a lazy trouble-maker, until the new art teacher has the patience and compassion to discover the real problem behind his struggles in school.' },
+  { id: 110, title: 'Full Metal Jacket', poster: 'https://m.media-amazon.com/images/M/MV5BYWUzNzZkNzUtNDdiYy00Nzk5LTgxMmItNTk0MjRjNjdjNDA0XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1987', runtime: '1h 56m', genre: 'Drama, War', overview: 'A pragmatic U.S. Marine observes the dehumanizing effects the Vietnam War has on his fellow recruits from their brutal boot camp training to the bloody street fighting in Hue.' },
+  { id: 111, title: 'M', poster: 'https://m.media-amazon.com/images/M/MV5BODA4ODk3OTEzMF5BMl5BanBnXkFtZTgwMTQ2ODMwMzE@._V1_QL75_UX500', rating: '8.3', year: '1931', runtime: '1h 57m', genre: 'Crime, Mystery, Thriller', overview: 'When the police in a German city are unable to catch a child-murderer, other criminals join in the manhunt.' },
+  { id: 112, title: 'Amélie', poster: 'https://m.media-amazon.com/images/M/MV5BOTNmYzY0MWQtZGZmNy00Y2Y4LWFmMDQtMTZjYTdiYzEwZGQ2XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '2001', runtime: '2h 2m', genre: 'Comedy, Romance', overview: 'Amélie is an innocent and naive girl in Paris with her own sense of justice. She decides to help those around her and, along the way, discovers love.' },
+  { id: 113, title: 'Vertigo', poster: 'https://m.media-amazon.com/images/M/MV5BNzEyZTUxMWItMGVhYy00Y2NlLTljYTMtYzBmMzI1YmUyMDBkXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1958', runtime: '2h 8m', genre: 'Mystery, Romance, Thriller', overview: 'A former police detective juggles wrestling with his personal demons and becoming obsessed with a hauntingly beautiful woman.' },
+  { id: 114, title: 'Citizen Kane', poster: 'https://m.media-amazon.com/images/M/MV5BYjk1ZDJlMmUtOWQ0Zi00MDM5LTk1OGYtODczNjFmMGYwZGVkXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1941', runtime: '1h 59m', genre: 'Drama, Mystery', overview: 'Following the death of publishing tycoon Charles Foster Kane, reporters scramble to uncover the meaning of his final utterance: \'Rosebud\'.' },
+  { id: 115, title: 'A Separation', poster: 'https://m.media-amazon.com/images/M/MV5BMDM0ZWRmMzctM2M5ZS00ZjU0LWIxN2MtNWNlNGY1ZDhjMDVhXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '2011', runtime: '2h 3m', genre: 'Drama', overview: 'A married couple are faced with a difficult decision - to improve the life of their child by moving to another country or to stay in Iran and look after a deteriorating parent who has Alzheimer\'s disease.' },
+  { id: 116, title: 'Die Hard', poster: 'https://m.media-amazon.com/images/M/MV5BMGNlYmM1NmQtYWExMS00NmRjLTg5ZmEtMmYyYzJkMzljYWMxXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1988', runtime: '2h 12m', genre: 'Action, Thriller', overview: 'An NYPD officer tries to save his wife and several others taken hostage by German terrorists during a Christmas party at the Nakatomi Plaza in Los Angeles.' },
+  { id: 117, title: 'To Kill a Mockingbird', poster: 'https://m.media-amazon.com/images/M/MV5BZTlkYWU4MGEtZmQyYi00OWEzLTgzY2EtYzVjOTEzYzAyNTk1XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1962', runtime: '2h 9m', genre: 'Crime, Drama', overview: 'Atticus Finch, a lawyer in the Depression-era South, defends a black man against an undeserved rape charge, and his children against prejudice.' },
+  { id: 118, title: 'Indiana Jones and the Last Crusade', poster: 'https://m.media-amazon.com/images/M/MV5BNGIxNzQ0YzYtMjNmYi00YjBlLWFjNzEtNGE3ZGFmYTczM2MwXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1989', runtime: '2h 7m', genre: 'Action, Adventure', overview: 'In 1938, after his father Professor Henry Jones, Sr. goes missing while pursuing the Holy Grail, Professor Henry "Indiana" Jones, Jr. finds himself up against Adolf Hitler\'s Nazis again.' },
+  { id: 119, title: 'The Sting', poster: 'https://m.media-amazon.com/images/M/MV5BZGI4OTk4MDMtYmQ1Ni00YTUzLTkyYTktZGUwMjMyN2M4NjQ5XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1973', runtime: '2h 9m', genre: 'Comedy, Crime, Drama', overview: 'Two grifters team up to pull off the ultimate con.' },
+  { id: 120, title: 'A Clockwork Orange', poster: 'https://m.media-amazon.com/images/M/MV5BMTY3MjM1Mzc4N15BMl5BanBnXkFtZTgwODM0NzAxMDE@._V1_QL75_UX500', rating: '8.2', year: '1971', runtime: '2h 16m', genre: 'Crime, Sci-Fi', overview: 'In the future, a sadistic gang leader is imprisoned and volunteers for a conduct-aversion experiment, but it doesn\'t go as planned.' },
+  { id: 121, title: 'Metropolis', poster: 'https://m.media-amazon.com/images/M/MV5BMjhjMGYyMjAtMzJkYy00NzhlLWIwY2MtMWQ2ODIxZDUyOGYyXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1927', runtime: '2h 33m', genre: 'Drama, Sci-Fi', overview: 'In a futuristic city sharply divided between the working class and the city planners, the son of the city\'s mastermind falls in love with a working class prophet who predicts the coming of a savior.' },
+  { id: 122, title: '1917', poster: 'https://m.media-amazon.com/images/M/MV5BYzkxZjg2NDQtMGVjMy00NWZkLTk0ZDEtZWE3NDYwYjAyMTg1XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '2019', runtime: '1h 59m', genre: 'Action, Drama, War', overview: 'April 6th, 1917. As an infantry battalion assembles to wage war deep in enemy territory, two soldiers are assigned to race against time and deliver a message that will stop 1,600 men from walking straight into a deadly trap.' },
+  { id: 123, title: 'Snatch', poster: 'https://m.media-amazon.com/images/M/MV5BYzk5NjJkMTQtN2IyNC00YWM5LTlhZmMtNGI3MWNhMTU1YTc4XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '2000', runtime: '1h 44m', genre: 'Comedy, Crime', overview: 'Unscrupulous boxing promoters, violent bookmakers, a Russian gangster, incompetent amateur robbers and supposedly Jewish jewelers fight to track down a priceless stolen diamond.' },
+  { id: 124, title: 'The Wolf of Wall Street', poster: 'https://m.media-amazon.com/images/M/MV5BMjIxMjgxNTk0MF5BMl5BanBnXkFtZTgwNjIyOTg2MDE@._V1_QL75_UX500', rating: '8.2', year: '2013', runtime: '3h', genre: 'Biography, Comedy, Crime', overview: 'Based on the true story of Jordan Belfort, from his rise to a wealthy stock-broker living the high life to his fall involving crime, corruption and the federal government.' },
+  { id: 125, title: 'L.A. Confidential', poster: 'https://m.media-amazon.com/images/M/MV5BODdiMjY1OGYtNDk0NC00NGQ1LWI4MDItOTJhMTM0YjE1YTAzXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1997', runtime: '2h 18m', genre: 'Crime, Drama, Mystery', overview: 'As corruption grows in 1950s Los Angeles, three policemen - one strait-laced, one brutal, and one sleazy - investigate a series of murders with their own brand of justice.' },
+  { id: 126, title: 'Downfall', poster: 'https://m.media-amazon.com/images/M/MV5BMTU0NTU5NTAyMl5BMl5BanBnXkFtZTYwNzYwMDg2._V1_QL75_UX500', rating: '8.2', year: '2004', runtime: '2h 36m', genre: 'Biography, Drama, History', overview: 'Traudl Junge, the final secretary for Adolf Hitler, tells of the Nazi dictator\'s final days in his Berlin bunker at the end of WWII.' },
+  { id: 127, title: 'The Truman Show', poster: 'https://m.media-amazon.com/images/M/MV5BNzA3ZjZlNzYtMTdjMy00NjMzLTk5ZGYtMTkyYzNiOGM1YmM3XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1998', runtime: '1h 43m', genre: 'Comedy, Drama', overview: 'An insurance salesman discovers his whole life is actually a reality TV show.' },
+  { id: 128, title: 'Dangal', poster: 'https://m.media-amazon.com/images/M/MV5BMTQ4MzQzMzM2Nl5BMl5BanBnXkFtZTgwMTQ1NzU3MDI@._V1_QL75_UX500', rating: '8.3', year: '2016', runtime: '2h 41m', genre: 'Action, Biography, Drama', overview: 'Mahavir Singh Phogat, a former wrestler, decides to fulfill his dream of winning a gold medal for his country by training his daughters for the Commonwealth Games.' },
+  { id: 129, title: 'Bicycle Thieves', poster: 'https://m.media-amazon.com/images/M/MV5BMjIzMzAyMzg1Nl5BMl5BanBnXkFtZTgwMzMyNzk0MTE@._V1_QL75_UX500', rating: '8.2', year: '1948', runtime: '1h 29m', genre: 'Drama', overview: 'In post-war Italy, a working-class man\'s bicycle is stolen. He and his son set out to find it.' },
+  { id: 130, title: 'Green Book', poster: 'https://m.media-amazon.com/images/M/MV5BYTMxMzNlMDYtYzhlMS00ODMxLWFlM2MtY2U4NzJmOGM3ZTljXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '2018', runtime: '2h 10m', genre: 'Biography, Comedy, Drama', overview: 'A working-class Italian-American bouncer becomes the driver of an African-American classical pianist on a tour of venues through the 1960s American South.' },
+  { id: 131, title: 'Oppenheimer', poster: 'https://m.media-amazon.com/images/M/MV5BN2JkMDc5MGQtZjg3YS00NmFiLWIyZmQtZTJmNTM5MjVmYTQ4XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '2023', runtime: '3h', genre: 'Biography, Drama, History', overview: 'The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.' },
+  { id: 132, title: 'Shutter Island', poster: 'https://m.media-amazon.com/images/M/MV5BN2FjNWExYzEtY2YzOC00YjNlLTllMTQtNmIwM2Q1YzBhOWM1XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '2010', runtime: '2h 18m', genre: 'Mystery, Thriller', overview: 'In 1954, a U.S. Marshal investigates the disappearance of a murderer who escaped from a hospital for the criminally insane.' },
+  { id: 133, title: 'Judgment at Nuremberg', poster: 'https://m.media-amazon.com/images/M/MV5BNDc2ODQ5NTE2MV5BMl5BanBnXkFtZTcwODExMjUyNA@@._V1_QL75_UX500', rating: '8.3', year: '1961', runtime: '2h 59m', genre: 'Drama, War', overview: 'In 1948, an American court in occupied Germany tries four Nazis judged for war crimes.' },
+  { id: 134, title: 'Batman Begins', poster: 'https://m.media-amazon.com/images/M/MV5BMzA2NDQzZDEtNDU5Ni00YTlkLTg2OWEtYmQwM2Y1YTBjMjFjXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '2005', runtime: '2h 20m', genre: 'Action, Crime, Drama', overview: 'After training with his mentor, Batman begins his fight to free crime-ridden Gotham City from corruption.' },
+  { id: 135, title: 'I Swear', poster: 'https://m.media-amazon.com/images/M/MV5BNWQxYTMyZTktZDg5Yi00Y2YwLWI4YzQtMjkyYmYxNmFjYThmXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '2025', runtime: '2h', genre: 'Drama', overview: 'A deeply emotional cinematic journey that tests the bonds of truth, justice, and personal sacrifice.' },
+  { id: 136, title: 'Hamilton', poster: 'https://m.media-amazon.com/images/M/MV5BYTc3MWIyMzAtMTZmNC00YmNjLWIyZTgtMmU4NjZkYzZkOThkXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '2020', runtime: '2h 40m', genre: 'Biography, Drama, History', overview: 'The real life of one of America\'s foremost founding fathers and first Secretary of the Treasury, Alexander Hamilton.' },
+  { id: 137, title: 'For a Few Dollars More', poster: 'https://m.media-amazon.com/images/M/MV5BNTRmOTcyYmYtMTIwNi00ZGYyLTk4YjYtZGJlZTgwZGY0NGQyXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1965', runtime: '2h 12m', genre: 'Western', overview: 'Two bounty hunters with the same intentions team up to track down a Western outlaw.' },
+  { id: 138, title: 'Jurassic Park', poster: 'https://m.media-amazon.com/images/M/MV5BMjM2MDgxMDg0Nl5BMl5BanBnXkFtZTgwNTM2OTM5NDE@._V1_QL75_UX500', rating: '8.2', year: '1993', runtime: '2h 7m', genre: 'Action, Adventure, Sci-Fi', overview: 'A pragmatic paleontologist visiting an almost complete theme park is tasked with protecting a couple of kids after a power failure causes the park\'s cloned dinosaurs to run loose.' },
+  { id: 139, title: 'Taxi Driver', poster: 'https://m.media-amazon.com/images/M/MV5BZDNhMGYwM2UtMTdlZS00MGQ1LWI2YzAtODY5YWI1MjYyNzRmXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1976', runtime: '1h 54m', genre: 'Crime, Drama', overview: 'A mentally unstable veteran works as a nighttime taxi driver in New York City, where the perceived decadence and sleaze fuels his urge for violent action by attempting to liberate a presidential campaign worker and an underage prostitute.' },
+  { id: 140, title: 'Some Like It Hot', poster: 'https://m.media-amazon.com/images/M/MV5BZTllZDYyNjEtY2RmMS00NmJhLWI4ODAtMTQ0NWFiZTJhZjA0XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1959', runtime: '2h 1m', genre: 'Comedy, Music, Romance', overview: 'After two male musicians witness a mob hit, they flee the state in an all-female band disguised as women, but further complications set in.' },
+  { id: 141, title: 'There Will Be Blood', poster: 'https://m.media-amazon.com/images/M/MV5BMjAxODQ4MDU5NV5BMl5BanBnXkFtZTcwMDU4MjU1MQ@@._V1_QL75_UX500', rating: '8.2', year: '2007', runtime: '2h 38m', genre: 'Drama', overview: 'A story of family, religion, hatred, oil and madness, focusing on a turn-of-the-century prospector in the early days of the business.' },
+  { id: 142, title: 'The Father', poster: 'https://m.media-amazon.com/images/M/MV5BYzUxMDAyMDAtNzIyZi00OGQ1LTllMjEtYzRjOThkZTUxNTliXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '2020', runtime: '1h 37m', genre: 'Drama, Mystery', overview: 'A man refuses all assistance from his daughter as he ages. As he tries to make sense of his changing circumstances, he begins to doubt his loved ones, his own mind and even the fabric of his reality.' },
+  { id: 143, title: 'The Kid', poster: 'https://m.media-amazon.com/images/M/MV5BNjkxMzY1NTQtN2YwOS00NmIwLTlkNTMtMjNkMzk1ZTk3ZDU2XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1921', runtime: '58m', genre: 'Comedy, Drama, Family', overview: 'The Tramp cares for an abandoned child, but events put that relationship in jeopardy.' },
+  { id: 144, title: 'All About Eve', poster: 'https://m.media-amazon.com/images/M/MV5BMTY2MTAzODI5NV5BMl5BanBnXkFtZTgwMjM4NzQ0MjE@._V1_QL75_UX500', rating: '8.2', year: '1950', runtime: '2h 18m', genre: 'Drama', overview: 'An ingenue insinuates herself into the company of an established but aging stage actress and her circle of theater friends.' },
+  { id: 145, title: 'The Sixth Sense', poster: 'https://m.media-amazon.com/images/M/MV5BZWQ2OTY0M2UtMTQxNC00MmIzLTllNDQtNDQ0MTQyYzI2M2ZiXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1999', runtime: '1h 47m', genre: 'Drama, Mystery, Thriller', overview: 'A boy who communicates with spirits seeks the help of a disheartened child psychologist.' },
+  { id: 146, title: 'Ran', poster: 'https://m.media-amazon.com/images/M/MV5BZDk2NDY5YjktMjEyMC00OTJhLTkzM2EtY2Q4Y2RjYzc2Yjk4XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1985', runtime: '2h 40m', genre: 'Action, Drama, War', overview: 'In Medieval Japan, an elderly warlord retires, handing over his empire to his three sons. However, he vastly underestimates how the new-found power will corrupt them and cause them to turn on each other...and him.' },
+  { id: 147, title: 'Casino', poster: 'https://m.media-amazon.com/images/M/MV5BMDRlZWZjZjYtYzY2NS00ZWVjLTkwYzAtZTA2ZDAzMGRiYmYwXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1995', runtime: '2h 58m', genre: 'Crime, Drama', overview: 'A tale of greed, deception, money, power, and murder occur between two best friends: a mafia enforcer and a casino executive compete against each other over a gambling empire.' },
+  { id: 148, title: 'No Country for Old Men', poster: 'https://m.media-amazon.com/images/M/MV5BMjA5Njk3MjM4OV5BMl5BanBnXkFtZTcwMTc5MTE1MQ@@._V1_QL75_UX500', rating: '8.2', year: '2007', runtime: '2h 2m', genre: 'Crime, Drama, Thriller', overview: 'Violence and mayhem ensue after a hunter stumbles upon a drug deal gone wrong and more than two million dollars in cash near the Rio Grande.' },
+  { id: 149, title: 'The Thing', poster: 'https://m.media-amazon.com/images/M/MV5BYTA3NDU5MWEtNTk4Yy00ZDNkLThmZTQtMjU3ZGVhYzAyMzU4XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1982', runtime: '1h 49m', genre: 'Horror, Mystery, Sci-Fi', overview: 'A research team in Antarctica is hunted by a shape-shifting alien that assumes the appearance of its victims.' },
+  { id: 150, title: 'Prisoners', poster: 'https://m.media-amazon.com/images/M/MV5BMTg0NTIzMjQ1NV5BMl5BanBnXkFtZTcwNDc3MzM5OQ@@._V1_QL75_UX500', rating: '8.2', year: '2013', runtime: '2h 33m', genre: 'Crime, Drama, Mystery', overview: 'When Keller Dover\'s daughter and her friend go missing, he takes matters into his own hands as the police pursue multiple leads and the pressure mounts.' },
+  { id: 151, title: 'Top Gun: Maverick', poster: 'https://m.media-amazon.com/images/M/MV5BMDBkZDNjMWEtOTdmMi00NmExLTg5MmMtNTFlYTJlNWY5YTdmXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '2022', runtime: '2h 10m', genre: 'Action, Drama', overview: 'After thirty years, Maverick is still pushing the envelope as a top naval aviator, but must confront ghosts of his past when he leads TOP GUN\'s elite graduates on a mission.' },
+  { id: 152, title: 'Kill Bill: Vol. 1', poster: 'https://m.media-amazon.com/images/M/MV5BZmMyYzJlZmYtY2I3NC00NjAyLTkyZWItZjdjZDI1YTYyYTEwXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '2003', runtime: '1h 51m', genre: 'Action, Crime, Thriller', overview: 'After awakening from a four-year coma, a former assassin wreaks vengeance on the team of assassins who betrayed her.' },
+  { id: 153, title: 'Pan\'s Labyrinth', poster: 'https://m.media-amazon.com/images/M/MV5BOTc1NTAxMWItMWFlNy00MmU2LTkwMTMtNzMwOTg5OTQ5YTFiXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '2006', runtime: '1h 58m', genre: 'Drama, Fantasy, War', overview: 'In the Falangist Spain of 1944, the bookish young stepdaughter of a sadistic army officer escapes into an eerie but captivating fantasy world.' },
+  { id: 154, title: 'Unforgiven', poster: 'https://m.media-amazon.com/images/M/MV5BNmZmMzM3YWMtZjg5Yi00M2MxLTg3ZGItNGU4YjQxNDAxM2Q4XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1992', runtime: '2h 10m', genre: 'Drama, Western', overview: 'Retired Old West gunslinger William Munny reluctantly takes on one last job, with the help of his old partner Ned Logan.' },
+  { id: 155, title: 'Attack on Titan: The Last Attack', poster: 'https://m.media-amazon.com/images/M/MV5BNzVjOWEwYjEtNDJhOC00YjUyLThjMWItMDQwZGY1ODM4YzI3XkEyXkFqcGc@._V1_QL75_UX500', rating: '9.1', year: '2024', runtime: '2h 25m', genre: 'Animation, Action, Adventure', overview: 'The final cinematic installment of the Attack on Titan series, bringing the battle against the Titans to a devastating and epic conclusion.' },
+  { id: 156, title: 'A Beautiful Mind', poster: 'https://m.media-amazon.com/images/M/MV5BYjgzNjFkMmItOGJhNi00NWM3LWJlYTUtNDExMGQ3ZTI3NjJkXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '2001', runtime: '2h 15m', genre: 'Biography, Drama', overview: 'After John Nash, a brilliant but asocial mathematician, accepts secret work in cryptography, his life takes a turn for the nightmarish.' },
+  { id: 157, title: 'Howl\'s Moving Castle', poster: 'https://m.media-amazon.com/images/M/MV5BNzlhNzlmZjktMTkyNC00ODBkLTlkZjctODAyMGRiYzQyMThmXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '2004', runtime: '1h 59m', genre: 'Animation, Adventure, Family', overview: 'When an unconfident young woman is cursed with an old body by a spiteful witch, her only chance of breaking the spell lies with a self-indulgent yet insecure young wizard and his companions in his legged, walking castle.' },
+  { id: 158, title: 'The Treasure of the Sierra Madre', poster: 'https://m.media-amazon.com/images/M/MV5BOWM1YjFmODEtMWNhMC00YmI1LWI0Y2EtYzg0YTBhZWI4ODE3XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1948', runtime: '2h 6m', genre: 'Adventure, Drama, Western', overview: 'Two rough-and-tumble wanderers, joined by a grizzled prospector, discover gold, but greed and paranoia soon take hold.' },
+  { id: 159, title: 'Finding Nemo', poster: 'https://m.media-amazon.com/images/M/MV5BMTc5NjExNTA5OV5BMl5BanBnXkFtZTYwMTQ0ODY2._V1_QL75_UX500', rating: '8.2', year: '2003', runtime: '1h 40m', genre: 'Animation, Adventure, Comedy', overview: 'After his son is captured in the Great Barrier Reef and taken to Sydney, a timid clownfish sets out on a journey to bring him home.' },
+  { id: 160, title: 'Klaus', poster: 'https://m.media-amazon.com/images/M/MV5BZDA4ODhlMzctNGRmYi00NmViLTkxZGYtZjRkNGQ5YzYwYWVlXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '2019', runtime: '1h 36m', genre: 'Animation, Adventure, Comedy', overview: 'A simple act of kindness always sparks another, even in a frozen, faraway place. When Smeerensburg\'s new postman, Jesper, befriends toymaker Klaus, their gifts melt an age-old feud.' },
+  { id: 161, title: 'Yojimbo', poster: 'https://m.media-amazon.com/images/M/MV5BYzFkODA1N2QtY2UyMC00NTMwLWEyNzctMmE3YjIzNzE1MzY4XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1961', runtime: '1h 50m', genre: 'Action, Drama, Thriller', overview: 'A crafty ronin comes to a town divided by two criminal gangs and decides to play them against each other to free the town.' },
+  { id: 162, title: 'The Great Escape', poster: 'https://m.media-amazon.com/images/M/MV5BMDRhNmJjMzEtMWU5MC00YmEyLTg3ZmYtNzYxZTI1ZGU4ZjI1XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1963', runtime: '2h 52m', genre: 'Adventure, Drama, History', overview: 'Allied prisoners of war plan for several hundred of their number to escape from a German camp during World War II.' },
+  { id: 163, title: 'The Elephant Man', poster: 'https://m.media-amazon.com/images/M/MV5BMGE3MDZhNmMtMmUxZS00MDJmLTgxYmQtOGU4ODU0Y2JmNDI1XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1980', runtime: '2h 4m', genre: 'Biography, Drama', overview: 'A Victorian surgeon rescues a heavily disfigured man who is mistreated while scraping a living as a side-show freak.' },
+  { id: 164, title: 'Monty Python and the Holy Grail', poster: 'https://m.media-amazon.com/images/M/MV5BYWY4YmUzZmUtMzQ0ZS00N2Y2LWJlODQtN2IwMDc1MWQwMmU3XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1975', runtime: '1h 31m', genre: 'Adventure, Comedy, Fantasy', overview: 'King Arthur and his Knights of the Round Table embark on a surreal, low-budget search for the Holy Grail.' },
+  { id: 165, title: 'Dial M for Murder', poster: 'https://m.media-amazon.com/images/M/MV5BZmYzNDgzYjgtNmU3Ny00YzUxLWE3OWUtMjIxZmNkYTVhNDZmXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1954', runtime: '1h 45m', genre: 'Crime, Thriller', overview: 'A former tennis player tries to arrange his wife\'s murder after learning of her affair.' },
+  { id: 166, title: 'Demon Slayer: Kimetsu No Yaiba Infinity Castle', poster: 'https://m.media-amazon.com/images/M/MV5BOGQ3YWUzYjEtMTJiYy00ZjQ0LWI0YjktYjhiNGVhNGExYTM3XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '2025', runtime: '2h 35m', genre: 'Animation, Action, Adventure', overview: 'The Demon Slayer Corps enters the Infinity Castle for the final, epic showdown against Muzan Kibutsuji and his top-ranking demons.' },
+  { id: 167, title: 'The Best of Youth', poster: 'https://m.media-amazon.com/images/M/MV5BYzcxMTE2YjUtMzIyMy00NDNjLWE3ZWYtODQzYmNhNDVhNDZmXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '2003', runtime: '6h 14m', genre: 'Drama, Romance', overview: 'An Italian epic that follows the lives of two brothers, from the 1960s to the 2000s, through some of the most tumultuous events of recent Italian history.' },
+  { id: 168, title: 'The Secret in Their Eyes', poster: 'https://m.media-amazon.com/images/M/MV5BMTgwNTI3OTczOV5BMl5BanBnXkFtZTcwMTM3MTUyMw@@._V1_QL75_UX500', rating: '8.2', year: '2009', runtime: '2h 9m', genre: 'Drama, Mystery, Romance', overview: 'A retired legal counselor writes a novel hoping to find closure for one of his past unresolved homicide cases and for his unreciprocated love with his superior.' },
+  { id: 169, title: 'Gone with the Wind', poster: 'https://m.media-amazon.com/images/M/MV5BYmYxZTE3YzMtYmE2Yy00NmFlLTkzYTAtYTAzN2IzNDFkN2E0XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1939', runtime: '3h 58m', genre: 'Drama, Romance, War', overview: 'A manipulative woman and a roguish man conduct a turbulent romance during the American Civil War and Reconstruction periods.' },
+  { id: 170, title: 'Lock, Stock and Two Smoking Barrels', poster: 'https://m.media-amazon.com/images/M/MV5BMmY1M2M5ZmMtYzllZC00YzAxLTk4MjktZDJkNjA1MTUwMGQ4XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1998', runtime: '1h 47m', genre: 'Action, Comedy, Crime', overview: 'A botched card game in London triggers four friends, thugs, weed-growers, hard gangsters, loan sharks and debt collectors to collide with each other in a series of unexpected events.' },
+  { id: 171, title: 'Chinatown', poster: 'https://m.media-amazon.com/images/M/MV5BNmRmZTE0NmUtZjhiZi00MzQ3LTk3ZjctN2Q3ODYzY2U3MDk3XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1974', runtime: '2h 10m', genre: 'Drama, Mystery, Thriller', overview: 'A private detective hired to expose an adulterer finds himself caught up in a web of deceit, corruption, and murder.' },
+  { id: 172, title: 'V for Vendetta', poster: 'https://m.media-amazon.com/images/M/MV5BOTI5ODc3NzExNV5BMl5BanBnXkFtZTcwNzYxNzQzMw@@._V1_QL75_UX500', rating: '8.1', year: '2005', runtime: '2h 12m', genre: 'Action, Drama, Sci-Fi', overview: 'In a future British tyranny, a shadowy freedom fighter, known only by the alias of "V", plots to overthrow it with the help of a young woman.' },
+  { id: 173, title: 'Catch Me If You Can', poster: 'https://m.media-amazon.com/images/M/MV5BMTY5MzYzNjc5NV5BMl5BanBnXkFtZTYwNTUyNTc2._V1_QL75_UX500', rating: '8.1', year: '2002', runtime: '2h 21m', genre: 'Biography, Crime, Drama', overview: 'A seasoned FBI agent pursues Frank Abagnale Jr. who, before his 19th birthday, successfully forged millions of dollars\' worth of checks while posing as a Pan Am pilot, a doctor, and a legal prosecutor.' },
+  { id: 174, title: 'Inside Out', poster: 'https://m.media-amazon.com/images/M/MV5BOTgxMDQwMDk0OF5BMl5BanBnXkFtZTgwNjU5OTg2NDE@._V1_QL75_UX500', rating: '8.1', year: '2015', runtime: '1h 35m', genre: 'Animation, Adventure, Comedy', overview: 'After young Riley is uprooted from her Midwest life and moved to San Francisco, her emotions - Joy, Fear, Anger, Disgust and Sadness - conflict on how best to navigate a new city, house, and school.' },
+  { id: 175, title: 'Rashomon', poster: 'https://m.media-amazon.com/images/M/MV5BZTdmNjhmNzQtYzlkZC00ZDM2LTk0NjUtMTY3NWE3NWI3YTI2XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1950', runtime: '1h 28m', genre: 'Crime, Drama, Mystery', overview: 'The rape of a bride and the murder of her samurai husband are recalled from the perspectives of a bandit, the bride, the samurai\'s ghost and a woodcutter.' },
+  { id: 176, title: 'Three Billboards Outside Ebbing, Missouri', poster: 'https://m.media-amazon.com/images/M/MV5BMjI0ODcxNzM1N15BMl5BanBnXkFtZTgwMzIwMTEwNDI@._V1_QL75_UX500', rating: '8.1', year: '2017', runtime: '1h 55m', genre: 'Comedy, Crime, Drama', overview: 'A mother personally challenges the local authorities to solve her daughter\'s murder when they fail to catch the culprit.' },
+  { id: 177, title: 'Trainspotting', poster: 'https://m.media-amazon.com/images/M/MV5BYmVkNGJkMzQtYWQwOS00OTZmLThjODQtZjNjNzllYzRiNTE0XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1996', runtime: '1h 33m', genre: 'Drama', overview: 'Renton, deeply immersed in the Edinburgh drug scene, tries to clean up and get out, despite the allure of the drugs and influence of friends.' },
+  { id: 178, title: 'The Bridge on the River Kwai', poster: 'https://m.media-amazon.com/images/M/MV5BNzdkYmU2YmItNmZiYy00OWQyLTg0YWYtZmUxM2U3YTRiNTQ1XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1957', runtime: '2h 41m', genre: 'Adventure, Drama, War', overview: 'British POWs are forced to build a railway bridge across the river Kwai for their Japanese captors in occupied Burma.' },
+  { id: 179, title: 'Harry Potter and the Deathly Hallows: Part 2', poster: 'https://m.media-amazon.com/images/M/MV5BOTA1Mzc2N2ItZWRiNS00MjQzLTlmZDQtMjU0NmY1YWRkMGQ4XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '2011', runtime: '2h 10m', genre: 'Adventure, Family, Fantasy', overview: 'Harry, Ron, and Hermione search for Voldemort\'s remaining Horcruxes in their effort to destroy the Dark Lord as the final battle rages on at Hogwarts.' },
+  { id: 180, title: 'Dead Poets Society', poster: 'https://m.media-amazon.com/images/M/MV5BMDYwNGVlY2ItMWYxMS00YjZiLWE5MTAtYWM5NWQ2ZWJjY2Q3XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1989', runtime: '2h 8m', genre: 'Comedy, Drama', overview: 'Maverick teacher John Keating uses poetry to embolden his boarding school students to new heights of self-expression.' },
+  { id: 181, title: 'The Wild Robot', poster: 'https://m.media-amazon.com/images/M/MV5BZWNiZjVlZTUtNGUwYi00MjJmLTg2MDctNWEzYTJiMzY1ODc4XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '2024', runtime: '1h 42m', genre: 'Animation, Adventure, Sci-Fi', overview: 'After a shipwreck, an intelligent robot called Roz is stranded on an uninhabited island and must learn to adapt to the harsh environment while bonding with the island\'s animals.' },
+  { id: 182, title: 'Warrior', poster: 'https://m.media-amazon.com/images/M/MV5BMTk4ODk5MTMyNV5BMl5BanBnXkFtZTcwMDMyNTg0Ng@@._V1_QL75_UX500', rating: '8.1', year: '2011', runtime: '2h 20m', genre: 'Action, Drama, Sport', overview: 'The youngest son of an alcoholic former boxer returns home, where he\'s trained by his father for competition in a mixed martial arts tournament - a path that puts the fighter on a collision course with his estranged, older brother.' },
+  { id: 183, title: 'Barry Lyndon', poster: 'https://m.media-amazon.com/images/M/MV5BNmM2MGQ5Y2UtYzA3ZC00ZDJlLTkwNDYtMjBmZGExZDJiN2RlXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1975', runtime: '3h 5m', genre: 'Adventure, Drama, History', overview: 'An Irish rogue wins the heart of a rich widow and assumes her dead husband\'s aristocratic position in 18th-century England.' },
+  { id: 184, title: 'Ben-Hur', poster: 'https://m.media-amazon.com/images/M/MV5BNjg2M2E1YzYtOThmMC00NjAyLWI5MzgtMDEwOGFiODdlOGUzXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1959', runtime: '3h 32m', genre: 'Adventure, Drama, History', overview: 'After a Jewish prince is betrayed and sent into slavery by a Roman friend, he regains his freedom and comes back for revenge.' },
+  { id: 185, title: 'Fargo', poster: 'https://m.media-amazon.com/images/M/MV5BNjg4MWE0MjEtODFhNy00MjA5LTg5ODktMzgwNWFmZTAwNjBlXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1996', runtime: '1h 38m', genre: 'Crime, Drama, Thriller', overview: 'Jerry Lundegaard\'s inept crime falls apart due to his and his henchmen\'s bungling and the persistent police work of the quite pregnant Marge Gunderson.' },
+  { id: 186, title: 'Million Dollar Baby', poster: 'https://m.media-amazon.com/images/M/MV5BMTkxNzA1NDQxOV5BMl5BanBnXkFtZTcwNTkyMTIzMw@@._V1_QL75_UX500', rating: '8.1', year: '2004', runtime: '2h 12m', genre: 'Drama, Sport', overview: 'A determined woman works with a hardened boxing trainer to become a professional.' },
+  { id: 187, title: 'Raging Bull', poster: 'https://m.media-amazon.com/images/M/MV5BMjlkYmYyZWQtNTZkOS00ZjA0LWEwNWUtNzE2ZGNiYjg0MjA2XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1980', runtime: '2h 9m', genre: 'Biography, Drama, Sport', overview: 'The life of boxer Jake LaMotta, whose violence and temper that led him to the top in the ring destroyed his life outside of it.' },
+  { id: 188, title: 'Mad Max: Fury Road', poster: 'https://m.media-amazon.com/images/M/MV5BZDRkODJhOTgtOTc1OC00NTgzLTk4NjItNDgxZDY4YjlmNDY2XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '2015', runtime: '2h', genre: 'Action, Adventure, Sci-Fi', overview: 'In a post-apocalyptic wasteland, a woman rebels against a tyrannical ruler in search for her homeland with the aid of a group of female prisoners, a psychotic worshiper, and a drifter named Max.' },
+  { id: 189, title: 'Hacksaw Ridge', poster: 'https://m.media-amazon.com/images/M/MV5BMjQ1NjM3MTUxNV5BMl5BanBnXkFtZTgwMDc5MTY5OTE@._V1_QL75_UX500', rating: '8.1', year: '2016', runtime: '2h 19m', genre: 'Biography, Drama, History', overview: 'World War II American Army Medic Desmond T. Doss, who served during the Battle of Okinawa, refuses to kill people, and becomes the first man in American history to receive the Medal of Honor without firing a shot.' },
+  { id: 190, title: 'Children of Heaven', poster: 'https://m.media-amazon.com/images/M/MV5BZWZlMjNhNzgtZGRhOS00Y2U5LThjOTctODNjZTI0ZTBiYzBhXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '1997', runtime: '1h 29m', genre: 'Drama, Family, Sport', overview: 'After a boy loses his sister\'s pair of shoes, he goes on a series of adventures in order to find them.' },
+  { id: 191, title: 'My Neighbour Totoro', poster: 'https://m.media-amazon.com/images/M/MV5BYWM3MDE3YjEtMzIzZC00ODE5LTgxNTItNmUyMTBkM2M2NmNiXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1988', runtime: '1h 26m', genre: 'Animation, Comedy, Family', overview: 'When two girls move to the country to be near their ailing mother, they have adventures with the wondrous forest spirits who live nearby.' },
+  { id: 192, title: 'Gran Torino', poster: 'https://m.media-amazon.com/images/M/MV5BMTc5NTk2OTU1Nl5BMl5BanBnXkFtZTcwMDc3NjAwMg@@._V1_QL75_UX500', rating: '8.1', year: '2008', runtime: '1h 56m', genre: 'Drama', overview: 'Disgruntled Korean War veteran Walt Kowalski sets out to reform his neighbor, Thao Lor, a Hmong teenager who tried to steal Kowalski\'s prized possession: a 1972 Gran Torino.' },
+  { id: 193, title: 'Ratatouille', poster: 'https://m.media-amazon.com/images/M/MV5BMTMzODU0NTkxMF5BMl5BanBnXkFtZTcwMjQ4MzMzMw@@._V1_QL75_UX500', rating: '8.1', year: '2007', runtime: '1h 51m', genre: 'Animation, Adventure, Comedy', overview: 'A rat who can cook makes an unusual alliance with a young kitchen worker at a famous Paris restaurant.' },
+  { id: 194, title: '12 Years a Slave', poster: 'https://m.media-amazon.com/images/M/MV5BMjExMTEzODkyN15BMl5BanBnXkFtZTcwNTU4NTc4OQ@@._V1_QL75_UX500', rating: '8.1', year: '2013', runtime: '2h 14m', genre: 'Biography, Drama, History', overview: 'In the antebellum United States, Solomon Northup, a free black man from upstate New York, is abducted and sold into slavery.' },
+  { id: 195, title: 'The Grand Budapest Hotel', poster: 'https://m.media-amazon.com/images/M/MV5BMzM5NjUxOTEyMl5BMl5BanBnXkFtZTgwNjEyMDM0MDE@._V1_QL75_UX500', rating: '8.1', year: '2014', runtime: '1h 39m', genre: 'Adventure, Comedy, Crime', overview: 'A writer encounters the owner of an aging high-class hotel, who tells him of his early years serving as a lobby boy in the hotel\'s glorious years under an exceptional concierge.' },
+  { id: 196, title: 'Before Sunrise', poster: 'https://m.media-amazon.com/images/M/MV5BZDZhZmI1ZTUtYWI3NC00NTMwLTk3NWMtNDc0OGNjM2I0ZjlmXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1995', runtime: '1h 41m', genre: 'Drama, Romance', overview: 'A young man and woman meet on a train in Europe, and wind up spending one evening together in Vienna. Unfortunately, both know that this will probably be their only night together.' },
+  { id: 197, title: 'The Chaos Class Failed the Class', poster: 'https://m.media-amazon.com/images/M/MV5BZmY3MjVhMmQtOTcwYy00ZjcyLWFiZDgtN2JiODVjNjQzYWQyXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.4', year: '1975', runtime: '1h 35m', genre: 'Comedy', overview: 'The mischievous students of the Chaos Class continue their hilarious antics, this time with a new female teacher and the threat of failing the year.' },
+  { id: 198, title: 'Memories of Murder', poster: 'https://m.media-amazon.com/images/M/MV5BYmRjOWE5NmMtYTdkYS00ODFlLWJiMTMtYzE2NDZlZjlkZDQ0XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '2003', runtime: '2h 11m', genre: 'Crime, Drama, Mystery', overview: 'In a small Korean province in 1986, two detectives struggle with the case of multiple young women being found raped and murdered by an unknown culprit.' },
+  { id: 199, title: 'How to Train Your Dragon', poster: 'https://m.media-amazon.com/images/M/MV5BMjA5NDQyMjc2NF5BMl5BanBnXkFtZTcwMjg5ODcyMw@@._V1_QL75_UX500', rating: '8.1', year: '2010', runtime: '1h 38m', genre: 'Animation, Action, Adventure', overview: 'A hapless young Viking who aspires to hunt dragons becomes the unlikely friend of a young dragon himself.' },
+  { id: 200, title: 'Blade Runner', poster: 'https://m.media-amazon.com/images/M/MV5BOWQ4YTBmNTQtMDYxMC00NGFjLTkwOGQtNzdhNmY1Nzc1MzUxXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1982', runtime: '1h 57m', genre: 'Action, Drama, Sci-Fi', overview: 'A blade runner must pursue and terminate four replicants who stole a ship in space and have returned to Earth to find their creator.' },
+  { id: 201, title: 'Gone Girl', poster: 'https://m.media-amazon.com/images/M/MV5BMTk0MDQ3MzAzOV5BMl5BanBnXkFtZTgwNzU1NzE3MjE@._V1_QL75_UX500', rating: '8.1', year: '2014', runtime: '2h 29m', genre: 'Drama, Mystery, Thriller', overview: 'With his wife\'s disappearance having become the focus of an intense media circus, a man sees the spotlight turned on him when it\'s suspected that he may not be innocent.' },
+  { id: 202, title: 'Spider-Man: No Way Home', poster: 'https://m.media-amazon.com/images/M/MV5BMmFiZGZjMmEtMTA0Ni00MzA2LTljMTYtZGI2MGJmZWYzZTQ2XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '2021', runtime: '2h 28m', genre: 'Action, Adventure, Fantasy', overview: 'With Spider-Man\'s identity now revealed, Peter asks Doctor Strange for help. When a spell goes wrong, dangerous foes from other worlds start to appear.' },
+  { id: 203, title: 'Monsters, Inc.', poster: 'https://m.media-amazon.com/images/M/MV5BMTY1NTI0ODUyOF5BMl5BanBnXkFtZTgwNTEyNjQ0MDE@._V1_QL75_UX500', rating: '8.1', year: '2001', runtime: '1h 32m', genre: 'Animation, Adventure, Comedy', overview: 'In order to power the city, monsters have to scare children so that they scream. However, the children are toxic to the monsters, and after a child gets through, 2 monsters realize things may not be what they think.' },
+  { id: 204, title: 'Jaws', poster: 'https://m.media-amazon.com/images/M/MV5BYjViNDQzNmUtYzkxZi00NTk5LTljMmItYjJlZmZkODIxNjU1XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1975', runtime: '2h 4m', genre: 'Adventure, Thriller', overview: 'When a killer shark unleashes chaos on a beach community off Cape Cod, it\'s up to a local sheriff, a marine biologist, and an old seafarer to hunt the beast down.' },
+  { id: 205, title: 'Le Mans \'66', poster: 'https://m.media-amazon.com/images/M/MV5BOTBjNTEyNjYtYjdkNi00YzE5LTljYzUtZjVlYmYwZmJmZWYxXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '2019', runtime: '2h 32m', genre: 'Action, Biography, Drama', overview: 'American car designer Carroll Shelby and driver Ken Miles battle corporate interference and the laws of physics to build a revolutionary race car for Ford in order to defeat Ferrari at the 24 Hours of Le Mans in 1966.' },
+  { id: 206, title: 'In the Name of the Father', poster: 'https://m.media-amazon.com/images/M/MV5BMGZiZDVjNzYtZWM4ZC00MzVkLThhNDEtMDJlOTBhYzVjMmNhXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1993', runtime: '2h 13m', genre: 'Biography, Crime, Drama', overview: 'A man\'s coerced confession to an IRA bombing he did not commit results in the imprisonment of his father as well. An English lawyer fights to free them.' },
+  { id: 207, title: 'Wild Tales', poster: 'https://m.media-amazon.com/images/M/MV5BNzAzMjA1ODAxOV5BMl5BanBnXkFtZTgwODg4NTQzNDE@._V1_QL75_UX500', rating: '8.1', year: '2014', runtime: '2h 2m', genre: 'Comedy, Drama, Thriller', overview: 'Six short stories that explore the extremities of human behavior involving people in distress.' },
+  { id: 208, title: 'The Gold Rush', poster: 'https://m.media-amazon.com/images/M/MV5BOTE1MWFkOWQtOWM1NC00ZjA4LTk5NmUtZTFjZDFjMzEwYTQzXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1925', runtime: '1h 35m', genre: 'Adventure, Comedy, Drama', overview: 'A prospector goes to the Klondike in search of gold and finds it and more.' },
+  { id: 209, title: 'Sherlock Jr.', poster: 'https://m.media-amazon.com/images/M/MV5BMjQzM2E2NjYtYmRjMC00ZmVlLTljZTgtNmQ5MGZlNDYyZTc5XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1924', runtime: '45m', genre: 'Action, Comedy, Romance', overview: 'A film projectionist longs to be a detective, and puts his meager skills to work when he is framed by a rival for stealing his girlfriend\'s father\'s pocket watch.' },
+  { id: 210, title: 'Mary and Max', poster: 'https://m.media-amazon.com/images/M/MV5BNzY2Mjc4NjMtNGY4Mi00NzM5LTk3ZTQtN2VkNzVkMzRmM2Y2XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '2009', runtime: '1h 32m', genre: 'Animation, Comedy, Drama', overview: 'A tale of friendship between two unlikely pen pals: Mary, a lonely, eight-year-old girl living in the suburbs of Melbourne, and Max, a forty-four-year old, severely obese man living in New York.' },
+  { id: 211, title: 'The Deer Hunter', poster: 'https://m.media-amazon.com/images/M/MV5BZGI4YmVhMzMtMWExMS00MGZiLTg2MmItM2I2MWZjODAyM2U5XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1978', runtime: '3h 3m', genre: 'Drama, War', overview: 'An in-depth examination of the ways in which the U.S. Vietnam War impacts and disrupts the lives of people in a small industrial town in Pennsylvania.' },
+  { id: 212, title: 'The Wages of Fear', poster: 'https://m.media-amazon.com/images/M/MV5BOGE5OTg2ZDItNzEzOC00ZDVkLWJkZGUtMDI2MDRlODg3NWIwXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1953', runtime: '2h 36m', genre: 'Adventure, Drama, Thriller', overview: 'In a decrepit South American village, four men are hired to transport an urgent nitroglycerine shipment without the equipment that would make it safe.' },
+  { id: 213, title: 'The General', poster: 'https://m.media-amazon.com/images/M/MV5BMTVhM2Y1MDUtMDkxYi00Y2UxLWI2MTMtZjMzYTY4ODM4MGIzXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1926', runtime: '1h 18m', genre: 'Action, Adventure, Comedy', overview: 'When Union spies steal an engineer\'s beloved locomotive, he pursues it single-handedly and straight through enemy lines.' },
+  { id: 214, title: 'Logan', poster: 'https://m.media-amazon.com/images/M/MV5BM2JjODdkMGMtNmY2YS00OGM2LThiY2YtZGYyNzE4Nzc2ODA0XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '2017', runtime: '2h 17m', genre: 'Action, Drama, Sci-Fi', overview: 'In a future where mutants are nearly extinct, an elderly and weary Logan leads a quiet life. But when Laura, a mutant child pursued by scientists, comes to him for help, he must get her to safety.' },
+  { id: 215, title: 'Rocky', poster: 'https://m.media-amazon.com/images/M/MV5BZDEyY2M2MGMtYjg5OC00ZWFjLWFkZDQtNmQzZTdiYmYzZTBkXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1976', runtime: '2h', genre: 'Drama, Sport', overview: 'A small-time Philadelphia boxer gets a supremely rare chance to fight the world heavyweight champion in a bout in which he strives to go the distance for his self-respect.' },
+  { id: 216, title: 'Mr. Smith Goes to Washington', poster: 'https://m.media-amazon.com/images/M/MV5BMDU4ZjNmMjEtMjcxYi00NDAxLWFlMjQtNWIyNjg5NWUzNTdjXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1939', runtime: '2h 9m', genre: 'Comedy, Drama', overview: 'A naive youth leader is appointed to fill a vacancy in the U.S. Senate. His idealistic plans promptly collide with corruption at home.' },
+  { id: 217, title: 'Pirates of the Caribbean: The Curse of the Black Pearl', poster: 'https://m.media-amazon.com/images/M/MV5BNDhlMzEyNzItMTA5Mi00YWRhLThlNTktYTQyMTA0MDIyNDEyXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '2003', runtime: '2h 23m', genre: 'Action, Adventure, Fantasy', overview: 'Blacksmith Will Turner teams up with eccentric pirate "Captain" Jack Sparrow to save his love, the governor\'s daughter, from Jack\'s former pirate allies, who are now undead.' },
+  { id: 218, title: 'Tokyo Story', poster: 'https://m.media-amazon.com/images/M/MV5BODdkNzcxZjItMDU2Yy00Y2JlLWFkYTQtNzIwM2Q4MWU5MTU2XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1953', runtime: '2h 17m', genre: 'Drama', overview: 'An old couple visit their children and grandchildren in the city, but receive little attention.' },
+  { id: 219, title: 'On the Waterfront', poster: 'https://m.media-amazon.com/images/M/MV5BZDJlYTM1ZGYtZTM4YS00MzFhLThiZjktYzQ0ZjAzMGYwZTU3XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1954', runtime: '1h 48m', genre: 'Crime, Drama, Thriller', overview: 'An ex-prize fighter turned longshoreman struggles to stand up to his corrupt union bosses.' },
+  { id: 220, title: 'A Silent Voice: The Movie', poster: 'https://m.media-amazon.com/images/M/MV5BMTRlNjA2N2YtM2FiMS00ZDc5LWJmY2MtNmMxZTgwNzRmZDBmXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '2016', runtime: '2h 10m', genre: 'Animation, Drama', overview: 'A young man is ostracized by his classmates after he bullies a deaf girl to the point where she moves away. Years later, he sets off on a path for redemption.' },
+  { id: 221, title: 'La haine', poster: 'https://m.media-amazon.com/images/M/MV5BYmU2OWQwNGYtNDA1ZS00ZGJjLWFhMDAtZGI4MGRhYzY0ZDY4XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1995', runtime: '1h 38m', genre: 'Crime, Drama', overview: 'Twenty-four hours in the lives of three young men in the French suburbs the day after a violent riot.' },
+  { id: 222, title: 'Spotlight', poster: 'https://m.media-amazon.com/images/M/MV5BMjIyOTM5OTIzNV5BMl5BanBnXkFtZTgwMDkzODE2NjE@._V1_QL75_UX500', rating: '8.1', year: '2015', runtime: '2h 9m', genre: 'Biography, Crime, Drama', overview: 'The true story of how the Boston Globe uncovered the massive scandal of child molestation and cover-up within the local Catholic Archdiocese.' },
+  { id: 223, title: 'Wild Strawberries', poster: 'https://m.media-amazon.com/images/M/MV5BZWQ5MDllM2EtZWRmNS00MmZiLWI4ZWQtMjRiY2Q5MTAxODY4XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1957', runtime: '1h 32m', genre: 'Drama, Romance', overview: 'After a life marked by coldness, an aging professor is forced to confront the emptiness of his existence.' },
+  { id: 224, title: 'The Terminator', poster: 'https://m.media-amazon.com/images/M/MV5BZmE0YzIxM2QtMGNlMi00MjRmLWE3MWMtOWQzMGVjMmU0YTFmXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1984', runtime: '1h 47m', genre: 'Action, Sci-Fi', overview: 'A human soldier is sent from 2029 to 1984 to stop an almost indestructible cyborg killing machine, sent from the same year, which has been programmed to execute a young woman.' },
+  { id: 225, title: 'The Sound of Music', poster: 'https://m.media-amazon.com/images/M/MV5BYWJhYmU4MjQtZDJhYi00ZGVjLTlkNTEtNzkzNGVjOWQ3MjcwXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1965', runtime: '2h 54m', genre: 'Biography, Drama, Family', overview: 'A young novitiate is sent by her convent in 1930s Austria to become a governess to the seven children of a widowed naval officer.' },
+  { id: 226, title: 'Jai Bhim', poster: 'https://m.media-amazon.com/images/M/MV5BZjEyNDIzNmEtMjdkYS00ZDAwLTljOWYtNDRhYTVhYTlmOTk1XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.6', year: '2021', runtime: '2h 44m', genre: 'Crime, Drama', overview: 'When a tribal man is arrested for a case of alleged theft, his wife turns to a human-rights lawyer to help bring justice.' },
+  { id: 227, title: 'Maharaja', poster: 'https://m.media-amazon.com/images/M/MV5BOTFlMTIxOGItZTk0Zi00MTk2LWJiM2UtMzlhZWYzNjQ4N2Y3XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '2024', runtime: '2h 21m', genre: 'Action, Drama', overview: 'A barber seeks vengeance after his home is burglarized, cryptically telling police his "lakshmi" has been taken, leaving them uncertain if it\'s a person or an object.' },
+  { id: 228, title: 'The Third Man', poster: 'https://m.media-amazon.com/images/M/MV5BMjMwNzMzMTQ0Ml5BMl5BanBnXkFtZTgwNjExMzUwNjE@._V1_QL75_UX500', rating: '8.1', year: '1949', runtime: '1h 44m', genre: 'Film-Noir, Mystery, Thriller', overview: 'Pulp novelist Holly Martins travels to shadowy, postwar Vienna, only to find himself investigating the mysterious death of an old friend, Harry Lime.' },
+  { id: 229, title: 'Chainsaw Man - The Movie: Reze Arc', poster: 'https://m.media-amazon.com/images/M/MV5BZmMzNGVhODktYmU5MS00MDg1LThlNTEtNTMyYTg5MDA0Njk4XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '2025', runtime: '1h 40m', genre: 'Animation, Action, Fantasy', overview: 'Denji crosses paths with a new girl named Reze, whose explosive abilities and mysterious motives plunge him into a deadly new conflict.' },
+  { id: 230, title: 'The Big Lebowski', poster: 'https://m.media-amazon.com/images/M/MV5BY2E3OWQ5OWYtYTRkMC00NjVjLWIzZDQtNmRmM2ZiYTIyYmYxXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1998', runtime: '1h 57m', genre: 'Comedy, Crime', overview: 'Ultimate L.A. slacker Jeff "The Dude" Lebowski, mistaken for a millionaire of the same name, seeks restitution for a rug ruined by debt collectors.' },
+  { id: 231, title: 'The Best Years of Our Lives', poster: 'https://m.media-amazon.com/images/M/MV5BNTgxMzUyODQtMDJmZC00ZGMyLWI3MzAtZTYwYjBjZjFmMzIxXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1946', runtime: '2h 50m', genre: 'Drama, Romance, War', overview: 'Three World War II veterans, two of them traumatized or disabled, return home to small-town America to discover that they and their families have been irreparably changed.' },
+  { id: 232, title: 'Before Sunset', poster: 'https://m.media-amazon.com/images/M/MV5BMTQ1MjAwNTM5Ml5BMl5BanBnXkFtZTYwNDM0MTc3._V1_QL75_UX500', rating: '8.1', year: '2004', runtime: '1h 20m', genre: 'Drama, Romance', overview: 'Nine years after originally meeting, Jesse and Celine reunite in Paris for an afternoon.' },
+  { id: 233, title: 'The Seventh Seal', poster: 'https://m.media-amazon.com/images/M/MV5BZDlmYTkzOWUtODQ0MS00MmM4LWE3ZjMtYTEwNGUwMmJkYzIxXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1957', runtime: '1h 36m', genre: 'Drama, Fantasy', overview: 'A knight returning to Sweden after the Crusades seeks answers about life, death, and the existence of God as he plays chess against the Grim Reaper during the Black Plague.' },
+  { id: 234, title: 'Room', poster: 'https://m.media-amazon.com/images/M/MV5BMjE4NzgzNzEwMl5BMl5BanBnXkFtZTgwMTMzMDE0NjE@._V1_QL75_UX500', rating: '8.1', year: '2015', runtime: '1h 58m', genre: 'Drama, Thriller', overview: 'Held captive for 7 years in an enclosed space, a woman and her young son finally gain their freedom, allowing the boy to experience the outside world for the first time.' },
+  { id: 235, title: 'Hotel Rwanda', poster: 'https://m.media-amazon.com/images/M/MV5BY2FmMWRmZmQtN2IzMS00OGVmLWFmNjktMTM0YWQzODcwYTEwXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '2004', runtime: '2h 1m', genre: 'Biography, Drama, History', overview: 'Paul Rusesabagina, a hotel manager, houses over a thousand Tutsi refugees during their struggle against the Hutu militia in Rwanda, Africa.' },
+  { id: 236, title: 'The Incredibles', poster: 'https://m.media-amazon.com/images/M/MV5BMTY5OTU0OTc2NV5BMl5BanBnXkFtZTcwMzU4MDcyMQ@@._V1_QL75_UX500', rating: '8.0', year: '2004', runtime: '1h 55m', genre: 'Animation, Action, Adventure', overview: 'A family of undercover superheroes, while trying to live the quiet suburban life, are forced into action to save the world.' },
+  { id: 237, title: 'Platoon', poster: 'https://m.media-amazon.com/images/M/MV5BZjE4YjllODAtZGMxZS00Mjg2LThkOWUtZjNkMjQ5YThiNDU4XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1986', runtime: '2h', genre: 'Drama, War', overview: 'A young soldier in Vietnam faces a moral crisis when confronted with the horrors of war and the duality of man.' },
+  { id: 238, title: 'Hachi: A Dog\'s Tale', poster: 'https://m.media-amazon.com/images/M/MV5BNTU5NjYyYTgtZGQ3My00MzRhLThjNGYtZmVjN2JjYjhkMjhhXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '2009', runtime: '1h 33m', genre: 'Biography, Drama, Family', overview: 'A college professor bonds with an abandoned dog he takes into his home.' },
+  { id: 239, title: 'The Exorcist', poster: 'https://m.media-amazon.com/images/M/MV5BZjg3YjE4ZjAtYTdmYS00ZTBkLWE1ZjgtNzAzODUwNzRiYjlmXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1973', runtime: '2h 2m', genre: 'Horror', overview: 'When a 12-year-old girl is possessed by a mysterious entity, her mother seeks the help of two priests to save her.' },
+  { id: 240, title: 'Rush', poster: 'https://m.media-amazon.com/images/M/MV5BMTZhOGQxM2ItNGQyYy00YzE5LWI5MjMtNmMzNGQzNDE1OTUzXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '2013', runtime: '2h 3m', genre: 'Action, Biography, Drama', overview: 'The merciless 1970s rivalry between Formula One rivals James Hunt and Niki Lauda.' },
+  { id: 241, title: 'The Iron Giant', poster: 'https://m.media-amazon.com/images/M/MV5BZTc2ZjdhZTctZDRlNC00ZWI4LWEyYjItMjQ3MjNjMDVkNmMzXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1999', runtime: '1h 26m', genre: 'Animation, Action, Adventure', overview: 'A young boy befriends a giant alien robot that a paranoid government agent wants to destroy.' },
+  { id: 242, title: 'The Wizard of Oz', poster: 'https://m.media-amazon.com/images/M/MV5BMTcwZTJmMWUtYmVmNi00Y2ZkLWIyY2ItY2I1YWMxMmU2ZDcxXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1939', runtime: '1h 42m', genre: 'Adventure, Family, Fantasy', overview: 'Dorothy Gale is swept away from a farm in Kansas to a magical land of Oz in a tornado and embarks on a quest with her new friends to see the Wizard.' },
+  { id: 243, title: 'Stand by Me', poster: 'https://m.media-amazon.com/images/M/MV5BNGJkNTUwM2MtZWE2MS00YjNkLWE3MjktNWQwZDQxMDIyZWVmXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1986', runtime: '1h 29m', genre: 'Adventure, Drama', overview: 'After the death of one of his friends, a writer recounts a childhood journey with his friends to find the body of a missing boy.' },
+  { id: 244, title: 'My Father and My Son', poster: 'https://m.media-amazon.com/images/M/MV5BZDE3MTBkNmQtNGFjMC00YTcwLWExY2ItN2MyMGZkNWJlMmFmXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '2005', runtime: '1h 52m', genre: 'Drama, Family', overview: 'The family of a left-wing journalist is torn apart by the 1980 military coup in Turkey.' },
+  { id: 245, title: 'The Battle of Algiers', poster: 'https://m.media-amazon.com/images/M/MV5BMTY2Mjk0OGEtYTM3Yy00ZWZiLWFhNjAtNGExMjEzNGVmMDMxXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1966', runtime: '2h 1m', genre: 'Drama, War', overview: 'In the 1950s, fear and violence escalate as the people of Algiers fight for independence from the French government.' },
+  { id: 246, title: 'The Passion of Joan of Arc', poster: 'https://m.media-amazon.com/images/M/MV5BNTE1MDliZjgtYTU2Yy00YjAxLTljYTItNDE2ZGYwYTY1MGQ1XkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1928', runtime: '1h 50m', genre: 'Biography, Drama, History', overview: 'In 1431, Jeanne d\'Arc is placed on trial on charges of heresy. The ecclesiastical jurists attempt to force Jeanne to recant her claims of holy visions.' },
+  { id: 247, title: 'The Handmaiden', poster: 'https://m.media-amazon.com/images/M/MV5BOTllZDI1OGItOGUxNS00OGZhLWIzMjAtYzllZTY1YTA0ZmYwXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '2016', runtime: '2h 25m', genre: 'Drama, Romance, Thriller', overview: 'A woman is hired as a handmaiden to a Japanese heiress, but secretly she is involved in a plot to defraud her.' },
+  { id: 248, title: 'Network', poster: 'https://m.media-amazon.com/images/M/MV5BY2E4ZGJiNTMtZTAxZC00MmVlLWI1NjYtMGVhMjhkOGEwZDhjXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.1', year: '1976', runtime: '2h 1m', genre: 'Drama', overview: 'A television network cynically exploits a deranged former anchor\'s ravings and revelations about the news media for its own profit.' },
+  { id: 249, title: 'Drishyam', poster: 'https://m.media-amazon.com/images/M/MV5BMDRlZWFkMjEtYmYyZi00MmE5LWIzMzUtYmM2N2M5Y2UxZDJjXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.2', year: '2015', runtime: '2h 43m', genre: 'Crime, Drama, Mystery', overview: 'Desperate measures are taken by a man who tries to save his family from the dark side of the law, after they commit an unexpected crime.' },
+  { id: 250, title: 'Laapataa Ladies', poster: 'https://m.media-amazon.com/images/M/MV5BOWIyM2Q0MDgtZjVhYi00MWQwLTk3ZmItYzc0YmZmOGIyM2RhXkEyXkFqcGc@._V1_QL75_UX500', rating: '8.3', year: '2023', runtime: '2h 2m', genre: 'Comedy, Drama', overview: 'The misadventures of two young brides who get lost from the same train in rural India, leading to a series of chaotic and heartwarming events.' }
 ]
