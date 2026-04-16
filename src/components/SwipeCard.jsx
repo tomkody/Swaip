@@ -3,18 +3,22 @@ import './SwipeCard.css'
 
 const SWIPE_THRESHOLD = 100
 const ROTATION_FACTOR = 0.15
-const TAP_MAX_MOVE = 14 // px total travel — below this = tap
+const DRAG_MIN_MOVE = 30  // px — below this the card never moves (pure tap zone)
 
 export default function SwipeCard({ item, onSwipe, active }) {
   const cardRef = useRef(null)
   const startPos = useRef({ x: 0, y: 0 })
-  const hasMoved = useRef(false)
   const isDraggingRef = useRef(false)
+  const hasMoved = useRef(false)       // true once finger moves > 30 px
+  const isLeavingRef = useRef(false)   // true once a swipe is committed
   const currentOffset = useRef({ x: 0, y: 0 })
+
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [dragging, setDragging] = useState(false)
   const [leaving, setLeaving] = useState(null)
   const [flipped, setFlipped] = useState(false)
+
+  // ── Drag handlers (swipe detection only) ──────────────────────────
 
   function handleStart(e) {
     if (!active) return
@@ -33,17 +37,16 @@ export default function SwipeCard({ item, onSwipe, active }) {
     const dy = point.clientY - startPos.current.y
     const dist = Math.sqrt(dx * dx + dy * dy)
 
-    if (dist > TAP_MAX_MOVE) {
+    // Always keep position ref up to date
+    currentOffset.current = { x: dx, y: dy }
+
+    if (dist > DRAG_MIN_MOVE) {
+      // Confirmed drag — now show visual movement
       hasMoved.current = true
       if (flipped) setFlipped(false)
-    }
-
-    // Only visually move the card once we've confirmed it's a real drag.
-    // This prevents any wibble/jitter on taps.
-    if (hasMoved.current) {
-      currentOffset.current = { x: dx, y: dy }
       setOffset({ x: dx, y: dy })
     }
+    // Below threshold: card stays perfectly still (no wibble)
   }
 
   function handleEnd() {
@@ -54,26 +57,38 @@ export default function SwipeCard({ item, onSwipe, active }) {
     const ox = currentOffset.current.x
 
     if (Math.abs(ox) > SWIPE_THRESHOLD) {
-      // Genuine swipe
+      // Genuine swipe — commit before the browser can fire a click
+      isLeavingRef.current = true
       const direction = ox > 0 ? 'right' : 'left'
       setLeaving(direction)
       setTimeout(() => onSwipe(direction), 300)
-    } else if (hasMoved.current) {
-      // Drag short of threshold — snap back
+    } else {
+      // Snap back (covers both taps and short drags)
       setOffset({ x: 0, y: 0 })
       currentOffset.current = { x: 0, y: 0 }
-    } else {
-      // Tap — flip the card
-      setFlipped(f => !f)
     }
   }
+
+  // ── Tap = flip (handled by browser's native click detection) ───────
+
+  function handleClick() {
+    if (!active) return
+    if (isLeavingRef.current) return  // card is flying off
+    if (hasMoved.current) return      // was a drag, not a tap
+    setFlipped(f => !f)
+  }
+
+  // ── Button swipe ──────────────────────────────────────────────────
 
   function swipeVia(direction) {
     if (!active) return
     setFlipped(false)
+    isLeavingRef.current = true
     setLeaving(direction)
     setTimeout(() => onSwipe(direction), 300)
   }
+
+  // ── Render ────────────────────────────────────────────────────────
 
   const rotation = offset.x * ROTATION_FACTOR
   const cardStyle = leaving
@@ -96,6 +111,7 @@ export default function SwipeCard({ item, onSwipe, active }) {
         ref={cardRef}
         className={`swipe-card ${active ? 'active' : ''}`}
         style={cardStyle}
+        onClick={handleClick}
         onMouseDown={handleStart}
         onMouseMove={handleMove}
         onMouseUp={handleEnd}
@@ -115,7 +131,7 @@ export default function SwipeCard({ item, onSwipe, active }) {
         {/* ── Flip container ── */}
         <div className={`card-flip-inner ${flipped ? 'is-flipped' : ''}`}>
 
-          {/* FRONT — poster + title bar */}
+          {/* FRONT */}
           <div className="card-face card-front">
             {item.poster ? (
               <img src={item.poster} alt={item.title} className="card-poster" draggable={false} />
@@ -133,11 +149,10 @@ export default function SwipeCard({ item, onSwipe, active }) {
               {item.genre && <p className="card-genre">{item.genre}</p>}
               <h2 className="card-title">{item.title}</h2>
             </div>
-            {/* Tap-to-flip hint */}
             <div className="card-flip-hint">Tap for details</div>
           </div>
 
-          {/* BACK — details */}
+          {/* BACK */}
           <div className="card-face card-back">
             <div className="card-back-inner">
               {item.poster && (
