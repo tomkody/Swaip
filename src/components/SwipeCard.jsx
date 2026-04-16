@@ -3,7 +3,7 @@ import './SwipeCard.css'
 
 const SWIPE_THRESHOLD = 100
 const ROTATION_FACTOR = 0.15
-const TAP_MAX_MOVE = 8 // px — below this = tap, above = drag
+const TAP_MAX_MOVE = 14 // px — below this = tap, above = drag
 
 export default function SwipeCard({ item, onSwipe, active }) {
   const cardRef = useRef(null)
@@ -27,7 +27,7 @@ export default function SwipeCard({ item, onSwipe, active }) {
     const point = e.touches ? e.touches[0] : e
     const dx = point.clientX - startPos.current.x
     const dy = point.clientY - startPos.current.y
-    if (Math.abs(dx) > TAP_MAX_MOVE || Math.abs(dy) > TAP_MAX_MOVE) {
+    if (Math.sqrt(dx * dx + dy * dy) > TAP_MAX_MOVE) {
       hasMoved.current = true
       // Un-flip while dragging so overlays are visible
       if (flipped) setFlipped(false)
