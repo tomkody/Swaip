@@ -3,18 +3,22 @@ import './SwipeCard.css'
 
 const SWIPE_THRESHOLD = 100
 const ROTATION_FACTOR = 0.15
+const TAP_MAX_MOVE = 8 // px — below this = tap, above = drag
 
 export default function SwipeCard({ item, onSwipe, active }) {
   const cardRef = useRef(null)
   const startPos = useRef({ x: 0, y: 0 })
+  const hasMoved = useRef(false)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [dragging, setDragging] = useState(false)
   const [leaving, setLeaving] = useState(null)
+  const [flipped, setFlipped] = useState(false)
 
   function handleStart(e) {
     if (!active) return
     const point = e.touches ? e.touches[0] : e
     startPos.current = { x: point.clientX, y: point.clientY }
+    hasMoved.current = false
     setDragging(true)
   }
 
@@ -23,6 +27,11 @@ export default function SwipeCard({ item, onSwipe, active }) {
     const point = e.touches ? e.touches[0] : e
     const dx = point.clientX - startPos.current.x
     const dy = point.clientY - startPos.current.y
+    if (Math.abs(dx) > TAP_MAX_MOVE || Math.abs(dy) > TAP_MAX_MOVE) {
+      hasMoved.current = true
+      // Un-flip while dragging so overlays are visible
+      if (flipped) setFlipped(false)
+    }
     setOffset({ x: dx, y: dy })
   }
 
@@ -31,25 +40,29 @@ export default function SwipeCard({ item, onSwipe, active }) {
     setDragging(false)
 
     if (Math.abs(offset.x) > SWIPE_THRESHOLD) {
+      // Genuine swipe
       const direction = offset.x > 0 ? 'right' : 'left'
       setLeaving(direction)
       setTimeout(() => onSwipe(direction), 300)
+    } else if (!hasMoved.current) {
+      // Tap — toggle flip
+      setFlipped(f => !f)
+      setOffset({ x: 0, y: 0 })
     } else {
+      // Drag released short of threshold — snap back
       setOffset({ x: 0, y: 0 })
     }
   }
 
-  // Allow button-based swiping
   function swipeVia(direction) {
     if (!active) return
+    setFlipped(false)
     setLeaving(direction)
     setTimeout(() => onSwipe(direction), 300)
   }
 
   const rotation = offset.x * ROTATION_FACTOR
-  const opacity = Math.max(0, 1 - Math.abs(offset.x) / 400)
-
-  const style = leaving
+  const cardStyle = leaving
     ? {
         transform: `translateX(${leaving === 'right' ? 600 : -600}px) rotate(${leaving === 'right' ? 30 : -30}deg)`,
         opacity: 0,
@@ -60,15 +73,16 @@ export default function SwipeCard({ item, onSwipe, active }) {
         transition: dragging ? 'none' : 'transform 0.3s ease',
       }
 
-  const rightIndicatorOpacity = Math.max(0, Math.min(1, offset.x / SWIPE_THRESHOLD))
-  const leftIndicatorOpacity = Math.max(0, Math.min(1, -offset.x / SWIPE_THRESHOLD))
+  // Overlay opacity tied directly to drag distance
+  const yesOpacity = Math.max(0, Math.min(1, offset.x / SWIPE_THRESHOLD))
+  const nopeOpacity = Math.max(0, Math.min(1, -offset.x / SWIPE_THRESHOLD))
 
   return (
     <div className="swipe-card-wrapper">
       <div
         ref={cardRef}
         className={`swipe-card ${active ? 'active' : ''}`}
-        style={style}
+        style={cardStyle}
         onMouseDown={handleStart}
         onMouseMove={handleMove}
         onMouseUp={handleEnd}
@@ -77,30 +91,74 @@ export default function SwipeCard({ item, onSwipe, active }) {
         onTouchMove={handleMove}
         onTouchEnd={handleEnd}
       >
-        <div className="swipe-indicator like" style={{ opacity: rightIndicatorOpacity }}>
-          YES
+        {/* ── Stamp overlays ── */}
+        <div className="swipe-stamp stamp-yes" style={{ opacity: yesOpacity }}>
+          <span>❤️</span> YES
         </div>
-        <div className="swipe-indicator nope" style={{ opacity: leftIndicatorOpacity }}>
-          NOPE
+        <div className="swipe-stamp stamp-nope" style={{ opacity: nopeOpacity }}>
+          NOPE <span>✕</span>
         </div>
 
-        {item.poster ? (
-          <img src={item.poster} alt={item.title} className="card-poster" draggable={false} />
-        ) : (
-          <div className="card-poster card-poster-placeholder">
-            <span className="placeholder-icon">{item.emoji || '🎬'}</span>
-          </div>
-        )}
+        {/* ── Flip container ── */}
+        <div className={`card-flip-inner ${flipped ? 'is-flipped' : ''}`}>
 
-        <div className="card-info">
-          <div className="card-meta">
-            {item.year && <span className="card-year">{item.year}</span>}
-            {item.rating && <span className="card-rating">★ {item.rating}</span>}
-            {item.runtime && <span className="card-runtime">{item.runtime}</span>}
+          {/* FRONT — poster + title bar */}
+          <div className="card-face card-front">
+            {item.poster ? (
+              <img src={item.poster} alt={item.title} className="card-poster" draggable={false} />
+            ) : (
+              <div className="card-poster card-poster-placeholder">
+                <span className="placeholder-icon">{item.emoji || '🎬'}</span>
+              </div>
+            )}
+            <div className="card-info">
+              <div className="card-meta">
+                {item.year && <span className="card-year">{item.year}</span>}
+                {item.rating && <span className="card-rating">★ {item.rating}</span>}
+                {item.runtime && <span className="card-runtime">{item.runtime}</span>}
+              </div>
+              {item.genre && <p className="card-genre">{item.genre}</p>}
+              <h2 className="card-title">{item.title}</h2>
+            </div>
+            {/* Tap-to-flip hint */}
+            <div className="card-flip-hint">Tap for details</div>
           </div>
-          {item.genre && <p className="card-genre">{item.genre}</p>}
-          <h2 className="card-title">{item.title}</h2>
-          <p className="card-overview">{item.overview}</p>
+
+          {/* BACK — details */}
+          <div className="card-face card-back">
+            <div className="card-back-inner">
+              {/* Blurred poster as bg */}
+              {item.poster && (
+                <img src={item.poster} alt="" className="card-back-bg" draggable={false} />
+              )}
+              <div className="card-back-content">
+                <h2 className="card-back-title">{item.title}</h2>
+
+                {item.rating && (
+                  <div className="card-back-rating">
+                    <span className="card-back-star">⭐</span>
+                    <span className="card-back-score">{item.rating}</span>
+                    <span className="card-back-max"> / 10</span>
+                  </div>
+                )}
+
+                <div className="card-back-tags">
+                  {item.year && <span className="card-back-tag">{item.year}</span>}
+                  {item.runtime && <span className="card-back-tag">{item.runtime}</span>}
+                  {item.genre && item.genre.split(' · ').map(g => (
+                    <span key={g} className="card-back-tag">{g}</span>
+                  ))}
+                </div>
+
+                <p className="card-back-overview">
+                  {item.overview || 'No description available.'}
+                </p>
+
+                <p className="card-back-hint">Tap to flip back</p>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -122,6 +180,7 @@ export default function SwipeCard({ item, onSwipe, active }) {
       {active && (
         <div className="swipe-hint">
           <span>← Nope</span>
+          <span className="swipe-hint-tap">↕ tap to flip</span>
           <span>Like →</span>
         </div>
       )}

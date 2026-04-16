@@ -1,3 +1,4 @@
+/* ── Wrapper ─────────────────────────────────────────────────────── */
 .swipe-card-wrapper {
   display: flex;
   flex-direction: column;
@@ -8,63 +9,99 @@
   margin: 0 auto;
 }
 
+/* ── Card shell (draggable, holds the flip) ──────────────────────── */
 .swipe-card {
   position: relative;
   width: 100%;
   height: min(480px, calc(100dvh - 260px));
-  display: flex;
-  flex-direction: column;
   border-radius: var(--radius);
-  overflow: hidden;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
   user-select: none;
   touch-action: none;
   cursor: grab;
   will-change: transform;
-  backdrop-filter: blur(12px);
+  /* perspective lives here so 3D works on the child */
+  perspective: 1000px;
 }
 
-.swipe-card.active:active {
-  cursor: grabbing;
-}
+.swipe-card.active:active { cursor: grabbing; }
 
-.swipe-indicator {
+/* ── Stamp overlays (YES / NOPE) ─────────────────────────────────── */
+.swipe-stamp {
   position: absolute;
-  top: 24px;
-  z-index: 10;
-  font-size: 24px;
-  font-weight: 800;
-  padding: 8px 20px;
-  border-radius: var(--radius-sm);
+  top: 28px;
+  z-index: 20;
+  font-size: 22px;
+  font-weight: 900;
+  padding: 8px 18px;
+  border-radius: 6px;
   border: 3px solid;
-  letter-spacing: 3px;
+  letter-spacing: 2px;
   pointer-events: none;
   opacity: 0;
-  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
 }
 
-.swipe-indicator.like {
-  right: 16px;
-  color: var(--success);
-  border-color: var(--success);
-  background: rgba(74, 222, 128, 0.1);
-  transform: rotate(12deg);
-}
-
-.swipe-indicator.nope {
-  left: 16px;
-  color: var(--danger);
-  border-color: var(--danger);
-  background: rgba(255, 92, 106, 0.1);
+.stamp-yes {
+  left: 18px;
+  color: #4ade80;
+  border-color: #4ade80;
+  background: rgba(74, 222, 128, 0.12);
   transform: rotate(-12deg);
+  text-shadow: 0 0 20px rgba(74, 222, 128, 0.4);
+  box-shadow: 0 0 24px rgba(74, 222, 128, 0.2);
+}
+
+.stamp-nope {
+  right: 18px;
+  color: #ff5c6a;
+  border-color: #ff5c6a;
+  background: rgba(255, 92, 106, 0.12);
+  transform: rotate(12deg);
+  text-shadow: 0 0 20px rgba(255, 92, 106, 0.4);
+  box-shadow: 0 0 24px rgba(255, 92, 106, 0.2);
+}
+
+/* ── 3D Flip container ───────────────────────────────────────────── */
+.card-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--radius);
+}
+
+.card-flip-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+
+/* ── Shared face styles ──────────────────────────────────────────── */
+.card-face {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── FRONT face ──────────────────────────────────────────────────── */
+.card-front {
+  z-index: 2;
 }
 
 .card-poster {
   width: 100%;
-  height: 0;
   flex: 1;
+  min-height: 0;
   object-fit: cover;
   display: block;
   pointer-events: none;
@@ -79,15 +116,13 @@
   min-height: 0;
 }
 
-.placeholder-icon {
-  font-size: 64px;
-}
+.placeholder-icon { font-size: 64px; }
 
 .card-info {
-  padding: 14px 18px;
+  padding: 14px 18px 10px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
   flex-shrink: 0;
 }
 
@@ -99,14 +134,8 @@
   font-weight: 500;
 }
 
-.card-rating {
-  color: var(--accent);
-  font-weight: 600;
-}
-
-.card-runtime {
-  color: var(--text-muted);
-}
+.card-rating  { color: var(--accent); font-weight: 600; }
+.card-runtime { color: var(--text-muted); }
 
 .card-title {
   font-size: 20px;
@@ -139,7 +168,128 @@
   overflow: hidden;
 }
 
-/* Swipe buttons */
+/* Tap-to-flip hint on front */
+.card-flip-hint {
+  position: absolute;
+  bottom: 68px;
+  right: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.45);
+  background: rgba(0,0,0,0.28);
+  padding: 3px 8px;
+  border-radius: 99px;
+  pointer-events: none;
+  letter-spacing: 0.2px;
+}
+
+/* ── BACK face ───────────────────────────────────────────────────── */
+.card-back {
+  transform: rotateY(180deg);
+  background: #0d0b1a;
+}
+
+.card-back-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Blurred poster as background */
+.card-back-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.18;
+  filter: blur(12px) saturate(1.4);
+  pointer-events: none;
+}
+
+.card-back-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 28px 22px 20px;
+  height: 100%;
+  justify-content: center;
+}
+
+.card-back-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+  line-height: 1.2;
+  letter-spacing: -0.4px;
+}
+
+/* IMDb-style rating */
+.card-back-rating {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.card-back-star { font-size: 22px; }
+
+.card-back-score {
+  font-size: 36px;
+  font-weight: 900;
+  color: #f5c842;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.card-back-max {
+  font-size: 14px;
+  color: rgba(255,255,255,0.45);
+  font-weight: 500;
+}
+
+/* Genre / year / runtime tags */
+.card-back-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.card-back-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 0.2px;
+}
+
+.card-back-overview {
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.72);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-back-hint {
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+  margin: 0;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+/* ── Swipe buttons ───────────────────────────────────────────────── */
 .swipe-buttons {
   display: flex;
   gap: 20px;
@@ -160,43 +310,35 @@
   backdrop-filter: blur(12px);
 }
 
-.swipe-btn:active {
-  transform: scale(0.88);
-}
+.swipe-btn:active { transform: scale(0.88); }
 
-.nope-btn {
-  color: var(--danger);
-}
-
+.nope-btn { color: var(--danger); }
 .nope-btn:hover {
   background: rgba(255, 92, 106, 0.12);
   border-color: var(--danger);
   box-shadow: 0 0 20px rgba(255, 92, 106, 0.15);
 }
 
-.like-btn {
-  color: var(--success);
-}
-
+.like-btn { color: var(--success); }
 .like-btn:hover {
   background: rgba(74, 222, 128, 0.12);
   border-color: var(--success);
   box-shadow: 0 0 20px rgba(74, 222, 128, 0.15);
 }
 
-/* Swipe hint */
+/* ── Swipe hint bar ──────────────────────────────────────────────── */
 .swipe-hint {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 24px;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 260px;
   font-size: 12px;
   color: var(--text-muted);
-  opacity: 0.6;
+  opacity: 0.55;
 }
 
-.swipe-hint span {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.swipe-hint-tap {
+  font-size: 11px;
+  opacity: 0.8;
 }
