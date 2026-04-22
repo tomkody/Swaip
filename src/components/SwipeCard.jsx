@@ -207,7 +207,6 @@ export default function SwipeCard({ item, onSwipe, active }) {
       {active && (
         <div className="swipe-hint">
           <span>← Nope</span>
-          <span className="swipe-hint-tap">↕ tap to flip</span>
           <span>Like →</span>
         </div>
       )}

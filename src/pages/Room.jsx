@@ -292,28 +292,18 @@ export default function Room() {
   return (
     <div className="room">
       <div className="room-header">
+        <div className="room-header-side" />
         <Link to="/" className="room-home-link" aria-label="Home">
-          <div className="room-logo-mark">S</div>
+          <span className="room-logo-text">Swaip</span>
         </Link>
-        <span className="room-genre">
-          {room.type === 'series' ? '📺' : '🎬'}
-          {(() => {
-            const { platforms, genres } = parseRoomFilters(room.platforms ?? room.topic_id)
-            const parts = [
-              ...platforms.map(id => PLATFORMS.find(p => p.id === id)?.name).filter(Boolean),
-              ...genres,
-            ]
-            return parts.length ? ' ' + parts.join(' · ') : ' Top Rated'
-          })()}
-        </span>
-        <span className="room-progress">
-          {currentIndex + 1} / {movies.length}
-        </span>
-        {matches.length > 0 && (
-          <span className="room-matches">
-            {matches.length} match{matches.length !== 1 ? 'es' : ''}
-          </span>
-        )}
+        <div className="room-header-side room-header-right">
+          {matches.length > 0 && (
+            <span className="room-matches">
+              {matches.length} match{matches.length !== 1 ? 'es' : ''}
+            </span>
+          )}
+          <span className="room-progress">{currentIndex + 1} / {movies.length}</span>
+        </div>
       </div>
 
       <div className="room-cards">
