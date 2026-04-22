@@ -58,10 +58,10 @@
   right: 18px;
   color: #ff5c6a;
   border-color: #ff5c6a;
-  background: rgba(82, 215, 176, 0.12);
+  background: rgba(255, 92, 106, 0.12);
   transform: rotate(12deg);
-  text-shadow: 0 0 20px rgba(82, 215, 176, 0.32);
-  box-shadow: 0 0 24px rgba(82, 215, 176, 0.2);
+  text-shadow: 0 0 20px rgba(255, 92, 106, 0.4);
+  box-shadow: 0 0 24px rgba(255, 92, 106, 0.2);
 }
 
 /* ── 3D Flip container ───────────────────────────────────────────── */
@@ -111,7 +111,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(82, 215, 176, 0.05) 0%, rgba(255, 200, 78, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(255, 92, 106, 0.05) 0%, rgba(255, 200, 78, 0.05) 100%);
   flex: 1;
   min-height: 0;
 }
@@ -310,9 +310,9 @@
 
 .nope-btn { color: var(--danger); }
 .nope-btn:hover {
-  background: rgba(82, 215, 176, 0.12);
+  background: rgba(255, 92, 106, 0.12);
   border-color: var(--danger);
-  box-shadow: 0 0 20px rgba(82, 215, 176, 0.15);
+  box-shadow: 0 0 20px rgba(255, 92, 106, 0.15);
 }
 
 .like-btn { color: var(--success); }

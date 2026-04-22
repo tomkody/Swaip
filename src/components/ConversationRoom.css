@@ -28,10 +28,10 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--primary);
-  background: rgba(82, 215, 176, 0.1);
+  background: rgba(255, 92, 106, 0.1);
   padding: 4px 14px;
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(82, 215, 176, 0.2);
+  border: 1px solid rgba(255, 92, 106, 0.2);
 }
 
 .subtopic-section {
@@ -73,9 +73,9 @@
 
 .subtopic-chip.selected {
   border-color: var(--primary);
-  background: rgba(82, 215, 176, 0.1);
+  background: rgba(255, 92, 106, 0.1);
   color: var(--primary);
-  box-shadow: 0 0 16px rgba(82, 215, 176, 0.1);
+  box-shadow: 0 0 16px rgba(255, 92, 106, 0.1);
 }
 
 .subtopic-chip .check {
@@ -268,8 +268,8 @@
   font-size: 11px;
   font-weight: 800;
   color: var(--primary);
-  background: rgba(82, 215, 176, 0.1);
-  border: 1px solid rgba(82, 215, 176, 0.2);
+  background: rgba(255, 92, 106, 0.1);
+  border: 1px solid rgba(255, 92, 106, 0.2);
   border-radius: 50%;
   width: 20px;
   height: 20px;
@@ -281,9 +281,9 @@
 }
 
 .result-chip.my-pick {
-  background: rgba(82, 215, 176, 0.08);
+  background: rgba(255, 92, 106, 0.08);
   color: var(--primary);
-  border: 1px solid rgba(82, 215, 176, 0.2);
+  border: 1px solid rgba(255, 92, 106, 0.2);
 }
 
 /* Reveal section */

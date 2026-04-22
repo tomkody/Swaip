@@ -218,7 +218,7 @@
 }
 
 .drawer-remove:hover {
-  background: rgba(82, 215, 176, 0.1);
-  border-color: rgba(82, 215, 176, 0.32);
+  background: rgba(255, 92, 106, 0.1);
+  border-color: rgba(255, 92, 106, 0.4);
   color: var(--danger);
 }

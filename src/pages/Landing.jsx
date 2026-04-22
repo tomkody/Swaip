@@ -10,27 +10,6 @@ const STEPS = [
   { icon: '4', title: 'See your matches', desc: 'Instantly find out what you both agree on' },
 ]
 
-function LogoMark() {
-  return (
-    <svg className="logo-mark" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="56" height="56" rx="14" fill="url(#swaipGrad)" />
-      {/* Two swap arrows forming an S-like shape */}
-      {/* Top arrow: right-pointing */}
-      <path d="M18 20h14l-4-4" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M28 20l4 4" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-      {/* Bottom arrow: left-pointing */}
-      <path d="M38 36H24l4 4" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M28 36l-4-4" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <defs>
-        <linearGradient id="swaipGrad" x1="0" y1="0" x2="56" y2="56" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#52D7B0"/>
-          <stop offset="1" stopColor="#2BCF9B"/>
-        </linearGradient>
-      </defs>
-    </svg>
-  )
-}
-
 export default function Landing() {
   const navigate = useNavigate()
   const [showHow, setShowHow] = useState(false)
@@ -38,12 +17,15 @@ export default function Landing() {
 
   return (
     <div className="landing">
+      <div className="landing-bg-orb orb-1" />
+      <div className="landing-bg-orb orb-2" />
+
       <div className="landing-content">
         <header className="landing-header">
           <div className="landing-header-row">
             <div style={{ flex: 1 }} />
             <Link to="/" className="landing-logo-center" aria-label="Home">
-              <LogoMark />
+              <div className="logo-mark">S</div>
               <h1 className="logo-text">Swaip</h1>
             </Link>
             <div className="landing-header-actions">
@@ -66,38 +48,38 @@ export default function Landing() {
 
         <div className="category-grid">
           <button className="category-card" onClick={() => navigate('/create/movies')}>
+            <div className="card-glow movie-glow" />
             <span className="category-emoji">🍿</span>
             <span className="category-name">Movies</span>
             <span className="category-desc">Find your perfect film. Match, grab popcorn, and hit play.</span>
-            <span className="category-mode-badge">↔ Swipe</span>
           </button>
 
           <button className="category-card" onClick={() => navigate('/create/series')}>
+            <div className="card-glow series-glow" />
             <span className="category-emoji">📺</span>
             <span className="category-name">TV Series</span>
             <span className="category-desc">Your next shared binge-watch awaits. Match on top-rated shows.</span>
-            <span className="category-mode-badge">↔ Swipe</span>
           </button>
 
           <button className="category-card" onClick={() => navigate('/create/conversations')}>
+            <div className="card-glow conv-glow" />
             <span className="category-emoji">💬</span>
             <span className="category-name">Conversations</span>
             <span className="category-desc">Skip the small talk. Match on deep dives, fun debates, and fresh topics.</span>
-            <span className="category-mode-badge">☑ Pick</span>
           </button>
 
           <button className="category-card" onClick={() => navigate('/create/activities')}>
+            <div className="card-glow activity-glow" />
             <span className="category-emoji">🎯</span>
             <span className="category-name">Activities</span>
             <span className="category-desc">Couch or outdoors? Discover your next shared adventure.</span>
-            <span className="category-mode-badge">☑ Pick</span>
           </button>
 
           <button className="category-card category-card--food" onClick={() => navigate('/create/food')}>
+            <div className="card-glow food-glow" />
             <span className="category-emoji">🍽️</span>
             <span className="category-name">Food & Dining</span>
             <span className="category-desc">End the "what's for dinner?" debate. Match on cuisines or local spots.</span>
-            <span className="category-mode-badge">↔ Swipe</span>
           </button>
         </div>
 
