@@ -1,62 +1,95 @@
+/* ── Design tokens ───────────────────────────────────────────────── */
 :root {
-  --primary: #FF5C6A;
-  --primary-glow: rgba(255, 92, 106, 0.25);
-  --accent: #FFC84E;
-  --accent-glow: rgba(255, 200, 78, 0.2);
-  --success: #4ADE80;
-  --success-glow: rgba(74, 222, 128, 0.15);
-  --danger: #FF5C6A;
-  --bg: #0D0B1A;
-  --bg-card: rgba(255, 255, 255, 0.05);
-  --bg-card-hover: rgba(255, 255, 255, 0.09);
-  --bg-surface: rgba(255, 255, 255, 0.07);
-  --bg-glass: rgba(255, 255, 255, 0.05);
-  --text: #F0EDF6;
-  --text-muted: #9B95A8;
-  --border: rgba(255, 255, 255, 0.09);
-  --border-hover: rgba(255, 255, 255, 0.18);
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 40px var(--primary-glow);
-  --radius: 20px;
-  --radius-sm: 12px;
-  --radius-pill: 50px;
-  --gradient-warm: linear-gradient(135deg, #F74F5E 0%, #F5B83A 100%);
-  --gradient-bg: radial-gradient(ellipse at 50% 0%, rgba(255, 92, 106, 0.07) 0%, transparent 60%);
+  /* Brand palette */
+  --brand-ink:    #171C22;
+  --brand-mint:   #52D7B0;
+  --brand-bg:     #F7F7F8;
+  --brand-surface:#FFFFFF;
+  --brand-border: #E8EAED;
+  --brand-dark:   #0F141A;
+  --mint-soft:    #E9FBF5;
+  --mint-strong:  #2BCF9B;
+
+  /* Semantic mappings — used throughout all components */
+  --primary:       var(--brand-mint);
+  --primary-glow:  rgba(82, 215, 176, 0.22);
+  --accent:        var(--brand-mint);
+  --accent-glow:   rgba(82, 215, 176, 0.15);
+  --success:       #34C88A;
+  --success-glow:  rgba(52, 200, 138, 0.15);
+  --danger:        #EF4444;
+
+  /* Surface system */
+  --bg:            var(--brand-bg);
+  --bg-card:       var(--brand-surface);
+  --bg-card-hover: #F0F3F7;
+  --bg-surface:    var(--brand-surface);
+  --bg-glass:      rgba(255, 255, 255, 0.9);
+
+  /* Text */
+  --text:          var(--brand-ink);
+  --text-muted:    #6B7280;
+  --text-soft:     #98A2B3;
+
+  /* Borders */
+  --border:        var(--brand-border);
+  --border-hover:  #C5CBD4;
+
+  /* Shadows */
+  --shadow:        0 4px 16px rgba(15, 20, 26, 0.06);
+  --shadow-soft:   0 8px 30px rgba(15, 20, 26, 0.07);
+  --shadow-card:   0 2px 8px  rgba(15, 20, 26, 0.04);
+  --shadow-glow:   0 0 24px rgba(82, 215, 176, 0.2);
+
+  /* Radii */
+  --radius:        16px;
+  --radius-sm:     10px;
+  --radius-md:     16px;
+  --radius-lg:     24px;
+  --radius-pill:   50px;
+
+  /* Gradients */
+  --gradient-warm: linear-gradient(135deg, var(--brand-mint) 0%, var(--mint-strong) 100%);
+  --gradient-bg:   none;
 }
 
-[data-theme="light"] {
-  --bg: #F2EFF9;
-  --bg-card: rgba(255, 255, 255, 0.72);
-  --bg-card-hover: rgba(255, 255, 255, 0.9);
-  --bg-surface: rgba(0, 0, 0, 0.05);
-  --bg-glass: rgba(255, 255, 255, 0.6);
-  --text: #1A1529;
-  --text-muted: #6B6480;
-  --border: rgba(0, 0, 0, 0.09);
-  --border-hover: rgba(0, 0, 0, 0.18);
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  --gradient-bg: radial-gradient(ellipse at 50% 0%, rgba(255, 92, 106, 0.06) 0%, transparent 60%);
+/* ── Dark mode ───────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg:            #0F141A;
+  --bg-card:       #1C2330;
+  --bg-card-hover: #232D3D;
+  --bg-surface:    #1C2330;
+  --bg-glass:      rgba(28, 35, 48, 0.9);
+
+  --text:          #EEF2F7;
+  --text-muted:    #8A97A8;
+  --text-soft:     #5A6678;
+
+  --border:        rgba(255, 255, 255, 0.08);
+  --border-hover:  rgba(255, 255, 255, 0.16);
+
+  --shadow:        0 4px 24px rgba(0, 0, 0, 0.3);
+  --shadow-soft:   0 8px 32px rgba(0, 0, 0, 0.25);
+  --shadow-card:   0 2px 12px rgba(0, 0, 0, 0.2);
+
+  --brand-bg:      #0F141A;
+  --brand-surface: #1C2330;
+  --brand-border:  rgba(255, 255, 255, 0.08);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* ── Reset ───────────────────────────────────────────────────────── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100dvh;
   overflow-x: hidden;
   -webkit-tap-highlight-color: transparent;
-  background-image: var(--gradient-bg);
-  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
 }
 
 #root {
@@ -72,34 +105,30 @@ button {
   outline: none;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+a { color: inherit; text-decoration: none; }
 
-/* Shared button styles */
+/* ── Shared buttons ──────────────────────────────────────────────── */
 .btn {
-  padding: 16px 28px;
+  padding: 14px 24px;
   border-radius: var(--radius-sm);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   width: 100%;
-  transition: all 0.25s ease;
-  letter-spacing: 0.02em;
+  transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease;
+  letter-spacing: 0.01em;
 }
 
-.btn:active {
-  transform: scale(0.97);
-}
+.btn:active { transform: scale(0.97); }
 
 .btn-primary {
-  background: var(--gradient-warm);
-  color: #0D0B1A;
-  box-shadow: 0 4px 20px var(--primary-glow);
+  background: var(--brand-mint);
+  color: var(--brand-ink);
+  box-shadow: 0 4px 16px rgba(82, 215, 176, 0.3);
 }
 
 .btn-primary:hover {
-  box-shadow: 0 6px 30px rgba(255, 92, 106, 0.4);
+  background: var(--mint-strong);
+  box-shadow: 0 6px 24px rgba(82, 215, 176, 0.38);
   transform: translateY(-1px);
 }
 
@@ -111,33 +140,31 @@ a {
 }
 
 .btn-secondary {
-  background: var(--bg-glass);
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(12px);
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1.5px solid var(--border);
 }
 
 .btn-secondary:hover {
-  color: var(--text);
   border-color: var(--border-hover);
   background: var(--bg-card-hover);
 }
 
-/* Shared back button */
+/* ── Back button ─────────────────────────────────────────────────── */
 .back-btn {
-  background: var(--bg-glass);
+  background: var(--bg-card);
   color: var(--text-muted);
   padding: 10px;
   margin: 0 0 20px -4px;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
-  transition: all 0.2s;
-  backdrop-filter: blur(8px);
+  transition: all 0.18s;
   border: 1px solid var(--border);
 }
 
 .back-btn:hover {
   color: var(--text);
   border-color: var(--border-hover);
+  background: var(--bg-card-hover);
 }

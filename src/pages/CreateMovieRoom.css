@@ -15,7 +15,7 @@
 .movie-hero-icon {
   font-size: 56px;
   margin-bottom: 12px;
-  filter: drop-shadow(0 4px 12px rgba(255, 92, 106, 0.3));
+  filter: drop-shadow(0 4px 12px rgba(82, 215, 176, 0.3));
 }
 
 .create-movie h1 {
@@ -61,7 +61,7 @@
 }
 
 .preview-card:nth-child(1) { transform: rotate(-6deg); }
-.preview-card:nth-child(2) { transform: translateY(-8px); box-shadow: 0 8px 24px rgba(255, 92, 106, 0.15); }
+.preview-card:nth-child(2) { transform: translateY(-8px); box-shadow: 0 8px 24px rgba(82, 215, 176, 0.15); }
 .preview-card:nth-child(3) { transform: rotate(6deg); }
 
 .create-movie .create-btn {
