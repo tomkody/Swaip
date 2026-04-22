@@ -283,7 +283,7 @@ export default function Room() {
     const matchesToShow = (doneMatches !== null && doneMatches.length >= matches.length)
       ? doneMatches
       : matches
-    return <RankingView matches={matchesToShow} room={room} movies={movies} onDone={() => navigate('/')} />
+    return <RankingView matches={matchesToShow} liked={liked} room={room} movies={movies} onDone={() => navigate('/')} />
   }
 
   // Movie mode — swipe UI

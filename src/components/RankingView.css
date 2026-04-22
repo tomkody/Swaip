@@ -613,3 +613,41 @@
 
 .rv-done-btn { width: 100%; margin-top: 16px; }
 .rv-empty { color: var(--text-muted); font-size: 14px; text-align: center; }
+
+/* ── My Selection section ─────────────────────────────────────────── */
+.rv-my-selection {
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.rv-selection-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: -8px 0 12px;
+  line-height: 1.5;
+}
+
+/* Non-interactive row (no hover state needed) */
+.rv-selection-item {
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Highlight rows that are also mutual matches */
+.rv-selection-matched {
+  border-color: rgba(74, 222, 128, 0.3) !important;
+  background: rgba(74, 222, 128, 0.05) !important;
+}
+
+.rv-selection-match-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--success);
+  background: rgba(74, 222, 128, 0.12);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+  white-space: nowrap;
+}

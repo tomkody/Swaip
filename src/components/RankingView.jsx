@@ -3,7 +3,7 @@ import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRo
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import './RankingView.css'
 
-export default function RankingView({ matches: initialMatches, room, movies = [], onDone }) {
+export default function RankingView({ matches: initialMatches, liked = [], room, movies = [], onDone }) {
   const userToken = useRef(getUserToken())
   const [matches, setMatches] = useState(initialMatches)
   const [top3, setTop3] = useState([])
@@ -258,10 +258,10 @@ export default function RankingView({ matches: initialMatches, room, movies = []
         ))}
       </div>
 
-      {/* All matches */}
+      {/* Mutual matches */}
       <div className="rv-match-list">
-        <p className="rv-label">All Matches ({matches.length})</p>
-        {matches.length === 0 && <p className="rv-empty">No matches yet — submit to skip.</p>}
+        <p className="rv-label">🤝 Mutual Matches ({matches.length})</p>
+        {matches.length === 0 && <p className="rv-empty">No matches yet — still waiting for your partner.</p>}
         {matches.map(m => {
           const inTop = isInTop3(m.id)
           const rank = rankOf(m.id)
@@ -286,6 +286,29 @@ export default function RankingView({ matches: initialMatches, room, movies = []
           )
         })}
       </div>
+
+      {/* My full selection — all movies I swiped right on */}
+      {liked.length > 0 && (
+        <div className="rv-match-list rv-my-selection">
+          <p className="rv-label">👤 My Selection ({liked.length})</p>
+          <p className="rv-selection-note">Everything you liked — waiting to see what your partner picked too.</p>
+          {liked.map(m => {
+            const isMatch = matches.some(x => x.id === m.id)
+            return (
+              <div key={m.id} className={`rv-match-item rv-selection-item ${isMatch ? 'rv-selection-matched' : ''}`}>
+                {m.poster
+                  ? <img src={m.poster} alt={m.title} className="rv-match-thumb" />
+                  : <div className="rv-match-thumb rv-match-thumb-empty">{emoji}</div>}
+                <div className="rv-match-info">
+                  <strong>{m.title}</strong>
+                  <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                </div>
+                {isMatch && <span className="rv-selection-match-badge">✓ Match</span>}
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       <div className="rv-footer">
         <button className="btn btn-primary rv-submit" onClick={handleSubmit} disabled={submitting}>
