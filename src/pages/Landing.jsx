@@ -3,34 +3,6 @@ import { useNavigate, Link } from 'react-router-dom'
 import SavedMatchesDrawer from '../components/SavedMatchesDrawer'
 import './Landing.css'
 
-/* ── Swaip logo mark (yin-yang S + arrow) ────────────────────────── */
-function LogoMark() {
-  return (
-    <svg className="logo-mark" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="swaipGrad" x1="2" y1="28" x2="54" y2="28" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#F74F5E" />
-          <stop offset="1" stopColor="#F5B83A" />
-        </linearGradient>
-      </defs>
-      {/* Dark charcoal top half — CW over top, then S-curve boundary */}
-      <path
-        d="M 2 28 A 26 26 0 0 1 54 28 A 13 13 0 0 1 28 28 A 13 13 0 0 0 2 28 Z"
-        fill="#1D1D1F"
-      />
-      {/* Coral-to-amber gradient bottom half */}
-      <path
-        d="M 2 28 A 26 26 0 0 0 54 28 A 13 13 0 0 0 28 28 A 13 13 0 0 1 2 28 Z"
-        fill="url(#swaipGrad)"
-      />
-      {/* White right-pointing arrow */}
-      <path
-        d="M 14 25 L 30 25 L 30 21 L 42 28 L 30 35 L 30 31 L 14 31 Z"
-        fill="white"
-      />
-    </svg>
-  )
-}
 
 const STEPS = [
   { icon: '1', title: 'Pick a mode', desc: 'Movies, Series, Food, Conversations, or Activities' },
@@ -54,7 +26,7 @@ export default function Landing() {
           <div className="landing-header-row">
             <div style={{ flex: 1 }} />
             <Link to="/" className="landing-logo-center" aria-label="Home">
-              <LogoMark />
+              <img src="/logo.png" alt="Swaip" className="logo-mark" />
               <h1 className="logo-text">Swaip</h1>
             </Link>
             <div className="landing-header-actions">
