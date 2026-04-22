@@ -1,0 +1,25 @@
+{
+  "name": "Swaip — Decide Together",
+  "short_name": "Swaip",
+  "description": "Stop debating what to watch or do. Swipe together, match instantly.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0D0B1A",
+  "theme_color": "#0D0B1A",
+  "categories": ["entertainment", "lifestyle", "social"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
