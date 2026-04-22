@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createMovieRoom, getUserToken } from '../lib/room'
 import { PLATFORMS } from '../lib/platforms'
@@ -18,6 +18,26 @@ export default function CreateMovieRoom() {
   const [genres, setGenres] = useState([])
   const [platformOpen, setPlatformOpen] = useState(false)
   const [genreOpen, setGenreOpen] = useState(false)
+  const platformRef = useRef(null)
+  const genreRef = useRef(null)
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (platformOpen && platformRef.current && !platformRef.current.contains(e.target)) {
+        setPlatformOpen(false)
+      }
+      if (genreOpen && genreRef.current && !genreRef.current.contains(e.target)) {
+        setGenreOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [platformOpen, genreOpen])
 
   function togglePlatform(id) {
     setPlatforms(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])
@@ -65,7 +85,7 @@ export default function CreateMovieRoom() {
         </p>
 
         {/* Streaming Platforms */}
-        <div className="filter-section">
+        <div className="filter-section" ref={platformRef}>
           <button className="filter-header" onClick={() => setPlatformOpen(o => !o)}>
             <span className="filter-header-left">
               <span className="filter-icon">📡</span>
@@ -111,7 +131,7 @@ export default function CreateMovieRoom() {
         </div>
 
         {/* Genres */}
-        <div className="filter-section">
+        <div className="filter-section" ref={genreRef}>
           <button className="filter-header" onClick={() => setGenreOpen(o => !o)}>
             <span className="filter-header-left">
               <span className="filter-icon">🎭</span>

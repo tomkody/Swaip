@@ -1,9 +1,9 @@
 export const PLATFORMS = [
   { id: 'netflix',   name: 'Netflix',      color: '#E50914', bg: 'rgba(229,9,20,0.15)',   border: 'rgba(229,9,20,0.4)' },
   { id: 'disney',    name: 'Disney+',      color: '#0063E5', bg: 'rgba(0,99,229,0.15)',   border: 'rgba(0,99,229,0.4)' },
-  { id: 'max',       name: 'Max',          color: '#731CF8', bg: 'rgba(115,28,248,0.15)', border: 'rgba(115,28,248,0.4)' },
+  { id: 'max',       name: 'HBO Max',       color: '#731CF8', bg: 'rgba(115,28,248,0.15)', border: 'rgba(115,28,248,0.4)' },
   { id: 'prime',     name: 'Prime Video',  color: '#00A8E0', bg: 'rgba(0,168,224,0.15)',  border: 'rgba(0,168,224,0.4)' },
-  { id: 'apple',     name: 'Apple TV+',    color: '#c8c8c8', bg: 'rgba(200,200,200,0.1)', border: 'rgba(200,200,200,0.3)' },
+  { id: 'apple',     name: 'Apple TV+',    color: '#ffffff', bg: 'rgba(0,0,0,0.85)',      border: 'rgba(0,0,0,0.9)' },
   { id: 'paramount', name: 'Paramount+',   color: '#0064FF', bg: 'rgba(0,100,255,0.15)',  border: 'rgba(0,100,255,0.4)' },
 ]
 
