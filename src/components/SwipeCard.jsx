@@ -148,8 +148,8 @@ export default function SwipeCard({ item, onSwipe, active }) {
               </div>
               {item.genre && <p className="card-genre">{item.genre}</p>}
               <h2 className="card-title">{item.title}</h2>
+              <p className="card-flip-hint">Tap for details</p>
             </div>
-            <div className="card-flip-hint">Tap for details</div>
           </div>
 
           {/* BACK */}
