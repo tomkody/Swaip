@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import SavedMatchesDrawer from '../components/SavedMatchesDrawer'
 import './Landing.css'
 
@@ -24,10 +24,10 @@ export default function Landing() {
         <header className="landing-header">
           <div className="landing-header-row">
             <div style={{ flex: 1 }} />
-            <div className="landing-logo-center">
+            <Link to="/" className="landing-logo-center" aria-label="Home">
               <div className="logo-mark">S</div>
               <h1 className="logo-text">Swaip</h1>
-            </div>
+            </Link>
             <div className="landing-header-actions">
               <button
                 className="history-btn"

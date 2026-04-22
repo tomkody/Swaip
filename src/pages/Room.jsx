@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, markRoomActive, fetchRoomMatches } from '../lib/room'
 import { PLATFORMS } from '../lib/platforms'
 import { fetchTopRatedMovies } from '../lib/tmdb'
@@ -144,12 +144,18 @@ export default function Room() {
     [movies, currentIndex, roomId]
   )
 
-  function handleCopyLink() {
+  function handleShare() {
     const url = `${window.location.origin}/room/${roomId}`
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
+    if (navigator.share) {
+      navigator.share({ title: 'Swaip', text: "Let's decide on Swaip!", url })
+        .catch(() => {}) // user cancelled — ignore
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(url).then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      })
+    }
   }
 
   if (loading) {
@@ -225,8 +231,18 @@ export default function Room() {
           <p className="waiting-text">Share this link to get started:</p>
           <div className="share-link">
             <code className="link-text">{window.location.origin}/room/{roomId}</code>
-            <button className="copy-btn" onClick={handleCopyLink}>
-              {copied ? 'Copied!' : 'Copy'}
+            <button className="copy-btn" onClick={handleShare}>
+              {copied ? (
+                'Copied!'
+              ) : (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 5 }}>
+                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                  </svg>
+                  Share
+                </>
+              )}
             </button>
           </div>
           <button className="btn btn-secondary skip-wait" onClick={() => setPartnerJoined(true)}>
@@ -276,6 +292,9 @@ export default function Room() {
   return (
     <div className="room">
       <div className="room-header">
+        <Link to="/" className="room-home-link" aria-label="Home">
+          <div className="room-logo-mark">S</div>
+        </Link>
         <span className="room-genre">
           {room.type === 'series' ? '📺' : '🎬'}
           {(() => {
