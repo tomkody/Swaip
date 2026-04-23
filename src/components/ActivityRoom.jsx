@@ -233,6 +233,33 @@ export default function ActivityRoom({ room, onDone }) {
     return unsub
   }, [room.id, phase])
 
+  // ── Polling fallback: check room every 3s while waiting for partner ────────
+  // Realtime subscriptions can miss updates; polling ensures we never get stuck.
+  useEffect(() => {
+    if (phase !== 'categories') return
+    const interval = setInterval(async () => {
+      try {
+        const latest = await getRoom(room.id)
+        if (!latest) return
+        const data = parseRoomActivityData(latest)
+        if (data.phase === 'places') {
+          console.log('[ActivityRoom] Poll detected places phase, count:', data.places.length)
+          setMatchedCategory(data.matchedCategory)
+          setPlaces(data.places)
+          setPhase('places')
+          setCurrentIndex(0)
+          setMySwipes({})
+          setPartnerSwipes({})
+          setTransitioning(false)
+          setWaitingForPartnerPlaces(false)
+        }
+      } catch (e) {
+        // polling failure is non-fatal
+      }
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [room.id, phase])
+
   // ── Handle category match ─────────────────────────────────────────────────
   // Called only by the person whose swipe creates the match (recordSwipe returns true).
   // Their partner transitions via subscribeToRoomChanges instead.
