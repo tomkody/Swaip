@@ -68,9 +68,10 @@ export default function CreateActivityRoom() {
         lng = geo.lng
         locationName = geo.name
       } catch (geoErr) {
-        // If Places API is not configured or fails, create room without location
-        console.warn('Geocode failed:', geoErr.message)
-        locationName = locationText.trim()
+        console.error('Geocode failed:', geoErr.message)
+        setError(`Couldn't find "${locationText.trim()}". Try a different city name.`)
+        setLoading(false)
+        return
       }
 
       const room = await createActivityRoom({ lat, lng, locationName, radius })
