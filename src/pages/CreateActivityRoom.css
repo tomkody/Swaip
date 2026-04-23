@@ -39,31 +39,98 @@
   margin-right: auto;
 }
 
-.activity-preview {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 32px;
+.activity-form {
+  text-align: left;
 }
 
-.activity-preview .preview-card {
-  width: 72px;
-  height: 72px;
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.location-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.location-input {
+  flex: 1;
+  padding: 12px 14px;
   background: var(--bg-glass);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.location-input::placeholder { color: var(--text-muted); }
+.location-input:focus { border-color: var(--primary); }
+
+.geo-btn {
+  width: 46px;
+  height: 46px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
-  backdrop-filter: blur(12px);
-  transition: all 0.3s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.2s, background 0.2s;
+}
+.geo-btn:hover:not(:disabled) { border-color: var(--primary); background: rgba(0, 184, 148, 0.08); }
+.geo-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.geo-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: geoSpin 0.7s linear infinite;
+  display: block;
+}
+@keyframes geoSpin { to { transform: rotate(360deg); } }
+
+.radius-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.activity-preview .preview-card:nth-child(1) { transform: rotate(-6deg); }
-.activity-preview .preview-card:nth-child(2) { transform: translateY(-8px); box-shadow: 0 8px 24px rgba(0, 184, 148, 0.15); }
-.activity-preview .preview-card:nth-child(3) { transform: rotate(6deg); }
+.radius-chip {
+  padding: 8px 14px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.radius-chip:hover { border-color: var(--primary); color: var(--text); }
+.radius-chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.create-error {
+  font-size: 13px;
+  color: #FF5C6A;
+  margin: 12px 0 0;
+}
 
 .create-activity .create-btn {
   width: 100%;
+  margin-top: 24px;
 }

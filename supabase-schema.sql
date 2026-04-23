@@ -31,6 +31,11 @@ create table conversation_selections (
   unique(room_id, user_token, subtopic_id)
 );
 
+-- Activities phase columns (migration — run if rooms table already exists)
+-- alter table rooms add column if not exists phase text;
+-- alter table rooms add column if not exists matched_category text;
+-- alter table rooms add column if not exists places text;
+
 -- Indexes
 create index idx_swipes_room_item on swipes(room_id, item_id, direction);
 create index idx_swipes_room_user on swipes(room_id, user_token);

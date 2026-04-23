@@ -140,13 +140,20 @@ export async function createFoodRoom() {
 }
 
 // Create an activity room
-export async function createActivityRoom() {
+export async function createActivityRoom({ lat, lng, locationName, radius } = {}) {
   const roomId = uuidv4().slice(0, 8)
+
+  // Store location + radius as JSON in topic_id field (same pattern as movie filters)
+  const locationData = (lat != null && lng != null)
+    ? JSON.stringify({ lat, lng, locationName: locationName || '', radius: radius || 5000 })
+    : null
 
   if (!supabase) {
     const room = {
       id: roomId,
       type: 'activities',
+      topic_id: locationData,
+      phase: 'categories',
       created_at: new Date().toISOString(),
       status: 'waiting',
     }
@@ -156,12 +163,48 @@ export async function createActivityRoom() {
 
   const { data, error } = await supabase
     .from('rooms')
-    .insert({ id: roomId, type: 'activities', status: 'waiting' })
+    .insert({ id: roomId, type: 'activities', topic_id: locationData, status: 'waiting' })
     .select()
     .single()
 
   if (error) throw error
   return data
+}
+
+// Update activity room phase (categories → places)
+export async function updateActivityRoomPhase(roomId, { phase, matched_category, places }) {
+  const update = {
+    phase,
+    matched_category: matched_category ? JSON.stringify(matched_category) : null,
+    places: places ? JSON.stringify(places) : null,
+  }
+
+  if (!supabase) {
+    const key = `swaip_room_${roomId}`
+    const room = JSON.parse(localStorage.getItem(key) || '{}')
+    Object.assign(room, update)
+    localStorage.setItem(key, JSON.stringify(room))
+    return
+  }
+
+  const { error } = await supabase.from('rooms').update(update).eq('id', roomId)
+  if (error) throw error
+}
+
+// Subscribe to room data changes (for activity phase transitions)
+export function subscribeToRoomChanges(roomId, onUpdate) {
+  if (!supabase) return () => {}
+
+  const channel = supabase
+    .channel(`room-data-${roomId}`)
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
+      (payload) => onUpdate(payload.new)
+    )
+    .subscribe()
+
+  return () => supabase.removeChannel(channel)
 }
 
 // Fetch actual mutual matches from DB (authoritative source)

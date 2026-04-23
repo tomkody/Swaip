@@ -1,52 +1,28 @@
-export const ACTIVITIES = [
-  // Active
-  { id: 'hiking', name: 'Hiking', emoji: '🥾', category: 'Active', description: 'Explore trails and nature paths' },
-  { id: 'basketball', name: 'Basketball', emoji: '🏀', category: 'Active', description: 'Shoot hoops together' },
-  { id: 'swimming', name: 'Swimming', emoji: '🏊', category: 'Active', description: 'Hit the pool or open water' },
-  { id: 'cycling', name: 'Cycling', emoji: '🚴', category: 'Active', description: 'Ride bikes around the city or trails' },
-  { id: 'dancing', name: 'Dancing', emoji: '💃', category: 'Active', description: 'Learn a dance style or just freestyle' },
-
-  // Relaxing
-  { id: 'movie-night', name: 'Movie Night', emoji: '🍿', category: 'Relaxing', description: 'Pick a film and chill' },
-  { id: 'spa-day', name: 'Spa Day', emoji: '🧖', category: 'Relaxing', description: 'Face masks, candles, relaxation' },
-  { id: 'stargazing', name: 'Stargazing', emoji: '🌌', category: 'Relaxing', description: 'Watch the night sky together' },
-  { id: 'picnic', name: 'Picnic', emoji: '🧺', category: 'Relaxing', description: 'Pack food and find a nice spot' },
-  { id: 'reading', name: 'Reading Together', emoji: '📖', category: 'Relaxing', description: 'Read side by side or the same book' },
-
-  // Creative
-  { id: 'cooking', name: 'Cooking', emoji: '👨‍🍳', category: 'Creative', description: 'Try a new recipe together' },
-  { id: 'pottery', name: 'Pottery', emoji: '🏺', category: 'Creative', description: 'Get your hands dirty with clay' },
-  { id: 'painting', name: 'Painting', emoji: '🎨', category: 'Creative', description: 'Canvas, watercolors, or digital art' },
-  { id: 'music-jam', name: 'Music Jam', emoji: '🎸', category: 'Creative', description: 'Play instruments or make beats' },
-  { id: 'photography', name: 'Photography Walk', emoji: '📸', category: 'Creative', description: 'Explore and capture cool shots' },
-
-  // Mind-provoking
-  { id: 'board-games', name: 'Board Games', emoji: '🎲', category: 'Mind-provoking', description: 'Strategy games, card games, classics' },
-  { id: 'puzzles', name: 'Puzzles', emoji: '🧩', category: 'Mind-provoking', description: 'Jigsaw, crossword, or brain teasers' },
-  { id: 'chess', name: 'Chess', emoji: '♟️', category: 'Mind-provoking', description: 'Classic battle of wits' },
-  { id: 'trivia', name: 'Trivia Night', emoji: '🧠', category: 'Mind-provoking', description: 'Test your knowledge together' },
-  { id: 'escape-room', name: 'Escape Room', emoji: '🔐', category: 'Mind-provoking', description: 'Solve puzzles under pressure' },
-
-  // Social
-  { id: 'karaoke', name: 'Karaoke', emoji: '🎤', category: 'Social', description: 'Sing your hearts out' },
-  { id: 'volunteering', name: 'Volunteering', emoji: '🤝', category: 'Social', description: 'Give back to the community together' },
-  { id: 'wine-tasting', name: 'Wine Tasting', emoji: '🍷', category: 'Social', description: 'Sample wines and learn about them' },
-  { id: 'game-night', name: 'Video Game Night', emoji: '🎮', category: 'Social', description: 'Co-op or versus, your choice' },
-  { id: 'cafe-hopping', name: 'Cafe Hopping', emoji: '☕', category: 'Social', description: 'Try different coffee spots' },
-
-  // Outdoor
-  { id: 'camping', name: 'Camping', emoji: '⛺', category: 'Outdoor', description: 'Sleep under the stars' },
-  { id: 'kayaking', name: 'Kayaking', emoji: '🛶', category: 'Outdoor', description: 'Paddle through calm waters' },
-  { id: 'rock-climbing', name: 'Rock Climbing', emoji: '🧗', category: 'Outdoor', description: 'Indoor wall or real rocks' },
-  { id: 'gardening', name: 'Gardening', emoji: '🌱', category: 'Outdoor', description: 'Plant and grow something together' },
-  { id: 'beach-day', name: 'Beach Day', emoji: '🏖️', category: 'Outdoor', description: 'Sun, sand, and waves' },
+// numId is a stable integer used for the swipes table (item_id integer column).
+// Category numIds are 1000–1011 to avoid collisions with movie/food item IDs.
+export const ACTIVITY_CATEGORIES = [
+  { id: 'food',          numId: 1000, label: 'Food & Restaurants', emoji: '🍕', desc: 'Restaurants, takeaway, dining',       types: ['restaurant'],                      gradient: 'linear-gradient(135deg, #FF6B35, #F7C59F)' },
+  { id: 'cafe',          numId: 1001, label: 'Café & Coffee',       emoji: '☕', desc: 'Coffee shops and cafés',              types: ['cafe'],                             gradient: 'linear-gradient(135deg, #6F4E37, #C9956C)' },
+  { id: 'bars',          numId: 1002, label: 'Bars & Nightlife',    emoji: '🍺', desc: 'Bars, pubs and night clubs',          types: ['bar'],                              gradient: 'linear-gradient(135deg, #2C3E50, #4CA1AF)' },
+  { id: 'sightseeing',   numId: 1003, label: 'Sightseeing',         emoji: '🏛️', desc: 'Landmarks, monuments, attractions',  types: ['tourist_attraction'],               gradient: 'linear-gradient(135deg, #834d9b, #d04ed6)' },
+  { id: 'museums',       numId: 1004, label: 'Museums & Culture',   emoji: '🎨', desc: 'Museums, galleries, exhibitions',    types: ['museum', 'art_gallery'],            gradient: 'linear-gradient(135deg, #1a1a2e, #e94560)' },
+  { id: 'nature',        numId: 1005, label: 'Parks & Nature',      emoji: '🌿', desc: 'Parks, gardens, outdoor spaces',     types: ['park'],                             gradient: 'linear-gradient(135deg, #11998e, #38ef7d)' },
+  { id: 'cinema',        numId: 1006, label: 'Cinema & Movies',     emoji: '🎬', desc: 'Movie theaters and cinemas',         types: ['movie_theater'],                    gradient: 'linear-gradient(135deg, #0f0c29, #302b63)' },
+  { id: 'sports',        numId: 1007, label: 'Sports & Fitness',    emoji: '🏋️', desc: 'Gyms, stadiums, sport centers',      types: ['gym', 'stadium'],                   gradient: 'linear-gradient(135deg, #f46b45, #eea849)' },
+  { id: 'entertainment', numId: 1008, label: 'Entertainment',       emoji: '🎮', desc: 'Bowling, arcades, amusement',        types: ['bowling_alley', 'amusement_park'],  gradient: 'linear-gradient(135deg, #7b2ff7, #f107a3)' },
+  { id: 'shopping',      numId: 1009, label: 'Shopping',            emoji: '🛍️', desc: 'Malls, markets, stores',             types: ['shopping_mall'],                    gradient: 'linear-gradient(135deg, #f953c6, #b91d73)' },
+  { id: 'wellness',      numId: 1010, label: 'Wellness & Spa',      emoji: '🧘', desc: 'Spas, wellness centers',             types: ['spa'],                              gradient: 'linear-gradient(135deg, #43cea2, #185a9d)' },
+  { id: 'music',         numId: 1011, label: 'Live Music',          emoji: '🎵', desc: 'Concert venues, live music bars',    types: ['night_club'],                       gradient: 'linear-gradient(135deg, #1f4037, #99f2c8)' },
 ]
 
-export function getActivitiesByCategory() {
-  const groups = {}
-  for (const a of ACTIVITIES) {
-    if (!groups[a.category]) groups[a.category] = []
-    groups[a.category].push(a)
+// Generate a stable numeric ID from a Google Place ID string
+// Uses a simple djb2-style hash, clamped to positive 32-bit integer range (avoiding 0–1100 used by categories/movies)
+export function placeIdToNumId(placeId) {
+  let h = 5381
+  for (let i = 0; i < placeId.length; i++) {
+    h = ((h << 5) + h) ^ placeId.charCodeAt(i)
+    h = h >>> 0 // keep unsigned 32-bit
   }
-  return groups
+  // Offset to avoid collision with categories (1000–1011) and typical movie IDs (< 1000000)
+  return (h % 9000000) + 2000000
 }
