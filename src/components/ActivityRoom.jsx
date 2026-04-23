@@ -184,22 +184,22 @@ export default function ActivityRoom({ room, onDone }) {
   const [transitioning, setTransitioning] = useState(false)
   const [fetchingPlaces, setFetchingPlaces] = useState(false)
   const [placesError, setPlacesError] = useState(null)
+  // Partner (first swiper) sees this while second swiper is fetching places
+  const [waitingForPartnerPlaces, setWaitingForPartnerPlaces] = useState(false)
 
   const hasConfettied = useRef(false)
   const isDoneRef = useRef(false)
   useEffect(() => { isDoneRef.current = isDone }, [isDone])
 
   // ── Subscribe to partner swipes ───────────────────────────────────────────
+  // NOTE: Category matches are handled exclusively via recordSwipe → handleCategoryMatch
+  // (the person whose swipe creates the match) and subscribeToRoomChanges (their partner).
+  // We do NOT call handleCategoryMatch here to avoid race conditions.
   useEffect(() => {
     const unsub = subscribeToSwipes(room.id, userToken.current, (itemId) => {
-      // itemId comes back as integer from the DB
       const numId = Number(itemId)
-      if (phase === 'categories') {
-        const cat = ACTIVITY_CATEGORIES.find(c => c.numId === numId)
-        if (cat) {
-          handleCategoryMatch(cat)
-        }
-      } else if (phase === 'places') {
+      // Only handle place-phase matches here
+      if (phase === 'places') {
         const place = places.find(p => p.numId === numId)
         if (place) {
           setMatches(prev => prev.find(m => m.id === place.id) ? prev : [...prev, place])
@@ -213,37 +213,43 @@ export default function ActivityRoom({ room, onDone }) {
     return unsub
   }, [room.id, phase, places]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Subscribe to room data changes (phase transition from partner triggering it) ──
+  // ── Subscribe to room data changes (partner fetched places → both transition) ──
   useEffect(() => {
     const unsub = subscribeToRoomChanges(room.id, (updatedRoom) => {
       const data = parseRoomActivityData(updatedRoom)
+      // Transition: partner finished fetching and updated the room to 'places'
       if (data.phase === 'places' && phase === 'categories') {
+        console.log('[ActivityRoom] Room update → places phase, count:', data.places.length)
         setMatchedCategory(data.matchedCategory)
         setPlaces(data.places)
         setPhase('places')
         setCurrentIndex(0)
         setMySwipes({})
         setPartnerSwipes({})
+        setTransitioning(false)
+        setWaitingForPartnerPlaces(false)
       }
     })
     return unsub
   }, [room.id, phase])
 
   // ── Handle category match ─────────────────────────────────────────────────
+  // Called only by the person whose swipe creates the match (recordSwipe returns true).
+  // Their partner transitions via subscribeToRoomChanges instead.
   const handleCategoryMatch = useCallback(async (cat) => {
     if (transitioning || phase !== 'categories') return
     setTransitioning(true)
     setMatchedCategory(cat)
-
-    // Wait a moment for the transition screen
-    await new Promise(r => setTimeout(r, 2500))
-
-    setFetchingPlaces(true)
     setPlacesError(null)
+
+    // Show "You both want X!" screen for 2s
+    await new Promise(r => setTimeout(r, 2000))
+    setFetchingPlaces(true)
 
     let fetchedPlaces = []
     if (location?.lat != null) {
       try {
+        console.log('[ActivityRoom] Fetching places for', cat.label, 'at', location.lat, location.lng, 'radius', location.radius || 5000)
         fetchedPlaces = await fetchNearbyPlaces(
           location.lat,
           location.lng,
@@ -251,15 +257,18 @@ export default function ActivityRoom({ room, onDone }) {
           cat.types,
           room.id
         )
+        console.log('[ActivityRoom] Fetched', fetchedPlaces.length, 'places for', cat.label)
       } catch (err) {
-        console.error('Places fetch error:', err)
+        console.error('[ActivityRoom] Places fetch error:', err)
         setPlacesError(err.message || 'Failed to fetch places')
       }
+    } else {
+      console.warn('[ActivityRoom] No location data — skipping places fetch. location:', location)
     }
 
     setFetchingPlaces(false)
 
-    // Update room so partner also transitions
+    // Save to room so partner also gets the places
     try {
       await updateActivityRoomPhase(room.id, {
         phase: 'places',
@@ -267,9 +276,10 @@ export default function ActivityRoom({ room, onDone }) {
         places: fetchedPlaces,
       })
     } catch (err) {
-      console.error('updateActivityRoomPhase error:', err)
+      console.error('[ActivityRoom] updateActivityRoomPhase error:', err)
     }
 
+    // Transition locally (partner transitions via subscribeToRoomChanges)
     setPlaces(fetchedPlaces)
     setPhase('places')
     setCurrentIndex(0)
@@ -291,8 +301,11 @@ export default function ActivityRoom({ room, onDone }) {
     try {
       const isMatch = await recordSwipe(room.id, userToken.current, cat.numId, direction)
       if (isMatch) {
+        // I'm the second swiper — fetch places and update room for both of us
         handleCategoryMatch(cat)
       }
+      // If not a match yet, partner hasn't swiped this category right yet — just keep swiping.
+      // If partner swipes it later, subscribeToRoomChanges will handle the transition.
     } catch (err) {
       console.error('recordSwipe error:', err)
     }
@@ -322,6 +335,21 @@ export default function ActivityRoom({ room, onDone }) {
     if (!matchedCategory) return
     setPlacesError(null)
     handleCategoryMatch(matchedCategory)
+  }
+
+  // ── Waiting for partner to fetch places (first swiper sees this) ──────────
+  if (waitingForPartnerPlaces) {
+    return (
+      <div className="act-center">
+        <div className="act-transition">
+          <div className="act-transition-emoji">{matchedCategory?.emoji}</div>
+          <h2>You both want</h2>
+          <h1 className="act-transition-label">{matchedCategory?.label}!</h1>
+          <p className="act-transition-sub">Loading places nearby…</p>
+          <div className="loader" style={{ marginTop: 20 }} />
+        </div>
+      </div>
+    )
   }
 
   // ── Transition screen ─────────────────────────────────────────────────────
@@ -410,8 +438,25 @@ export default function ActivityRoom({ room, onDone }) {
     )
   }
 
+  // ── Place swipe (no places available) ─────────────────────────────────────
+  if (phase === 'places' && places.length === 0) {
+    return (
+      <div className="act-center">
+        <div className="act-error">
+          <div className="act-error-icon">{matchedCategory?.emoji || '📍'}</div>
+          <h2>No places found</h2>
+          <p className="act-error-sub">
+            We couldn't find any {matchedCategory?.label || 'places'} nearby.
+            {!location ? ' Add a location when creating the room to see real nearby places.' : ' Try a larger search radius.'}
+          </p>
+          <button className="btn btn-secondary" onClick={onDone}>Go home</button>
+        </div>
+      </div>
+    )
+  }
+
   // ── Results screen ─────────────────────────────────────────────────────────
-  if (isDone || (phase === 'places' && currentIndex >= places.length)) {
+  if (isDone || (phase === 'places' && places.length > 0 && currentIndex >= places.length)) {
     return (
       <div className="act-results">
         <div className="act-results-inner">
@@ -471,23 +516,6 @@ export default function ActivityRoom({ room, onDone }) {
             You've swiped through all categories. Waiting for your partner to match one with you.
           </p>
           <div className="loader" />
-        </div>
-      </div>
-    )
-  }
-
-  // ── Place swipe (no places available) ─────────────────────────────────────
-  if (phase === 'places' && places.length === 0) {
-    return (
-      <div className="act-center">
-        <div className="act-error">
-          <div className="act-error-icon">{matchedCategory?.emoji || '📍'}</div>
-          <h2>No places found</h2>
-          <p className="act-error-sub">
-            We couldn't find any {matchedCategory?.label || 'places'} nearby.
-            {!location ? ' Add a location when creating the room to see real nearby places.' : ' Try a larger search radius.'}
-          </p>
-          <button className="btn btn-secondary" onClick={onDone}>Go home</button>
         </div>
       </div>
     )

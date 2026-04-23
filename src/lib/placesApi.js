@@ -35,7 +35,7 @@ function haversine(lat1, lng1, lat2, lng2) {
 // Build a photo URL from a photo name (e.g. "places/xxx/photos/yyy")
 export function getPhotoUrl(photoName, maxWidth = 600) {
   if (!photoName) return null
-  return `${BASE}/${photoName}/media?maxWidthPx=${maxWidth}&key=${API_KEY}&skipHttpRedirect=true`
+  return `${BASE}/${photoName}/media?maxWidthPx=${maxWidth}&key=${API_KEY}`
 }
 
 // Price level label
