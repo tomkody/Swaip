@@ -147,7 +147,7 @@ export default function SwipeCard({ item, onSwipe, active }) {
                 {item.runtime && <span className="card-runtime">{item.runtime}</span>}
               </div>
               {item.genre && <p className="card-genre">{item.genre}</p>}
-              {item.isOpen !== null && (
+              {item.isOpen != null && (
                 <div className="card-open-row">
                   <span className={`card-open-badge ${item.isOpen ? 'card-open-badge--open' : 'card-open-badge--closed'}`}>
                     {item.isOpen ? '● Open' : '● Closed'}
@@ -187,8 +187,8 @@ export default function SwipeCard({ item, onSwipe, active }) {
                 <div className="card-back-tags">
                   {item.year && <span className="card-back-tag">{item.year}</span>}
                   {item.runtime && <span className="card-back-tag">{item.runtime}</span>}
-                  {item.isOpen === true && <span className="card-back-tag card-back-tag--open">● Open now</span>}
-                  {item.isOpen === false && <span className="card-back-tag card-back-tag--closed">● Closed</span>}
+                  {item.isOpen === true  && <span className="card-back-tag card-back-tag--open">● Open now</span>}
+                  {item.isOpen === false && item.isOpen != null && <span className="card-back-tag card-back-tag--closed">● Closed</span>}
                   {item.genre && item.genre.split(' · ').map(g => (
                     <span key={g} className="card-back-tag">{g}</span>
                   ))}
