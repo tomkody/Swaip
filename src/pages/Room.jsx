@@ -227,7 +227,7 @@ export default function Room() {
           <div className="waiting-icon">⏳</div>
           <h2>Waiting for your partner</h2>
           <p className="waiting-genre">
-            {room.type === 'movies' ? '🎬 Movies' : room.type === 'series' ? '📺 TV Series' : room.type === 'activities' ? '🎯 Activities' : `💬 ${room.topic_name}`}
+            {room.type === 'movies' ? '🎬 Movies' : room.type === 'series' ? '📺 TV Series' : room.type === 'activities' ? '🎯 Activities' : room.type === 'food' ? '🍽️ Food & Dining' : `💬 ${room.topic_name}`}
           </p>
           <p className="waiting-text">Share this link to get started:</p>
           <div className="share-link">
