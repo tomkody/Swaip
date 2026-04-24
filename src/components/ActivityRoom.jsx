@@ -9,6 +9,7 @@ import {
   updateActivityRoomPhase,
   subscribeToRoomChanges,
   getRoom,
+  fetchRoomMatches,
 } from '../lib/room'
 import SwipeCard from './SwipeCard'
 import './ActivityRoom.css'
@@ -200,6 +201,33 @@ export default function ActivityRoom({ room, onDone }) {
   const hasConfettied = useRef(false)
   const isDoneRef = useRef(false)
   useEffect(() => { isDoneRef.current = isDone }, [isDone])
+
+  // ── Authoritative matches from DB when results screen opens ──────────────
+  // Real-time events can be missed (network blips, subscription gaps, stale closures).
+  // This ensures the results screen always shows every mutual match that's in the DB.
+  useEffect(() => {
+    const showingResults =
+      isDone || (phase === 'places' && places.length > 0 && currentIndex >= places.length)
+    if (!showingResults || places.length === 0) return
+
+    fetchRoomMatches(room.id, userToken.current)
+      .then(ids => {
+        if (!ids || ids.length === 0) return
+        // Map numeric item_ids back to place objects (filters out category numIds automatically)
+        const canonical = places.filter(p => ids.includes(p.numId))
+        if (canonical.length > 0) {
+          setMatches(prev => {
+            // Merge: keep real-time matches + add any DB matches that weren't captured
+            const merged = [...prev]
+            for (const p of canonical) {
+              if (!merged.find(m => m.id === p.id)) merged.push(p)
+            }
+            return merged
+          })
+        }
+      })
+      .catch(() => {})
+  }, [isDone, currentIndex, places.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Subscribe to partner swipes ───────────────────────────────────────────
   // NOTE: Category matches are handled exclusively via recordSwipe → handleCategoryMatch
