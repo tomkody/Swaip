@@ -64,57 +64,20 @@ export default function HamburgerMenu({ onSavedMatches, dark, onToggleDark }) {
             swaiptheapp@gmail.com
           </a>
 
-          {/* Social media */}
-          <div className="hm-social-row">
-            <a
-              href="https://instagram.com/swaipapp"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hm-social-btn"
-              aria-label="Instagram"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-              </svg>
-            </a>
-            <a
-              href="https://facebook.com/swaipapp"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hm-social-btn"
-              aria-label="Facebook"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-              </svg>
-            </a>
-            <a
-              href="https://tiktok.com/@swaipapp"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hm-social-btn"
-              aria-label="TikTok"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/>
-              </svg>
-            </a>
-            <a
-              href="https://threads.net/@swaipapp"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hm-social-btn"
-              aria-label="Threads"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
-                <path d="M8 12c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4"/>
-                <path d="M16 8.5c0 2.5-1.5 5.5-4 6"/>
-              </svg>
-            </a>
-          </div>
+          {/* Instagram */}
+          <a
+            className="hm-item"
+            href="https://instagram.com/swaiptheapp"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+            </svg>
+            Follow us on Instagram
+          </a>
         </div>
       )}
     </div>
