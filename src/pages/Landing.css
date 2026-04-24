@@ -147,33 +147,13 @@
   -webkit-backdrop-filter: blur(16px);
 }
 
-.card-glow {
-  position: absolute;
-  top: -40px;
-  width: 160px;
-  height: 80px;
-  border-radius: 50%;
-  filter: blur(50px);
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
-}
-
-.movie-glow  { background: var(--primary); }
-.series-glow { background: #6C5CE7; }
-.conv-glow   { background: var(--accent); }
-.activity-glow { background: #00B894; }
-.food-glow     { background: #FF6B35; }
+.card-glow { display: none; }
 
 .category-card:hover {
   border-color: var(--border-hover);
   background: var(--bg-card-hover);
   transform: scale(1.02);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-}
-
-.category-card:hover .card-glow {
-  opacity: 0.18;
 }
 
 .category-card:active {
