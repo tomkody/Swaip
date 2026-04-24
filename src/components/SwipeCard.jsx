@@ -152,8 +152,11 @@ export default function SwipeCard({ item, onSwipe, active }) {
                   <span className={`card-open-badge ${item.isOpen ? 'card-open-badge--open' : 'card-open-badge--closed'}`}>
                     {item.isOpen ? '● Open' : '● Closed'}
                   </span>
-                  {item.todayHours && (
+                  {item.isOpen && item.todayHours && item.todayHours !== 'Closed' && (
                     <span className="card-open-hours">{item.todayHours}</span>
+                  )}
+                  {!item.isOpen && item.opensAt && (
+                    <span className="card-open-hours">Opens {item.opensAt}</span>
                   )}
                 </div>
               )}

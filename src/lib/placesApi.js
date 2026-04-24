@@ -75,14 +75,31 @@ function formatPlace(place, centerLat, centerLng) {
 
   // Extract today's opening hours from weekdayDescriptions
   // Google uses Mon=0…Sun=6; JS getDay() uses Sun=0, Mon=1…Sat=6
-  let todayHours = null
+  let todayHours = null   // full string e.g. "9:00 AM – 10:00 PM"
+  let opensAt = null      // e.g. "9:00 AM" or "Tomorrow 9:00 AM" — shown when closed
   const weekday = place.currentOpeningHours?.weekdayDescriptions
   if (weekday && weekday.length === 7) {
     const jsDay = new Date().getDay()                  // 0=Sun … 6=Sat
     const googleIdx = jsDay === 0 ? 6 : jsDay - 1     // 0=Mon … 6=Sun
-    const raw = weekday[googleIdx] || ''
-    // Strip the day name prefix ("Monday: ") to get just the hours
-    todayHours = raw.replace(/^[^:]+:\s*/, '').trim() || null
+
+    // Strip the day-name prefix ("Monday: ") to get just the hours
+    const strip = s => (s || '').replace(/^[^:]+:\s*/, '').trim()
+    todayHours = strip(weekday[googleIdx]) || null
+
+    if (isOpen === false) {
+      if (todayHours && todayHours !== 'Closed') {
+        // Closed right now but opens later today — grab first time in the string
+        const m = todayHours.match(/(\d{1,2}:\d{2}\s*[AP]M)/i)
+        if (m) opensAt = m[1]
+      } else {
+        // Closed all day — look at tomorrow
+        const tomorrowHours = strip(weekday[(googleIdx + 1) % 7])
+        if (tomorrowHours && tomorrowHours !== 'Closed') {
+          const m = tomorrowHours.match(/(\d{1,2}:\d{2}\s*[AP]M)/i)
+          if (m) opensAt = `Tomorrow ${m[1]}`
+        }
+      }
+    }
   }
 
   const overviewParts = []
@@ -111,6 +128,7 @@ function formatPlace(place, centerLat, centerLng) {
     priceLevel,
     isOpen,
     todayHours,
+    opensAt,
     lat: loc.latitude ?? null,
     lng: loc.longitude ?? null,
   }
