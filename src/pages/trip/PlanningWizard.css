@@ -152,7 +152,7 @@
   margin-bottom: 12px;
 }
 
-.step-title {
+.wizard-page .step-title {
   font-size: 26px;
   font-weight: 800;
   color: #0F172A;
@@ -592,7 +592,7 @@
     grid-template-columns: 1fr;
   }
 
-  .step-title {
+  .wizard-page .step-title {
     font-size: 22px;
   }
 }

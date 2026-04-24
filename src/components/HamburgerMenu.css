@@ -58,7 +58,7 @@
   border-radius: 9px;
   font-size: 14px;
   font-weight: 500;
-  color: var(--text);
+  color: #ffffff;
   text-decoration: none;
   background: none;
   border: none;
@@ -68,7 +68,7 @@
 }
 
 .hm-item:hover {
-  background: var(--bg-glass);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .hm-icon {
@@ -78,7 +78,7 @@
 
 .hm-divider {
   height: 1px;
-  background: var(--border);
+  background: rgba(255, 255, 255, 0.12);
   margin: 4px 6px;
 }
 
