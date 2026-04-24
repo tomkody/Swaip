@@ -202,6 +202,31 @@ export default function ActivityRoom({ room, onDone }) {
   const isDoneRef = useRef(false)
   useEffect(() => { isDoneRef.current = isDone }, [isDone])
 
+  // True when this user has swiped all places but isDone hasn't been set yet
+  const finishedSwiping = phase === 'places' && places.length > 0 && currentIndex >= places.length && !isDone
+
+  // ── Poll for new matches while waiting for partner to finish ─────────────
+  useEffect(() => {
+    if (!finishedSwiping) return
+    const interval = setInterval(async () => {
+      try {
+        const ids = await fetchRoomMatches(room.id, userToken.current)
+        if (!ids) return
+        const canonical = places.filter(p => ids.includes(p.numId))
+        if (canonical.length > 0) {
+          setMatches(prev => {
+            const merged = [...prev]
+            for (const p of canonical) {
+              if (!merged.find(m => m.id === p.id)) merged.push(p)
+            }
+            return merged
+          })
+        }
+      } catch (e) { /* non-fatal */ }
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [finishedSwiping, room.id, places]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Authoritative matches from DB when results screen opens ──────────────
   // Real-time events can be missed (network blips, subscription gaps, stale closures).
   // This ensures the results screen always shows every mutual match that's in the DB.
@@ -554,8 +579,46 @@ export default function ActivityRoom({ room, onDone }) {
     )
   }
 
+  // ── Waiting for partner to finish swiping places ─────────────────────────
+  if (finishedSwiping) {
+    return (
+      <div className="act-center">
+        <div className="act-waiting">
+          <div className="act-waiting-icon">⏳</div>
+          <h2>Waiting for your partner…</h2>
+          <p className="act-waiting-text">
+            You've swiped through all {places.length} places.
+            {matches.length > 0
+              ? ` You've already matched on ${matches.length} place${matches.length !== 1 ? 's' : ''}!`
+              : ' Waiting to see if you agree on any…'}
+          </p>
+          <div className="loader" style={{ margin: '16px auto' }} />
+          {matches.length > 0 && (
+            <div className="act-waiting-matches">
+              {matches.map(p => (
+                <div key={p.id} className="act-waiting-match-item">
+                  {p.poster
+                    ? <img src={p.poster} alt={p.title} className="act-waiting-match-thumb" />
+                    : <div className="act-waiting-match-thumb act-waiting-match-thumb--empty">{matchedCategory?.emoji || '📍'}</div>}
+                  <span className="act-waiting-match-name">{p.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <button
+            className="btn btn-primary"
+            style={{ width: '100%', marginTop: 20 }}
+            onClick={() => setIsDone(true)}
+          >
+            See results now
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   // ── Results screen ─────────────────────────────────────────────────────────
-  if (isDone || (phase === 'places' && places.length > 0 && currentIndex >= places.length)) {
+  if (isDone) {
     return (
       <div className="act-results">
         <div className="act-results-inner">
