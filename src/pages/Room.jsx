@@ -147,7 +147,7 @@ export default function Room() {
   function handleShare() {
     const url = `${window.location.origin}/room/${roomId}`
     if (navigator.share) {
-      navigator.share({ title: 'Swaip', text: "Let's decide on Swaip!", url })
+      navigator.share({ title: 'Swaip', url })
         .catch(() => {}) // user cancelled — ignore
     } else {
       // Fallback: copy to clipboard
