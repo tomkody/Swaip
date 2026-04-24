@@ -645,8 +645,25 @@ export default function ActivityRoom({ room, onDone }) {
                       {place.rating && (
                         <div className="act-result-rating">★ {place.rating}{place.ratingCount ? ` (${place.ratingCount.toLocaleString()})` : ''}</div>
                       )}
+                      <div className="act-result-meta-row">
+                        {place.isOpen === true && <span className="act-result-open">● Open now</span>}
+                        {place.isOpen === false && <span className="act-result-closed">● Closed</span>}
+                        {place.distance && <span className="act-result-distance">{place.distance}</span>}
+                      </div>
                       {place.address && <div className="act-result-address">{place.address}</div>}
-                      {place.distance && <div className="act-result-distance">{place.distance}</div>}
+                      {place.lat && place.lng && (
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}&travelmode=walking`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="act-result-directions"
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+                          </svg>
+                          Get walking directions
+                        </a>
+                      )}
                     </div>
                   </div>
                 ))}

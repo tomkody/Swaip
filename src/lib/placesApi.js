@@ -98,6 +98,8 @@ function formatPlace(place, centerLat, centerLng) {
     distance: distLabel,
     priceLevel,
     isOpen,
+    lat: loc.latitude ?? null,
+    lng: loc.longitude ?? null,
   }
 }
 

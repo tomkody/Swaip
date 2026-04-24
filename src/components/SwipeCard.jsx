@@ -165,21 +165,42 @@ export default function SwipeCard({ item, onSwipe, active }) {
                   <div className="card-back-rating">
                     <span className="card-back-star">⭐</span>
                     <span className="card-back-score">{item.rating}</span>
-                    <span className="card-back-max"> / 10</span>
+                    {item.ratingCount
+                      ? <span className="card-back-max"> ({item.ratingCount.toLocaleString()} reviews)</span>
+                      : <span className="card-back-max"> / 10</span>}
                   </div>
                 )}
 
                 <div className="card-back-tags">
                   {item.year && <span className="card-back-tag">{item.year}</span>}
                   {item.runtime && <span className="card-back-tag">{item.runtime}</span>}
+                  {item.isOpen === true && <span className="card-back-tag card-back-tag--open">● Open now</span>}
+                  {item.isOpen === false && <span className="card-back-tag card-back-tag--closed">● Closed</span>}
                   {item.genre && item.genre.split(' · ').map(g => (
                     <span key={g} className="card-back-tag">{g}</span>
                   ))}
                 </div>
 
+                {item.distance && <p className="card-back-distance">📍 {item.distance}</p>}
+
                 <p className="card-back-overview">
                   {item.overview || 'No description available.'}
                 </p>
+
+                {item.lat && item.lng && (
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}&travelmode=walking`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="card-back-directions"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+                    </svg>
+                    Get walking directions
+                  </a>
+                )}
 
                 <p className="card-back-hint">Tap to flip back</p>
               </div>
