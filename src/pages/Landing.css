@@ -259,7 +259,7 @@
 
 .step-desc {
   font-size: 13px;
-  color: var(--text-muted);
+  color: var(--text);
   line-height: 1.45;
 }
 
@@ -281,7 +281,7 @@
 
 .how-tip p {
   font-size: 13px;
-  color: var(--text-muted);
+  color: var(--text);
   line-height: 1.5;
   margin: 0;
 }
