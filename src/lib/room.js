@@ -222,7 +222,7 @@ export async function fetchRoomMatches(roomId, userToken) {
   const byUser = {}
   for (const row of data) {
     if (!byUser[row.user_token]) byUser[row.user_token] = new Set()
-    byUser[row.user_token].add(row.item_id)
+    byUser[row.user_token].add(Number(row.item_id)) // normalize to number for === comparisons
   }
 
   const users = Object.keys(byUser)
@@ -405,7 +405,7 @@ export function subscribeToSwipes(roomId, userToken, onMatch) {
             .eq('user_token', userToken)
 
           if (data && data.length > 0) {
-            onMatch(swipe.item_id)
+            onMatch(Number(swipe.item_id))
           }
         }
       }
