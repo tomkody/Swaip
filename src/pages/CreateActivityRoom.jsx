@@ -15,6 +15,7 @@ const RADIUS_OPTIONS = [
 export default function CreateActivityRoom() {
   const navigate = useNavigate()
   const [locationText, setLocationText] = useState('')
+  const [pinnedCoords, setPinnedCoords] = useState(null) // { lat, lng } from GPS — bypasses geocoding
   const [radius, setRadius] = useState(5000)
   const [loading, setLoading] = useState(false)
   const [geoLoading, setGeoLoading] = useState(false)
@@ -30,21 +31,30 @@ export default function CreateActivityRoom() {
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude, longitude } = pos.coords
-        // Reverse geocode to get a display name
+        // Store exact GPS coordinates — no geocoding roundtrip
+        setPinnedCoords({ lat: latitude, lng: longitude })
+        // Reverse geocode just for the display label (does not affect actual coords used)
         try {
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
             { headers: { 'Accept-Language': 'en' } }
           )
           const data = await res.json()
-          const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county || 'My Location'
-          setLocationText(city)
+          const label =
+            data.address?.neighbourhood ||
+            data.address?.suburb ||
+            data.address?.city_district ||
+            data.address?.city ||
+            data.address?.town ||
+            data.address?.village ||
+            'My Location'
+          setLocationText(label)
         } catch {
           setLocationText('My Location')
         }
         setGeoLoading(false)
       },
-      (err) => {
+      () => {
         setError('Could not get your location. Please type a city name.')
         setGeoLoading(false)
       }
@@ -52,7 +62,7 @@ export default function CreateActivityRoom() {
   }
 
   async function handleCreate() {
-    if (!locationText.trim()) {
+    if (!locationText.trim() && !pinnedCoords) {
       setError('Please enter a location.')
       return
     }
@@ -62,23 +72,30 @@ export default function CreateActivityRoom() {
       getUserToken()
 
       let lat, lng, locationName
-      try {
-        const geo = await geocodeLocation(locationText.trim())
-        lat = geo.lat
-        lng = geo.lng
-        locationName = geo.name
-      } catch (geoErr) {
-        console.error('Geocode failed:', geoErr.message)
-        const msg = geoErr.message || ''
-        if (msg.includes('API key') || msg.includes('not configured') || msg.includes('403') || msg.includes('REQUEST_DENIED')) {
-          setError('Google Maps API key issue — check the deployment environment variables (VITE_GOOGLE_MAPS_API_KEY).')
-        } else if (msg.includes('No results')) {
-          setError(`Couldn't find "${locationText.trim()}". Try a different city name.`)
-        } else {
-          setError(`Location search failed: ${msg}`)
+      if (pinnedCoords) {
+        // Use exact GPS coordinates — skip geocoding entirely
+        lat = pinnedCoords.lat
+        lng = pinnedCoords.lng
+        locationName = locationText.trim() || 'My Location'
+      } else {
+        try {
+          const geo = await geocodeLocation(locationText.trim())
+          lat = geo.lat
+          lng = geo.lng
+          locationName = geo.name
+        } catch (geoErr) {
+          console.error('Geocode failed:', geoErr.message)
+          const msg = geoErr.message || ''
+          if (msg.includes('API key') || msg.includes('not configured') || msg.includes('403') || msg.includes('REQUEST_DENIED')) {
+            setError('Google Maps API key issue — check the deployment environment variables (VITE_GOOGLE_MAPS_API_KEY).')
+          } else if (msg.includes('No results')) {
+            setError(`Couldn't find "${locationText.trim()}". Try a different city name.`)
+          } else {
+            setError(`Location search failed: ${msg}`)
+          }
+          setLoading(false)
+          return
         }
-        setLoading(false)
-        return
       }
 
       const room = await createActivityRoom({ lat, lng, locationName, radius })
@@ -114,7 +131,7 @@ export default function CreateActivityRoom() {
               type="text"
               placeholder="City or address…"
               value={locationText}
-              onChange={e => { setLocationText(e.target.value); setError(null) }}
+              onChange={e => { setLocationText(e.target.value); setPinnedCoords(null); setError(null) }}
               onKeyDown={e => e.key === 'Enter' && handleCreate()}
             />
             <button

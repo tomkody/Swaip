@@ -317,6 +317,18 @@ export default function ActivityRoom({ room, onDone }) {
       console.error('[ActivityRoom] updateActivityRoomPhase error:', err)
     }
 
+    // Read back canonical places from DB — ensures both users see the SAME set
+    // (handles the rare race where two users both call handleCategoryMatch simultaneously)
+    try {
+      const canonical = await getRoom(room.id)
+      if (canonical) {
+        const canonicalData = parseRoomActivityData(canonical)
+        if (canonicalData.places.length > 0) {
+          fetchedPlaces = canonicalData.places
+        }
+      }
+    } catch (e) { /* non-fatal, use locally fetched places */ }
+
     // Transition locally (partner transitions via subscribeToRoomChanges)
     setPlaces(fetchedPlaces)
     setPhase('places')
@@ -339,7 +351,28 @@ export default function ActivityRoom({ room, onDone }) {
     try {
       const isMatch = await recordSwipe(room.id, userToken.current, cat.numId, direction)
       if (isMatch) {
-        // I'm the second swiper — fetch places and update room for both of us
+        // Before fetching places, check if the DB already has them
+        // (partner may have already matched and fetched in a race condition)
+        try {
+          const latest = await getRoom(room.id)
+          if (latest) {
+            const latestData = parseRoomActivityData(latest)
+            if (latestData.phase === 'places' && latestData.places.length > 0) {
+              // Partner already fetched — sync local state from DB instead of fetching again
+              setMatchedCategory(latestData.matchedCategory)
+              setPlaces(latestData.places)
+              setPhase('places')
+              setCurrentIndex(0)
+              setMySwipes({})
+              setPartnerSwipes({})
+              setTransitioning(false)
+              setWaitingForPartnerPlaces(false)
+              return
+            }
+          }
+        } catch (e) { /* non-fatal */ }
+
+        // I'm the (sole) fetcher — fetch places and update room for both of us
         handleCategoryMatch(cat)
       }
       // If not a match yet, partner hasn't swiped this category right yet — just keep swiping.
