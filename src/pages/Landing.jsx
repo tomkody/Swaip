@@ -55,6 +55,13 @@ export default function Landing() {
             <span className="category-desc">Find your perfect film. Match, grab popcorn, and hit play.</span>
           </button>
 
+          <button className="category-card" onClick={() => navigate('/create/activities')}>
+            <div className="card-glow activity-glow" />
+            <span className="category-emoji">🎯</span>
+            <span className="category-name">Activities</span>
+            <span className="category-desc">Couch or outdoors? Discover your next shared adventure.</span>
+          </button>
+
           <button className="category-card" onClick={() => navigate('/create/series')}>
             <div className="card-glow series-glow" />
             <span className="category-emoji">📺</span>
@@ -67,13 +74,6 @@ export default function Landing() {
             <span className="category-emoji">💬</span>
             <span className="category-name">Conversations</span>
             <span className="category-desc">Skip the small talk. Match on deep dives, fun debates, and fresh topics.</span>
-          </button>
-
-          <button className="category-card" onClick={() => navigate('/create/activities')}>
-            <div className="card-glow activity-glow" />
-            <span className="category-emoji">🎯</span>
-            <span className="category-name">Activities</span>
-            <span className="category-desc">Couch or outdoors? Discover your next shared adventure.</span>
           </button>
 
           <button className="category-card category-card--food" onClick={() => navigate('/create/food')}>
