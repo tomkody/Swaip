@@ -1,0 +1,110 @@
+.hamburger-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.hamburger-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.2s;
+  backdrop-filter: blur(12px);
+  flex-shrink: 0;
+}
+
+.hamburger-btn:hover,
+.hamburger-btn.is-open {
+  color: var(--text);
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
+}
+
+.hm-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22), 0 2px 8px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 200;
+  overflow: hidden;
+  padding: 6px;
+  animation: hmSlideIn 0.18s ease;
+}
+
+@keyframes hmSlideIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.hm-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+}
+
+.hm-item:hover {
+  background: var(--bg-glass);
+}
+
+.hm-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.hm-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 6px;
+}
+
+.hm-social-row {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 8px 6px;
+}
+
+.hm-social-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.hm-social-btn:hover {
+  color: var(--text);
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
+}

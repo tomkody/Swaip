@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import SavedMatchesDrawer from '../components/SavedMatchesDrawer'
+import HamburgerMenu from '../components/HamburgerMenu'
 import './Landing.css'
 
 
@@ -16,6 +17,21 @@ export default function Landing() {
   const [showHow, setShowHow] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
 
+  // Theme state (mirrors ThemeToggle logic)
+  const [dark, setDark] = useState(() => {
+    const saved = localStorage.getItem('swaip-theme')
+    if (saved) return saved === 'dark'
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
+    localStorage.setItem('swaip-theme', dark ? 'dark' : 'light')
+  }, [dark])
+
+  // Pick logo based on theme (put logo-dark.png in /public/ for dark mode)
+  const logoSrc = dark ? '/logo-dark.png' : '/logo.png'
+
   return (
     <div className="landing">
       <div className="landing-bg-orb orb-1" />
@@ -26,23 +42,20 @@ export default function Landing() {
           <div className="landing-header-row">
             <div style={{ flex: 1 }} />
             <Link to="/" className="landing-logo-center" aria-label="Home">
-              <img src="/logo.png" alt="Swaip" className="logo-mark" />
-              <h1 className="logo-text">Swaip</h1>
+              <img
+                src={logoSrc}
+                alt="Swaip"
+                className="logo-mark"
+                onError={e => { e.currentTarget.src = '/logo.png' }}
+              />
             </Link>
-            <div className="landing-header-actions">
-              <button
-                className="history-btn"
-                onClick={() => setDrawerOpen(true)}
-                aria-label="Saved Matches"
-                title="Saved Matches"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-                </svg>
-              </button>
-            </div>
+            <HamburgerMenu
+              dark={dark}
+              onToggleDark={() => setDark(d => !d)}
+              onSavedMatches={() => setDrawerOpen(true)}
+            />
           </div>
-          <p className="tagline">From "I don't know" to "Let's go!"</p>
+          <p className="tagline">Swipe your way to a perfect plan.</p>
         </header>
 
         <h2 className="landing-question">What are we deciding?</h2>
@@ -74,13 +87,6 @@ export default function Landing() {
             <span className="category-emoji">💬</span>
             <span className="category-name">Conversations</span>
             <span className="category-desc">Skip the small talk. Match on deep dives, fun debates, and fresh topics.</span>
-          </button>
-
-          <button className="category-card category-card--food" onClick={() => navigate('/create/food')}>
-            <div className="card-glow food-glow" />
-            <span className="category-emoji">🍽️</span>
-            <span className="category-name">Food & Dining</span>
-            <span className="category-desc">End the "what's for dinner?" debate. Match on cuisines or local spots.</span>
           </button>
         </div>
 

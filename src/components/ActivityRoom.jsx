@@ -1,6 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import confetti from 'canvas-confetti'
-import { ACTIVITY_CATEGORIES } from '../lib/activities'
+import { ACTIVITY_CATEGORIES as _ACTIVITY_CATEGORIES } from '../lib/activities'
+
+// Shuffle once per session (different order each time the component mounts)
+const ACTIVITY_CATEGORIES = (() => {
+  const a = [..._ACTIVITY_CATEGORIES]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+})()
 import { fetchNearbyPlaces } from '../lib/placesApi'
 import {
   getUserToken,
