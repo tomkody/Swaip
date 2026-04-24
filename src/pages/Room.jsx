@@ -4,7 +4,6 @@ import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, markRoomActive, 
 import { PLATFORMS } from '../lib/platforms'
 import { fetchTopRatedMovies } from '../lib/tmdb'
 import { fetchTopRatedSeries } from '../lib/seriesFetch'
-import { getFoodItems } from '../lib/foodItems'
 import SwipeCard from '../components/SwipeCard'
 import MatchModal from '../components/MatchModal'
 import ConversationRoom from '../components/ConversationRoom'

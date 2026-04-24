@@ -88,6 +88,13 @@ export default function Landing() {
             <span className="category-name">Conversations</span>
             <span className="category-desc">Skip the small talk. Match on deep dives, fun debates, and fresh topics.</span>
           </button>
+
+          <button className="category-card category-card--food" onClick={() => navigate('/create/food')}>
+            <div className="card-glow food-glow" />
+            <span className="category-emoji">🍽️</span>
+            <span className="category-name">Food & Dining</span>
+            <span className="category-desc">Match on a cuisine, then swipe through real restaurants near you both.</span>
+          </button>
         </div>
 
         <button className="how-toggle" onClick={() => setShowHow(!showHow)}>

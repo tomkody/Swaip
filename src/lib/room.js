@@ -124,16 +124,19 @@ export async function checkMutualSwipesByIds(roomId, userToken, itemIds) {
 }
 
 // Create a food room
-export async function createFoodRoom() {
+export async function createFoodRoom({ lat, lng, locationName, radius } = {}) {
   const roomId = uuidv4().slice(0, 8)
+  const locationData = (lat != null && lng != null)
+    ? JSON.stringify({ lat, lng, locationName: locationName || '', radius: radius || 5000 })
+    : null
   if (!supabase) {
-    const room = { id: roomId, type: 'food', created_at: new Date().toISOString(), status: 'waiting' }
+    const room = { id: roomId, type: 'food', topic_id: locationData, created_at: new Date().toISOString(), status: 'waiting' }
     localStorage.setItem(`swaip_room_${roomId}`, JSON.stringify(room))
     return room
   }
   const { data, error } = await supabase
     .from('rooms')
-    .insert({ id: roomId, type: 'food', status: 'waiting' })
+    .insert({ id: roomId, type: 'food', topic_id: locationData, status: 'waiting' })
     .select().single()
   if (error) throw error
   return data

@@ -149,6 +149,10 @@
 
 .card-glow { display: none; }
 
+.category-card--food {
+  grid-column: 1 / -1;
+}
+
 .category-card:hover {
   border-color: var(--border-hover);
   background: var(--bg-card-hover);
