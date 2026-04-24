@@ -201,6 +201,8 @@ export default function ActivityRoom({ room, onDone }) {
   const hasConfettied = useRef(false)
   const isDoneRef = useRef(false)
   useEffect(() => { isDoneRef.current = isDone }, [isDone])
+  // Prevents the first swiper's celebration from firing twice (subscription + poll both may fire)
+  const placesTransitionFiredRef = useRef(false)
 
   // True when this user has swiped all places but isDone hasn't been set yet
   const finishedSwiping = phase === 'places' && places.length > 0 && currentIndex >= places.length && !isDone
@@ -280,24 +282,15 @@ export default function ActivityRoom({ room, onDone }) {
   useEffect(() => {
     const unsub = subscribeToRoomChanges(room.id, (updatedRoom) => {
       const data = parseRoomActivityData(updatedRoom)
-      // Transition: partner finished fetching and updated the room to 'places'
       if (data.phase === 'places' && phase === 'categories') {
         console.log('[ActivityRoom] Room update → places phase, count:', data.places.length)
-        setMatchedCategory(data.matchedCategory)
-        setPlaces(data.places)
-        setPhase('places')
-        setCurrentIndex(0)
-        setMySwipes({})
-        setPartnerSwipes({})
-        setTransitioning(false)
-        setWaitingForPartnerPlaces(false)
+        showCelebrationThenPlaces(data)
       }
     })
     return unsub
-  }, [room.id, phase])
+  }, [room.id, phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Polling fallback: check room every 3s while waiting for partner ────────
-  // Realtime subscriptions can miss updates; polling ensures we never get stuck.
   useEffect(() => {
     if (phase !== 'categories') return
     const interval = setInterval(async () => {
@@ -307,21 +300,30 @@ export default function ActivityRoom({ room, onDone }) {
         const data = parseRoomActivityData(latest)
         if (data.phase === 'places') {
           console.log('[ActivityRoom] Poll detected places phase, count:', data.places.length)
-          setMatchedCategory(data.matchedCategory)
-          setPlaces(data.places)
-          setPhase('places')
-          setCurrentIndex(0)
-          setMySwipes({})
-          setPartnerSwipes({})
-          setTransitioning(false)
-          setWaitingForPartnerPlaces(false)
+          showCelebrationThenPlaces(data)
         }
-      } catch (e) {
-        // polling failure is non-fatal
-      }
+      } catch (e) { /* non-fatal */ }
     }, 3000)
     return () => clearInterval(interval)
-  }, [room.id, phase])
+  }, [room.id, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Show "You both want X!" for 2s then switch to places swipe.
+  // Used by the FIRST swiper who didn't call handleCategoryMatch themselves.
+  function showCelebrationThenPlaces(data) {
+    if (placesTransitionFiredRef.current) return // already fired, ignore duplicate events
+    placesTransitionFiredRef.current = true
+    setMatchedCategory(data.matchedCategory)
+    setWaitingForPartnerPlaces(false)
+    setTransitioning(true) // shows "You both want X!" screen
+    setTimeout(() => {
+      setPlaces(data.places)
+      setPhase('places')
+      setCurrentIndex(0)
+      setMySwipes({})
+      setPartnerSwipes({})
+      setTransitioning(false)
+    }, 2200)
+  }
 
   // ── Handle category match ─────────────────────────────────────────────────
   // Called only by the person whose swipe creates the match (recordSwipe returns true).
