@@ -19,18 +19,28 @@ function parseLocation(topicId) {
   try { return JSON.parse(topicId) } catch { return null }
 }
 
-// Parse phase/places/matched_category from room row
+// Parse phase/places/matched_category from room row.
+// Primary storage: _phase/_matched_category/_places packed into topic_id JSON
+// (works without custom DB columns).
+// Fallback: dedicated room.phase / room.matched_category / room.places columns
+// (used if the DB migration has been run).
 function parseRoomActivityData(room) {
-  let phase = room.phase || 'categories'
-  let matchedCategory = null
-  let places = []
+  // Try topic_id first (no custom columns needed)
+  let topicData = {}
+  try { topicData = JSON.parse(room.topic_id || '{}') } catch { topicData = {} }
 
-  if (room.matched_category) {
-    try { matchedCategory = JSON.parse(room.matched_category) } catch { matchedCategory = null }
+  const phase = topicData._phase || room.phase || 'categories'
+
+  let matchedCategory = topicData._matched_category || null
+  if (!matchedCategory && room.matched_category) {
+    try { matchedCategory = JSON.parse(room.matched_category) } catch {}
   }
-  if (room.places) {
-    try { places = JSON.parse(room.places) } catch { places = [] }
+
+  let places = topicData._places || []
+  if (places.length === 0 && room.places) {
+    try { places = JSON.parse(room.places) } catch {}
   }
+
   return { phase, matchedCategory, places }
 }
 
@@ -301,6 +311,7 @@ export default function ActivityRoom({ room, onDone }) {
         phase: 'places',
         matched_category: cat,
         places: fetchedPlaces,
+        locationData: location, // preserve lat/lng/radius alongside phase data in topic_id
       })
     } catch (err) {
       console.error('[ActivityRoom] updateActivityRoomPhase error:', err)

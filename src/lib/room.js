@@ -171,13 +171,19 @@ export async function createActivityRoom({ lat, lng, locationName, radius } = {}
   return data
 }
 
-// Update activity room phase (categories → places)
-export async function updateActivityRoomPhase(roomId, { phase, matched_category, places }) {
-  const update = {
-    phase,
-    matched_category: matched_category ? JSON.stringify(matched_category) : null,
-    places: places ? JSON.stringify(places) : null,
+// Update activity room phase (categories → places).
+// Packs phase data into topic_id so no custom DB columns are required.
+// locationData should be the parsed location object { lat, lng, locationName, radius }
+// already stored in topic_id — we preserve it alongside the new phase fields.
+export async function updateActivityRoomPhase(roomId, { phase, matched_category, places, locationData }) {
+  // Merge phase info into the existing topic_id JSON using _ prefixed keys
+  const combined = {
+    ...(locationData || {}),
+    _phase: phase,
+    _matched_category: matched_category || null,
+    _places: places || [],
   }
+  const update = { topic_id: JSON.stringify(combined) }
 
   if (!supabase) {
     const key = `swaip_room_${roomId}`
