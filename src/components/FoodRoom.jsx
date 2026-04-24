@@ -78,7 +78,7 @@ export default function FoodRoom({ room, onDone }) {
       const isMatch = await recordSwipe(room.id, userToken.current, item.id, direction)
       if (isMatch && direction === 'right') {
         setMatchItem(item)
-        setMatches(prev => [...prev, item])
+        setMatches(prev => prev.find(m => m.id === item.id) ? prev : [...prev, item])
         saveMatch({ id: item.id, title: item.title, category: 'food', image: null })
         confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
       }

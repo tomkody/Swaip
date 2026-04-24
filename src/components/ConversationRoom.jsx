@@ -59,6 +59,7 @@ export default function ConversationRoom({ room, onDone }) {
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [likedIds, setLikedIds] = useState([])        // IDs of right-swiped cards
+  const likedIdsRef = useRef([])                      // sync ref — avoids stale closure on last card
   const [submitted, setSubmitted] = useState(false)
   const [partnerSubmitted, setPartnerSubmitted] = useState(false)
   const [matches, setMatches] = useState(null)
@@ -110,7 +111,7 @@ export default function ConversationRoom({ room, onDone }) {
     if (submitted) return
     setLoading(true)
     try {
-      await submitConversationSelections(room.id, userToken.current, likedIds)
+      await submitConversationSelections(room.id, userToken.current, likedIdsRef.current)
       setSubmitted(true)
       const result = await getConversationMatches(room.id, userToken.current)
       if (result.partnerSubmitted) {
@@ -128,7 +129,8 @@ export default function ConversationRoom({ room, onDone }) {
     const card = cards[currentIndex]
     if (!card) return
     if (direction === 'right') {
-      setLikedIds(prev => [...prev, card.id])
+      likedIdsRef.current = [...likedIdsRef.current, card.id]
+      setLikedIds(likedIdsRef.current)
     }
     const nextIndex = currentIndex + 1
     setCurrentIndex(nextIndex)

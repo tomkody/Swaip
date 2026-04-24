@@ -32,6 +32,7 @@ export default function Room() {
 
   const [room, setRoom] = useState(null)
   const [movies, setMovies] = useState([])
+  const moviesRef = useRef([])                         // always-current ref for subscription callback
   const [currentIndex, setCurrentIndex] = useState(0)
   const [matchItem, setMatchItem] = useState(null)
   const [matches, setMatches] = useState([])
@@ -93,14 +94,15 @@ export default function Room() {
     return () => clearInterval(interval)
   }, [isCreator, partnerJoined, roomId])
 
-  // Keep isDoneRef in sync so the swipe subscription can read it without stale closure
+  // Keep refs in sync so subscription callbacks always see current values
   useEffect(() => { isDoneRef.current = isDone }, [isDone])
+  useEffect(() => { moviesRef.current = movies }, [movies])
 
   useEffect(() => {
     if (!room || (room.type !== 'movies' && room.type !== 'series')) return
 
     const unsubSwipes = subscribeToSwipes(roomId, userToken.current, (itemId) => {
-      const matched = movies.find((m) => m.id === itemId)
+      const matched = moviesRef.current.find((m) => m.id === itemId)
       if (matched) {
         // Always update real-time matches list (deduped)
         setMatches((prev) => prev.find(m => m.id === matched.id) ? prev : [...prev, matched])
@@ -118,7 +120,7 @@ export default function Room() {
     })
 
     return () => unsubSwipes()
-  }, [room, movies, roomId])
+  }, [room, roomId])
 
   const handleSwipe = useCallback(
     async (direction) => {
