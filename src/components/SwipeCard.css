@@ -157,6 +157,41 @@
   opacity: 0.85;
 }
 
+/* ── Open / closed badge on front face ─────────────────────────── */
+.card-open-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: 2px 0 0;
+}
+
+.card-open-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  letter-spacing: 0.1px;
+}
+
+.card-open-badge--open {
+  background: rgba(34, 197, 94, 0.22);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.card-open-badge--closed {
+  background: rgba(239, 68, 68, 0.22);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.card-open-hours {
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  font-weight: 500;
+}
+
 .card-overview {
   font-size: 12px;
   line-height: 1.5;

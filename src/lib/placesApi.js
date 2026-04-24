@@ -73,6 +73,18 @@ function formatPlace(place, centerLat, centerLng) {
   const isOpen = place.currentOpeningHours?.openNow ?? null
   const openLabel = isOpen === true ? 'Open now' : isOpen === false ? 'Closed' : null
 
+  // Extract today's opening hours from weekdayDescriptions
+  // Google uses Mon=0…Sun=6; JS getDay() uses Sun=0, Mon=1…Sat=6
+  let todayHours = null
+  const weekday = place.currentOpeningHours?.weekdayDescriptions
+  if (weekday && weekday.length === 7) {
+    const jsDay = new Date().getDay()                  // 0=Sun … 6=Sat
+    const googleIdx = jsDay === 0 ? 6 : jsDay - 1     // 0=Mon … 6=Sun
+    const raw = weekday[googleIdx] || ''
+    // Strip the day name prefix ("Monday: ") to get just the hours
+    todayHours = raw.replace(/^[^:]+:\s*/, '').trim() || null
+  }
+
   const overviewParts = []
   if (place.editorialSummary?.text) overviewParts.push(place.editorialSummary.text)
   else if (place.formattedAddress) overviewParts.push(place.formattedAddress)
@@ -98,6 +110,7 @@ function formatPlace(place, centerLat, centerLng) {
     distance: distLabel,
     priceLevel,
     isOpen,
+    todayHours,
     lat: loc.latitude ?? null,
     lng: loc.longitude ?? null,
   }

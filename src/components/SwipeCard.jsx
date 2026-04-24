@@ -147,6 +147,16 @@ export default function SwipeCard({ item, onSwipe, active }) {
                 {item.runtime && <span className="card-runtime">{item.runtime}</span>}
               </div>
               {item.genre && <p className="card-genre">{item.genre}</p>}
+              {item.isOpen !== null && (
+                <div className="card-open-row">
+                  <span className={`card-open-badge ${item.isOpen ? 'card-open-badge--open' : 'card-open-badge--closed'}`}>
+                    {item.isOpen ? '● Open' : '● Closed'}
+                  </span>
+                  {item.todayHours && (
+                    <span className="card-open-hours">{item.todayHours}</span>
+                  )}
+                </div>
+              )}
               <h2 className="card-title">{item.title}</h2>
               <p className="card-flip-hint">Tap for details</p>
             </div>
