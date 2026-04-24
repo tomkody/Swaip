@@ -2,15 +2,27 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import confetti from 'canvas-confetti'
 import { ACTIVITY_CATEGORIES as _ACTIVITY_CATEGORIES } from '../lib/activities'
 
-// Shuffle once per session (different order each time the component mounts)
-const ACTIVITY_CATEGORIES = (() => {
-  const a = [..._ACTIVITY_CATEGORIES]
+// Seeded shuffle — same order for everyone in the same room, different per room
+function seededShuffle(arr, seed) {
+  const a = [...arr]
+  let h = 0x9E3779B9
+  for (let i = 0; i < seed.length; i++) {
+    h = Math.imul(h ^ seed.charCodeAt(i), 0x9E3779B9)
+    h ^= h >>> 15
+  }
+  let t = (h >>> 0) + 0x6D2B79F5
+  function rng() {
+    t = (t + 0x6D2B79F5) >>> 0
+    let r = Math.imul(t ^ (t >>> 15), 1 | t)
+    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r)
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296
+  }
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]]
+    const j = Math.floor(rng() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
   }
   return a
-})()
+}
 import { fetchNearbyPlaces } from '../lib/placesApi'
 import {
   getUserToken,
@@ -189,6 +201,9 @@ function CategoryCard({ category, onSwipe, active, offset, dragging, leaving }) 
 export default function ActivityRoom({ room, onDone }) {
   const userToken = useRef(getUserToken())
   const location = parseLocation(room.topic_id)
+
+  // Same shuffled order for everyone in this room, different per room
+  const ACTIVITY_CATEGORIES = seededShuffle(_ACTIVITY_CATEGORIES, room.id)
 
   const initialData = parseRoomActivityData(room)
   const [phase, setPhase] = useState(initialData.phase)
