@@ -530,3 +530,16 @@
 .act-result-directions:active {
   opacity: 0.8;
 }
+
+.done-early-btn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  transition: color 0.2s;
+  cursor: pointer;
+}
+.done-early-btn:hover { color: var(--text); }

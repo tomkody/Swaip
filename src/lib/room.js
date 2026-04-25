@@ -178,12 +178,13 @@ export async function createActivityRoom({ lat, lng, locationName, radius } = {}
 // Packs phase data into topic_id so no custom DB columns are required.
 // locationData should be the parsed location object { lat, lng, locationName, radius }
 // already stored in topic_id — we preserve it alongside the new phase fields.
-export async function updateActivityRoomPhase(roomId, { phase, matched_category, places, locationData }) {
+export async function updateActivityRoomPhase(roomId, { phase, matched_category, matched_categories, places, locationData }) {
   // Merge phase info into the existing topic_id JSON using _ prefixed keys
   const combined = {
     ...(locationData || {}),
     _phase: phase,
-    _matched_category: matched_category || null,
+    _matched_category: matched_category || (matched_categories?.[0]) || null, // backward compat
+    _matched_categories: matched_categories || (matched_category ? [matched_category] : []),
     _places: places || [],
   }
   const update = { topic_id: JSON.stringify(combined) }

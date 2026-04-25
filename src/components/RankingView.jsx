@@ -103,7 +103,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
     if (sharing) return
     setSharing(true)
     try {
-      const typeLabel = room.type === 'series' ? 'shows' : room.type === 'activities' ? 'activities' : 'movies'
+      const typeLabel = room.type === 'series' ? 'shows' : room.type === 'activities' ? 'activities' : room.type === 'food' ? 'restaurants' : 'movies'
       const canvas = await generateShareImage({
         title: matches.length === 1 ? matches[0].title : `${matches.length} ${typeLabel}`,
         posterUrl: matches.length === 1 ? (matches[0].poster || null) : null,
@@ -117,8 +117,8 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
     finally { setSharing(false) }
   }
 
-  const emoji = room.type === 'series' ? '📺' : room.type === 'activities' ? '🎯' : '🎬'
-  const typeLabel = room.type === 'series' ? 'shows' : room.type === 'activities' ? 'activities' : 'movies'
+  const emoji = room.type === 'series' ? '📺' : room.type === 'activities' ? '🎯' : room.type === 'food' ? '🍽️' : '🎬'
+  const typeLabel = room.type === 'series' ? 'shows' : room.type === 'activities' ? 'activities' : room.type === 'food' ? 'restaurants' : 'movies'
 
   // ── RESULTS ──────────────────────────────────────────────────────
   if (phase === 'results') {

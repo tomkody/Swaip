@@ -12,7 +12,10 @@ import {
   fetchRoomMatches,
 } from '../lib/room'
 import SwipeCard from './SwipeCard'
+import RankingView from './RankingView'
 import './ActivityRoom.css'
+
+const FOOD_CAT_DONE_NUMID = 2999
 
 // ── Seeded shuffle — same order for both users in the same room ──────────────
 function seededShuffle(arr, seed) {
@@ -42,23 +45,18 @@ function parseLocation(topicId) {
   try { return JSON.parse(topicId) } catch { return null }
 }
 
-// ── Parse phase/places/matched_category from room row ────────────────────────
+// ── Parse phase/places/matched_categories from room row ──────────────────────
 function parseRoomFoodData(room) {
   let topicData = {}
-  try { topicData = JSON.parse(room.topic_id || '{}') } catch { topicData = {} }
-  const phase = topicData._phase || room.phase || 'categories'
-  let matchedCategory = topicData._matched_category || null
-  if (!matchedCategory && room.matched_category) {
-    try { matchedCategory = JSON.parse(room.matched_category) } catch {}
-  }
-  let places = topicData._places || []
-  if (places.length === 0 && room.places) {
-    try { places = JSON.parse(room.places) } catch {}
-  }
-  return { phase, matchedCategory, places }
+  try { topicData = JSON.parse(room.topic_id || '{}') } catch {}
+  const phase = topicData._phase || 'categories'
+  const matchedCategories = topicData._matched_categories ||
+    (topicData._matched_category ? [topicData._matched_category] : [])
+  const places = topicData._places || []
+  return { phase, matchedCategories, places }
 }
 
-// ─── Category Card (identical pattern to ActivityRoom) ────────────────────────
+// ─── Category Card ────────────────────────────────────────────────────────────
 
 function CategoryCard({ category, onSwipe, active }) {
   const cardRef = useRef(null)
@@ -198,7 +196,7 @@ export default function FoodRoom({ room, onDone }) {
 
   const initialData = parseRoomFoodData(room)
   const [phase, setPhase] = useState(initialData.phase)
-  const [matchedCategory, setMatchedCategory] = useState(initialData.matchedCategory)
+  const [matchedCategories, setMatchedCategories] = useState(initialData.matchedCategories)
   const [places, setPlaces] = useState(initialData.places)
 
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -209,28 +207,16 @@ export default function FoodRoom({ room, onDone }) {
   const [transitioning, setTransitioning] = useState(false)
   const [fetchingPlaces, setFetchingPlaces] = useState(false)
   const [placesError, setPlacesError] = useState(null)
-  const [waitingForPartnerPlaces, setWaitingForPartnerPlaces] = useState(false)
+  const [waitingForPartner, setWaitingForPartner] = useState(false)
 
   const isDoneRef = useRef(false)
   const placesTransitionFiredRef = useRef(false)
+  const pendingSwipesRef = useRef([])
+  const likedCatIdsRef = useRef(new Set())
+
   useEffect(() => { isDoneRef.current = isDone }, [isDone])
 
   const finishedSwiping = phase === 'places' && places.length > 0 && currentIndex >= places.length && !isDone
-
-  // ── Show celebration then transition to places ────────────────────────────
-  function showCelebrationThenPlaces(data) {
-    if (placesTransitionFiredRef.current) return
-    placesTransitionFiredRef.current = true
-    setMatchedCategory(data.matchedCategory)
-    setWaitingForPartnerPlaces(false)
-    setTransitioning(true)
-    setTimeout(() => {
-      setPlaces(data.places)
-      setPhase('places')
-      setCurrentIndex(0)
-      setTransitioning(false)
-    }, 2200)
-  }
 
   // ── Poll for matches while waiting for partner ────────────────────────────
   useEffect(() => {
@@ -293,18 +279,112 @@ export default function FoodRoom({ room, onDone }) {
     return unsub
   }, [room.id, phase, places]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Subscribe to room changes (partner fetched places) ───────────────────
+  // ── fetchAndTransitionToPlaces ────────────────────────────────────────────
+  const fetchAndTransitionToPlaces = useCallback(async (matchedCats) => {
+    if (placesTransitionFiredRef.current) return
+    placesTransitionFiredRef.current = true
+    setMatchedCategories(matchedCats)
+    setTransitioning(true)
+    setFetchingPlaces(true)
+
+    let allPlaces = []
+    if (location?.lat != null && matchedCats.length > 0) {
+      const seenIds = new Set()
+      for (const cat of matchedCats) {
+        try {
+          const fetched = await fetchNearbyPlaces(location.lat, location.lng, location.radius || 5000, cat.types, room.id)
+          for (const p of fetched) {
+            if (!seenIds.has(p.id)) { seenIds.add(p.id); allPlaces.push(p) }
+          }
+        } catch (err) { console.error('[FoodRoom] fetch error for', cat.label, err) }
+      }
+    }
+
+    setFetchingPlaces(false)
+
+    try {
+      await updateActivityRoomPhase(room.id, { phase: 'places', matched_categories: matchedCats, places: allPlaces, locationData: location })
+    } catch (err) { console.error('[FoodRoom] updateActivityRoomPhase error:', err) }
+
+    // Read canonical places from DB
+    try {
+      const canonical = await getRoom(room.id)
+      if (canonical) {
+        const data = parseRoomFoodData(canonical)
+        if (data.places.length > 0) allPlaces = data.places
+      }
+    } catch {}
+
+    setPlaces(allPlaces)
+    setPhase('places')
+    setCurrentIndex(0)
+    setTransitioning(false)
+    setWaitingForPartner(false)
+  }, [location, room.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── handleCategoriesDone (sentinel logic) ────────────────────────────────
+  const handleCategoriesDone = useCallback(async () => {
+    setWaitingForPartner(true)
+    try {
+      // Wait for all pending category swipes to reach DB before sending sentinel
+      await Promise.all(pendingSwipesRef.current)
+      pendingSwipesRef.current = []
+
+      const isBothDone = await recordSwipe(room.id, userToken.current, FOOD_CAT_DONE_NUMID, 'right')
+      if (isBothDone) {
+        // I'm second to finish — fetch all matched categories from DB authoritatively
+        const allMatchIds = await fetchRoomMatches(room.id, userToken.current)
+        const matchedCats = FOOD_CATS.filter(c => allMatchIds?.includes(c.numId))
+        await fetchAndTransitionToPlaces(matchedCats)
+      }
+      // else: I'm first — wait for partner via subscribeToRoomChanges/polling
+    } catch (err) {
+      console.error('[FoodRoom] handleCategoriesDone error:', err)
+      setWaitingForPartner(false)
+    }
+  }, [room.id, FOOD_CATS, fetchAndTransitionToPlaces]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── handleCategorySwipe (no early exit, collect pending swipes) ──────────
+  const handleCategorySwipe = useCallback(async (direction) => {
+    const cat = FOOD_CATS[currentIndex]
+    if (!cat) return
+    const newIndex = currentIndex + 1
+    setCurrentIndex(newIndex)
+
+    if (direction === 'right') {
+      likedCatIdsRef.current.add(cat.numId)
+      const promise = recordSwipe(room.id, userToken.current, cat.numId, direction).catch(console.error)
+      pendingSwipesRef.current.push(promise)
+    }
+
+    if (newIndex >= FOOD_CATS.length) {
+      handleCategoriesDone()
+    }
+  }, [currentIndex, room.id, FOOD_CATS, handleCategoriesDone]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Subscribe to room changes (detect partner fetched places) ────────────
   useEffect(() => {
     const unsub = subscribeToRoomChanges(room.id, (updatedRoom) => {
       const data = parseRoomFoodData(updatedRoom)
       if (data.phase === 'places' && phase === 'categories') {
-        showCelebrationThenPlaces(data)
+        if (placesTransitionFiredRef.current) return
+        placesTransitionFiredRef.current = true
+        setMatchedCategories(data.matchedCategories)
+        setTransitioning(true)
+        // Brief celebration, then show places
+        setTimeout(() => {
+          setPlaces(data.places)
+          setPhase('places')
+          setCurrentIndex(0)
+          setTransitioning(false)
+          setWaitingForPartner(false)
+        }, 2200)
       }
     })
     return unsub
   }, [room.id, phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Polling fallback while in category phase ──────────────────────────────
+  // ── Polling fallback ──────────────────────────────────────────────────────
   useEffect(() => {
     if (phase !== 'categories') return
     const interval = setInterval(async () => {
@@ -312,101 +392,19 @@ export default function FoodRoom({ room, onDone }) {
         const latest = await getRoom(room.id)
         if (!latest) return
         const data = parseRoomFoodData(latest)
-        if (data.phase === 'places' && data.places.length > 0 && !placesTransitionFiredRef.current) {
-          showCelebrationThenPlaces(data)
+        if (data.phase === 'places' && !placesTransitionFiredRef.current) {
+          placesTransitionFiredRef.current = true
+          setMatchedCategories(data.matchedCategories)
+          setPlaces(data.places)
+          setPhase('places')
+          setCurrentIndex(0)
+          setWaitingForPartner(false)
+          setTransitioning(false)
         }
-      } catch { /* non-fatal */ }
+      } catch {}
     }, 3000)
     return () => clearInterval(interval)
   }, [room.id, phase]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Handle cuisine match ──────────────────────────────────────────────────
-  const handleCategoryMatch = useCallback(async (cat) => {
-    if (transitioning || phase !== 'categories') return
-    setTransitioning(true)
-    setMatchedCategory(cat)
-    setPlacesError(null)
-
-    await new Promise(r => setTimeout(r, 2000))
-    setFetchingPlaces(true)
-
-    let fetchedPlaces = []
-    if (location?.lat != null) {
-      try {
-        fetchedPlaces = await fetchNearbyPlaces(
-          location.lat,
-          location.lng,
-          location.radius || 5000,
-          cat.types,
-          room.id
-        )
-      } catch (err) {
-        console.error('[FoodRoom] Places fetch error:', err)
-        setPlacesError(err.message || 'Failed to fetch restaurants')
-      }
-    }
-
-    setFetchingPlaces(false)
-
-    try {
-      await updateActivityRoomPhase(room.id, {
-        phase: 'places',
-        matched_category: cat,
-        places: fetchedPlaces,
-        locationData: location,
-      })
-    } catch (err) {
-      console.error('[FoodRoom] updateActivityRoomPhase error:', err)
-    }
-
-    // Read canonical places from DB
-    try {
-      const canonical = await getRoom(room.id)
-      if (canonical) {
-        const canonicalData = parseRoomFoodData(canonical)
-        if (canonicalData.places.length > 0) fetchedPlaces = canonicalData.places
-      }
-    } catch { /* non-fatal */ }
-
-    setPlaces(fetchedPlaces)
-    setPhase('places')
-    setCurrentIndex(0)
-    setTransitioning(false)
-  }, [transitioning, phase, location, room.id])
-
-  // ── Swipe a cuisine category ──────────────────────────────────────────────
-  const handleCategorySwipe = useCallback(async (direction) => {
-    const cat = FOOD_CATS[currentIndex]
-    if (!cat) return
-
-    setCurrentIndex(i => i + 1)
-    if (direction !== 'right') return
-
-    try {
-      const isMatch = await recordSwipe(room.id, userToken.current, cat.numId, direction)
-      if (isMatch) {
-        // Check if partner already fetched places
-        try {
-          const latest = await getRoom(room.id)
-          if (latest) {
-            const latestData = parseRoomFoodData(latest)
-            if (latestData.phase === 'places' && latestData.places.length > 0) {
-              setMatchedCategory(latestData.matchedCategory)
-              setPlaces(latestData.places)
-              setPhase('places')
-              setCurrentIndex(0)
-              setTransitioning(false)
-              setWaitingForPartnerPlaces(false)
-              return
-            }
-          }
-        } catch { /* non-fatal */ }
-        handleCategoryMatch(cat)
-      }
-    } catch (err) {
-      console.error('recordSwipe error:', err)
-    }
-  }, [currentIndex, room.id, handleCategoryMatch, FOOD_CATS])
 
   // ── Swipe a restaurant ────────────────────────────────────────────────────
   const handlePlaceSwipe = useCallback(async (direction) => {
@@ -428,22 +426,36 @@ export default function FoodRoom({ room, onDone }) {
     }
   }, [places, currentIndex, room.id])
 
-  function handleRetryPlaces() {
-    if (!matchedCategory) return
-    setPlacesError(null)
-    handleCategoryMatch(matchedCategory)
+  // ── Results → RankingView ─────────────────────────────────────────────────
+  if (isDone) {
+    // Normalize places: use numId as id so RankingView's subscribeToSwipes matching works
+    const normalizedPlaces = places.map(p => ({ ...p, id: p.numId }))
+    const normalizedMatches = matches.map(p => ({ ...p, id: p.numId }))
+    return (
+      <RankingView
+        matches={normalizedMatches}
+        room={room}
+        movies={normalizedPlaces}
+        onDone={onDone}
+      />
+    )
   }
 
-  // ── Waiting for partner to fetch places ──────────────────────────────────
-  if (waitingForPartnerPlaces) {
+  // ── Waiting for partner to finish categories ──────────────────────────────
+  if (waitingForPartner && !transitioning) {
+    const likedCats = FOOD_CATS.filter(c => likedCatIdsRef.current.has(c.numId))
     return (
       <div className="act-center">
-        <div className="act-transition">
-          <div className="act-transition-emoji">{matchedCategory?.emoji}</div>
-          <h2>You both want</h2>
-          <h1 className="act-transition-label">{matchedCategory?.label}!</h1>
-          <p className="act-transition-sub">Loading restaurants nearby…</p>
-          <div className="loader" style={{ marginTop: 20 }} />
+        <div className="act-waiting">
+          <div className="act-waiting-icon">⏳</div>
+          <h2>Waiting for your partner…</h2>
+          <p className="act-waiting-text">You've picked your cuisines. Hang tight!</p>
+          {likedCats.length > 0 && (
+            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 8 }}>
+              Your picks: {likedCats.map(c => `${c.emoji} ${c.label}`).join(', ')}
+            </p>
+          )}
+          <div className="loader" style={{ margin: '16px auto' }} />
         </div>
       </div>
     )
@@ -456,18 +468,25 @@ export default function FoodRoom({ room, onDone }) {
         <div className="act-transition">
           {fetchingPlaces ? (
             <>
-              <div className="act-transition-emoji">{matchedCategory?.emoji}</div>
+              <div className="act-transition-emoji">🔍</div>
               <h2>Finding restaurants…</h2>
-              <p className="act-transition-sub">Searching nearby {matchedCategory?.label}</p>
+              <p className="act-transition-sub">
+                Searching for {matchedCategories.map(c => c.label).join(', ')} nearby
+              </p>
+              <div className="loader" style={{ marginTop: 20 }} />
+            </>
+          ) : matchedCategories.length > 0 ? (
+            <>
+              <div className="act-transition-emoji">🎉</div>
+              <h2>You matched on {matchedCategories.length} cuisine{matchedCategories.length !== 1 ? 's' : ''}!</h2>
+              <p className="act-transition-sub">{matchedCategories.map(c => `${c.emoji} ${c.label}`).join(' · ')}</p>
               <div className="loader" style={{ marginTop: 20 }} />
             </>
           ) : (
             <>
-              <div className="act-transition-emoji">{matchedCategory?.emoji}</div>
-              <h2>You both want</h2>
-              <h1 className="act-transition-label">{matchedCategory?.label}!</h1>
-              <p className="act-transition-sub">Finding restaurants nearby…</p>
-              <div className="loader" style={{ marginTop: 20 }} />
+              <div className="act-transition-emoji">😅</div>
+              <h2>No cuisine matches</h2>
+              <p className="act-transition-sub">You didn't agree on any cuisines. Try creating a new room!</p>
             </>
           )}
         </div>
@@ -483,7 +502,6 @@ export default function FoodRoom({ room, onDone }) {
           <div className="act-error-icon">😕</div>
           <h2>Couldn't load restaurants</h2>
           <p className="act-error-sub">{placesError}</p>
-          <button className="btn btn-primary" onClick={handleRetryPlaces}>Try again</button>
           <button className="btn btn-secondary" style={{ marginTop: 10 }} onClick={onDone}>Go home</button>
         </div>
       </div>
@@ -503,7 +521,7 @@ export default function FoodRoom({ room, onDone }) {
             {matchItem.poster ? (
               <img src={matchItem.poster} alt={matchItem.title} className="act-match-img" />
             ) : (
-              <div className="act-match-img-placeholder">{matchedCategory?.emoji || '🍽️'}</div>
+              <div className="act-match-img-placeholder">{matchedCategories[0]?.emoji || '🍽️'}</div>
             )}
             <div className="act-match-info">
               <h2>{matchItem.title}</h2>
@@ -536,10 +554,10 @@ export default function FoodRoom({ room, onDone }) {
     return (
       <div className="act-center">
         <div className="act-error">
-          <div className="act-error-icon">{matchedCategory?.emoji || '🍽️'}</div>
+          <div className="act-error-icon">{matchedCategories[0]?.emoji || '🍽️'}</div>
           <h2>No restaurants found</h2>
           <p className="act-error-sub">
-            We couldn't find any {matchedCategory?.label || 'restaurants'} nearby.
+            We couldn't find any {matchedCategories.map(c => c.label).join(' or ') || 'restaurants'} nearby.
             {!location ? ' Add a location when creating the room.' : ' Try a larger search radius.'}
           </p>
           <button className="btn btn-secondary" onClick={onDone}>Go home</button>
@@ -548,7 +566,7 @@ export default function FoodRoom({ room, onDone }) {
     )
   }
 
-  // ── Waiting for partner to finish swiping ────────────────────────────────
+  // ── Waiting for partner to finish swiping places ─────────────────────────
   if (finishedSwiping) {
     return (
       <div className="act-center">
@@ -568,7 +586,7 @@ export default function FoodRoom({ room, onDone }) {
                 <div key={p.id} className="act-waiting-match-item">
                   {p.poster
                     ? <img src={p.poster} alt={p.title} className="act-waiting-match-thumb" />
-                    : <div className="act-waiting-match-thumb act-waiting-match-thumb--empty">{matchedCategory?.emoji || '🍽️'}</div>}
+                    : <div className="act-waiting-match-thumb act-waiting-match-thumb--empty">{matchedCategories[0]?.emoji || '🍽️'}</div>}
                   <span className="act-waiting-match-name">{p.title}</span>
                 </div>
               ))}
@@ -581,89 +599,6 @@ export default function FoodRoom({ room, onDone }) {
           >
             See results now
           </button>
-        </div>
-      </div>
-    )
-  }
-
-  // ── Results screen ────────────────────────────────────────────────────────
-  if (isDone) {
-    return (
-      <div className="act-results">
-        <div className="act-results-inner">
-          {matches.length > 0 ? (
-            <>
-              <div className="act-results-icon">🎊</div>
-              <h2 className="act-results-title">Your restaurant matches!</h2>
-              <p className="act-results-sub">
-                You both agreed on {matches.length} place{matches.length !== 1 ? 's' : ''}
-                {matchedCategory ? ` for ${matchedCategory.label}` : ''}.
-              </p>
-              <div className="act-results-list">
-                {matches.map(place => (
-                  <div key={place.id} className="act-result-item">
-                    {place.poster ? (
-                      <img src={place.poster} alt={place.title} className="act-result-img" />
-                    ) : (
-                      <div className="act-result-img-placeholder">{matchedCategory?.emoji || '🍽️'}</div>
-                    )}
-                    <div className="act-result-info">
-                      <div className="act-result-title">{place.title}</div>
-                      {place.rating && (
-                        <div className="act-result-rating">★ {place.rating}{place.ratingCount ? ` (${place.ratingCount.toLocaleString()})` : ''}</div>
-                      )}
-                      <div className="act-result-meta-row">
-                        {place.isOpen === true && <span className="act-result-open">● Open now</span>}
-                        {place.isOpen === false && <span className="act-result-closed">● Closed</span>}
-                        {place.distance && <span className="act-result-distance">{place.distance}</span>}
-                      </div>
-                      {place.address && <div className="act-result-address">{place.address}</div>}
-                      {place.lat && place.lng && (
-                        <a
-                          href={`https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}&travelmode=walking`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="act-result-directions"
-                        >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polygon points="3 11 22 2 13 21 11 13 3 11"/>
-                          </svg>
-                          Get walking directions
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="act-results-icon">😅</div>
-              <h2 className="act-results-title">No matches</h2>
-              <p className="act-results-sub">
-                You didn't agree on any{matchedCategory ? ` ${matchedCategory.label}` : ''} restaurants this time.
-              </p>
-            </>
-          )}
-          <button className="btn btn-primary" style={{ width: '100%', marginTop: 24 }} onClick={onDone}>
-            Go home
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // ── All cuisines swiped but no match yet ──────────────────────────────────
-  if (phase === 'categories' && currentIndex >= FOOD_CATS.length) {
-    return (
-      <div className="act-center">
-        <div className="act-waiting">
-          <div className="act-waiting-icon">⏳</div>
-          <h2>Waiting for a match…</h2>
-          <p className="act-waiting-text">
-            You've swiped through all cuisines. Waiting for your partner to match one with you.
-          </p>
-          <div className="loader" />
         </div>
       </div>
     )
@@ -703,7 +638,7 @@ export default function FoodRoom({ room, onDone }) {
         </div>
 
         <div className="act-footer">
-          <p className="act-footer-hint">Swipe right on cuisines you'd both enjoy</p>
+          <p className="act-footer-hint">Swipe right on all cuisines you'd both enjoy</p>
         </div>
       </div>
     )
@@ -715,7 +650,7 @@ export default function FoodRoom({ room, onDone }) {
     <div className="act-room">
       <div className="act-header">
         <span className="act-phase-label">
-          {matchedCategory?.emoji} {matchedCategory?.label}
+          {matchedCategories.map(c => c.emoji).join(' ')} Restaurants
         </span>
         <div className="act-header-right">
           {matches.length > 0 && (
