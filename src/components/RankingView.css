@@ -58,8 +58,8 @@
 
 .rv-slot-filled {
   border-style: solid;
-  border-color: var(--primary);
-  background: rgba(255, 92, 106, 0.06);
+  border-color: var(--accent-orange);
+  background: var(--accent-soft);
 }
 
 .rv-slot-num {
@@ -155,20 +155,20 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--bg-glass);
-  border: 1px solid var(--border);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
   text-align: left;
   transition: all 0.2s;
-  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-xs);
   width: 100%;
 }
 .rv-match-item:hover:not(.rv-full) { border-color: var(--border-hover); }
 
 .rv-in-top3 {
-  border-color: var(--primary) !important;
-  background: rgba(255, 92, 106, 0.06) !important;
+  border-color: var(--accent-orange) !important;
+  background: var(--accent-soft) !important;
 }
 
 .rv-full { opacity: 0.4; cursor: default; }
@@ -207,6 +207,16 @@
 }
 .rv-match-info span { font-size: 12px; color: var(--text-muted); }
 
+.rv-hours {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+/* Use !important to win over the generic .rv-match-info span and .rv-result-info span rules */
+.rv-hours--open  { color: #22c55e !important; }
+.rv-hours--closed { color: #ef4444 !important; }
+
 .rv-badge {
   width: 32px;
   height: 32px;
@@ -219,7 +229,7 @@
   flex-shrink: 0;
 }
 .rv-badge-add { background: var(--bg-surface); color: var(--text-muted); border: 1px solid var(--border); }
-.rv-badge-ranked { background: var(--gradient-warm); color: #0D0B1A; }
+.rv-badge-ranked { background: var(--gradient-primary); color: #1E222B; }
 .rv-badge-full { background: transparent; color: var(--border); }
 
 /* Footer */
@@ -295,11 +305,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg-glass);
-  border: 1px solid var(--border);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 8px 10px;
-  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-xs);
 }
 
 .rv-wait-partner {
@@ -341,8 +351,8 @@
   align-items: center;
   gap: 8px;
   padding: 16px 8px;
-  background: var(--bg-glass);
-  border: 1px dashed var(--border);
+  background: var(--bg-surface);
+  border: 1.5px dashed var(--border);
   border-radius: var(--radius-sm);
 }
 .rv-wait-pending p {
@@ -381,13 +391,13 @@
 
 .rv-refresh-btn {
   padding: 10px 20px;
-  background: var(--bg-glass);
-  border: 1px solid var(--border);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
   border-radius: var(--radius-pill);
   font-size: 14px;
   font-weight: 600;
   color: var(--text);
-  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-xs);
   transition: all 0.2s;
 }
 .rv-refresh-btn:hover:not(:disabled) {
@@ -421,11 +431,11 @@
 
 /* Result cards */
 .rv-result-card {
-  background: var(--bg-glass);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   overflow: hidden;
-  backdrop-filter: blur(12px);
+  /* removed backdrop-filter */
   transition: border-color 0.2s;
 }
 .rv-result-card-inner {
@@ -439,12 +449,12 @@
   background: rgba(74, 222, 128, 0.04);
 }
 .rv-result-top {
-  border-color: var(--primary);
-  background: rgba(255, 92, 106, 0.05);
+  border-color: var(--accent-orange);
+  background: var(--accent-soft);
 }
 .rv-top-badge {
-  background: var(--gradient-warm);
-  color: #0D0B1A;
+  background: var(--gradient-primary);
+  color: #1E222B;
   font-size: 11px;
   font-weight: 800;
   padding: 4px 12px;
@@ -497,9 +507,9 @@
 }
 .rv-share-btn {
   width: 100%;
-  background: var(--bg-glass);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(12px);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  box-shadow: var(--shadow-xs);
   color: var(--text);
   font-size: 15px;
   font-weight: 700;
@@ -568,12 +578,12 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--bg-glass);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
   margin-bottom: 8px;
-  backdrop-filter: blur(12px);
+  /* removed backdrop-filter */
 }
 .rv-both {
   border-color: rgba(74, 222, 128, 0.4) !important;

@@ -44,11 +44,11 @@
   align-items: center;
   gap: 6px;
   padding: 16px 8px;
-  background: var(--bg-glass);
-  border: 2px solid var(--border);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
   border-radius: var(--radius);
   transition: all 0.25s ease;
-  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-xs);
 }
 
 .topic-card:hover {
@@ -58,9 +58,9 @@
 }
 
 .topic-card.selected {
-  border-color: var(--primary);
-  background: rgba(255, 92, 106, 0.08);
-  box-shadow: 0 0 20px rgba(255, 92, 106, 0.1);
+  border-color: var(--accent-orange);
+  background: var(--accent-soft);
+  box-shadow: var(--shadow);
 }
 
 .topic-check {
@@ -69,8 +69,8 @@
   right: 8px;
   font-size: 11px;
   font-weight: 700;
-  color: #0D0B1A;
-  background: var(--gradient-warm);
+  color: #1E222B;
+  background: var(--gradient-primary);
   width: 20px;
   height: 20px;
   border-radius: 50%;

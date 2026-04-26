@@ -22,7 +22,7 @@
   font-size: 32px;
   font-weight: 800;
   margin: 0 0 8px;
-  background: linear-gradient(135deg, #00B894, #55efc4);
+  background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -61,21 +61,23 @@
 .location-input {
   flex: 1;
   padding: 12px 14px;
-  background: var(--bg-glass);
-  border: 1px solid var(--border);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text);
   font-size: 15px;
   outline: none;
   transition: border-color 0.2s;
+  box-shadow: var(--shadow-xs);
+  font-family: 'Inter', sans-serif;
 }
 .location-input::placeholder { color: var(--text-muted); }
-.location-input:focus { border-color: var(--primary); }
+.location-input:focus { border-color: var(--accent-orange); }
 
 .geo-btn {
   width: 46px;
   height: 46px;
-  background: var(--bg-glass);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 20px;
@@ -108,7 +110,7 @@
 
 .radius-chip {
   padding: 8px 14px;
-  background: var(--bg-glass);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   color: var(--text-muted);
@@ -119,9 +121,9 @@
 }
 .radius-chip:hover { border-color: var(--primary); color: var(--text); }
 .radius-chip.active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #fff;
+  background: var(--gradient-primary);
+  border-color: var(--accent-coral);
+  color: #1E222B;
 }
 
 .create-error {

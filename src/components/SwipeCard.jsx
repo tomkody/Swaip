@@ -152,10 +152,13 @@ export default function SwipeCard({ item, onSwipe, active }) {
                   <span className={`card-open-badge ${item.isOpen ? 'card-open-badge--open' : 'card-open-badge--closed'}`}>
                     {item.isOpen ? '● Open' : '● Closed'}
                   </span>
-                  {item.isOpen && item.todayHours && item.todayHours !== 'Closed' && (
-                    <span className="card-open-hours">{item.todayHours}</span>
+                  {item.isOpen === true && item.closesAt && (
+                    <span className="card-open-hours">until {item.closesAt}</span>
                   )}
-                  {!item.isOpen && item.opensAt && (
+                  {item.isOpen === true && !item.closesAt && item.todayHours === 'Open 24 hours' && (
+                    <span className="card-open-hours">24 hours</span>
+                  )}
+                  {item.isOpen === false && item.opensAt && (
                     <span className="card-open-hours">Opens {item.opensAt}</span>
                   )}
                 </div>
@@ -187,8 +190,16 @@ export default function SwipeCard({ item, onSwipe, active }) {
                 <div className="card-back-tags">
                   {item.year && <span className="card-back-tag">{item.year}</span>}
                   {item.runtime && <span className="card-back-tag">{item.runtime}</span>}
-                  {item.isOpen === true  && <span className="card-back-tag card-back-tag--open">● Open now</span>}
-                  {item.isOpen === false && item.isOpen != null && <span className="card-back-tag card-back-tag--closed">● Closed</span>}
+                  {item.isOpen === true  && (
+                    <span className="card-back-tag card-back-tag--open">
+                      ● Open{item.closesAt ? ` · until ${item.closesAt}` : item.todayHours === 'Open 24 hours' ? ' 24h' : ''}
+                    </span>
+                  )}
+                  {item.isOpen === false && item.isOpen != null && (
+                    <span className="card-back-tag card-back-tag--closed">
+                      ● Closed{item.opensAt ? ` · opens ${item.opensAt}` : ''}
+                    </span>
+                  )}
                   {item.genre && item.genre.split(' · ').map(g => (
                     <span key={g} className="card-back-tag">{g}</span>
                   ))}

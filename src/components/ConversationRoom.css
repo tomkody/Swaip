@@ -27,11 +27,11 @@
 .conv-count {
   font-size: 13px;
   font-weight: 600;
-  color: var(--primary);
-  background: rgba(255, 92, 106, 0.1);
+  color: var(--accent-orange);
+  background: var(--accent-soft);
   padding: 4px 14px;
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(255, 92, 106, 0.2);
+  border: 1px solid rgba(255, 138, 76, 0.2);
 }
 
 .subtopic-section {
@@ -53,8 +53,8 @@
 
 .subtopic-chip {
   padding: 8px 14px;
-  background: var(--bg-glass);
-  border: 2px solid var(--border);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
   border-radius: var(--radius-pill);
   font-size: 13px;
   font-weight: 500;
@@ -63,7 +63,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-xs);
 }
 
 .subtopic-chip:hover {
@@ -72,10 +72,10 @@
 }
 
 .subtopic-chip.selected {
-  border-color: var(--primary);
-  background: rgba(255, 92, 106, 0.1);
-  color: var(--primary);
-  box-shadow: 0 0 16px rgba(255, 92, 106, 0.1);
+  border-color: var(--accent-orange);
+  background: var(--accent-soft);
+  color: var(--accent-orange);
+  box-shadow: var(--shadow-xs);
 }
 
 .subtopic-chip .check {
@@ -227,7 +227,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  backdrop-filter: blur(8px);
+  /* removed backdrop-filter */
 }
 
 .result-subtopic-block {
@@ -254,22 +254,22 @@
   align-items: flex-start;
   gap: 10px;
   padding: 10px 14px;
-  background: var(--bg-glass);
-  border: 1px solid var(--border);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 13px;
   line-height: 1.55;
   color: var(--text);
-  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-xs);
   text-align: left;
 }
 
 .question-num {
   font-size: 11px;
   font-weight: 800;
-  color: var(--primary);
-  background: rgba(255, 92, 106, 0.1);
-  border: 1px solid rgba(255, 92, 106, 0.2);
+  color: var(--accent-orange);
+  background: var(--accent-soft);
+  border: 1px solid rgba(255, 138, 76, 0.2);
   border-radius: 50%;
   width: 20px;
   height: 20px;
@@ -281,9 +281,9 @@
 }
 
 .result-chip.my-pick {
-  background: rgba(255, 92, 106, 0.08);
-  color: var(--primary);
-  border: 1px solid rgba(255, 92, 106, 0.2);
+  background: var(--accent-soft);
+  color: var(--accent-orange);
+  border: 1px solid rgba(255, 138, 76, 0.2);
 }
 
 /* Reveal section */
@@ -296,8 +296,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--bg-glass);
-  border: 1px solid var(--border);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 10px 18px;
   font-size: 14px;
@@ -305,7 +305,7 @@
   color: var(--text);
   transition: all 0.25s;
   margin-bottom: 6px;
-  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-xs);
 }
 
 .reveal-toggle:hover {
