@@ -330,9 +330,14 @@
   padding: 9px 14px;
   font-size: 13px;
   font-weight: 600;
+  font-family: inherit;
   text-decoration: none;
   transition: background 0.18s;
   cursor: pointer;
+}
+.card-back-directions:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 .card-back-directions:hover,
 .card-back-directions:active {

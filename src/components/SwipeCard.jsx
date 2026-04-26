@@ -17,6 +17,33 @@ export default function SwipeCard({ item, onSwipe, active }) {
   const [dragging, setDragging] = useState(false)
   const [leaving, setLeaving] = useState(null)
   const [flipped, setFlipped] = useState(false)
+  const [gettingLocation, setGettingLocation] = useState(false)
+
+  // ── Directions ────────────────────────────────────────────────────
+  function handleDirections(e) {
+    e.stopPropagation()
+    const dest = `${item.lat},${item.lng}`
+    const base = `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=walking`
+
+    if (!navigator.geolocation) {
+      window.open(base, '_blank', 'noopener,noreferrer')
+      return
+    }
+
+    setGettingLocation(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGettingLocation(false)
+        const origin = `${pos.coords.latitude},${pos.coords.longitude}`
+        window.open(`${base}&origin=${origin}`, '_blank', 'noopener,noreferrer')
+      },
+      () => {
+        setGettingLocation(false)
+        window.open(base, '_blank', 'noopener,noreferrer')
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+    )
+  }
 
   // ── Drag handlers (swipe detection only) ──────────────────────────
 
@@ -212,18 +239,16 @@ export default function SwipeCard({ item, onSwipe, active }) {
                 </p>
 
                 {item.lat && item.lng && (
-                  <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}&travelmode=walking`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
                     className="card-back-directions"
-                    onClick={e => e.stopPropagation()}
+                    onClick={handleDirections}
+                    disabled={gettingLocation}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <polygon points="3 11 22 2 13 21 11 13 3 11"/>
                     </svg>
-                    Get walking directions
-                  </a>
+                    {gettingLocation ? 'Getting location…' : 'Get walking directions'}
+                  </button>
                 )}
 
                 <p className="card-back-hint">Tap to flip back</p>
