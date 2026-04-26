@@ -1,62 +1,128 @@
+/* ── Fonts ──────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+/* ── Design Tokens — Light (default) ───────────────────────────────────── */
 :root {
-  --primary: #FF5C6A;
-  --primary-glow: rgba(255, 92, 106, 0.25);
-  --accent: #FFC84E;
-  --accent-glow: rgba(255, 200, 78, 0.2);
-  --success: #4ADE80;
-  --success-glow: rgba(74, 222, 128, 0.15);
-  --danger: #FF5C6A;
-  --bg: #0D0B1A;
-  --bg-card: rgba(255, 255, 255, 0.05);
-  --bg-card-hover: rgba(255, 255, 255, 0.09);
-  --bg-surface: rgba(255, 255, 255, 0.07);
-  --bg-glass: rgba(255, 255, 255, 0.05);
-  --text: #F0EDF6;
-  --text-muted: #9B95A8;
-  --border: rgba(255, 255, 255, 0.09);
-  --border-hover: rgba(255, 255, 255, 0.18);
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 40px var(--primary-glow);
-  --radius: 20px;
-  --radius-sm: 12px;
-  --radius-pill: 50px;
-  --gradient-warm: linear-gradient(135deg, #F74F5E 0%, #F5B83A 100%);
-  --gradient-bg: radial-gradient(ellipse at 50% 0%, rgba(255, 92, 106, 0.07) 0%, transparent 60%);
+  /* Brand colours */
+  --brand-ink:     #1E222B;
+  --brand-bg:      #F6F3F2;
+  --brand-surface: #FFFFFF;
+  --brand-border:  #E8E2DF;
+
+  /* Accent system */
+  --accent-coral:  #FF6B6B;
+  --accent-orange: #FF8A4C;
+  --accent-peach:  #FFB15E;
+  --accent-soft:   #FFF1EA;
+
+  /* Gradient */
+  --gradient-primary: linear-gradient(135deg, #FF6B6B 0%, #FF8A4C 50%, #FFB15E 100%);
+  --gradient-warm:    linear-gradient(135deg, #FF6B6B 0%, #FF8A4C 50%, #FFB15E 100%);
+
+  /* Semantic — light default */
+  --bg:            var(--brand-bg);
+  --bg-card:       var(--brand-surface);
+  --bg-card-hover: #FAFAF9;
+  --bg-surface:    rgba(30, 34, 43, 0.04);
+  --bg-glass:      rgba(255, 255, 255, 0.88);
+  --text:          var(--brand-ink);
+  --text-muted:    #6F7280;
+  --text-soft:     #9A9EAA;
+  --border:        var(--brand-border);
+  --border-hover:  #D0C8C4;
+
+  /* Shadows — warm, soft */
+  --shadow-xs: 0 1px 4px rgba(30, 34, 43, 0.06);
+  --shadow:    0 2px 12px rgba(30, 34, 43, 0.08), 0 1px 3px rgba(30, 34, 43, 0.05);
+  --shadow-md: 0 4px 24px rgba(30, 34, 43, 0.10), 0 2px 8px rgba(30, 34, 43, 0.06);
+  --shadow-lg: 0 8px 40px rgba(30, 34, 43, 0.12), 0 4px 16px rgba(30, 34, 43, 0.07);
+
+  /* Radius */
+  --radius-xs:   10px;
+  --radius-sm:   16px;
+  --radius:      24px;
+  --radius-lg:   28px;
+  --radius-pill: 999px;
+
+  /* Legacy compat aliases */
+  --primary:      #FF6B6B;
+  --primary-glow: rgba(255, 107, 107, 0.20);
+  --accent:       #FFB15E;
+  --success:      #22C55E;
+  --danger:       #FF6B6B;
+  --shadow-glow:  0 0 32px rgba(255, 107, 107, 0.18);
 }
 
-[data-theme="light"] {
-  --bg: #F2EFF9;
-  --bg-card: rgba(255, 255, 255, 0.72);
-  --bg-card-hover: rgba(255, 255, 255, 0.9);
-  --bg-surface: rgba(0, 0, 0, 0.05);
-  --bg-glass: rgba(255, 255, 255, 0.6);
-  --text: #1A1529;
-  --text-muted: #6B6480;
-  --border: rgba(0, 0, 0, 0.09);
-  --border-hover: rgba(0, 0, 0, 0.18);
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  --gradient-bg: radial-gradient(ellipse at 50% 0%, rgba(255, 92, 106, 0.06) 0%, transparent 60%);
+/* ── Dark theme override ────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  color-scheme: dark; /* tells the browser: controls, scrollbars, etc. should be dark */
+
+  --bg:            #13111C;
+  --bg-card:       #1E1B2D;
+  --bg-card-hover: #252239;
+  --bg-surface:    #1A1728;
+  --bg-glass:      rgba(30, 26, 44, 0.96);
+  --text:          #F0EDF6;
+  --text-muted:    #9B95A8;
+  --text-soft:     #8A8595; /* bumped up from #706B7D — meets contrast on dark card */
+  --border:        rgba(255, 255, 255, 0.10);
+  --border-hover:  rgba(255, 255, 255, 0.20);
+  /* accent-soft must be dark in dark mode — default #FFF1EA is cream (unreadable with light text) */
+  --accent-soft:   rgba(255, 138, 76, 0.13);
+  --shadow-xs: 0 1px 4px rgba(0, 0, 0, 0.3);
+  --shadow:    0 4px 20px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 16px 56px rgba(0, 0, 0, 0.55);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* ── Global dark mode safety net ──────────────────────────────────────── */
+/* Prevents browser-default dark text on form controls and catches any
+   component that uses hardcoded colors designed only for light mode.    */
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  color: var(--text);
+  background-color: var(--bg-card);
+  border-color: var(--border);
+  color-scheme: dark;
 }
 
-html {
-  scroll-behavior: smooth;
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
 }
+
+/* Trip planner section — uses a separate design system with hardcoded
+   light-only colors; override all text to use theme tokens in dark mode */
+[data-theme="dark"] .trip-page,
+[data-theme="dark"] .trip-home,
+[data-theme="dark"] .planning-wizard,
+[data-theme="dark"] .trip-dashboard {
+  color: var(--text);
+}
+[data-theme="dark"] .trip-page *:not(button):not(a):not([class*="btn"]):not([style]),
+[data-theme="dark"] .trip-home *:not(button):not(a):not([class*="btn"]):not([style]),
+[data-theme="dark"] .planning-wizard *:not(button):not(a):not([class*="btn"]):not([style]),
+[data-theme="dark"] .trip-dashboard *:not(button):not(a):not([class*="btn"]):not([style]) {
+  color: inherit;
+}
+
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100dvh;
   overflow-x: hidden;
   -webkit-tap-highlight-color: transparent;
-  background-image: var(--gradient-bg);
-  background-attachment: fixed;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 #root {
@@ -65,79 +131,171 @@ body {
   flex-direction: column;
 }
 
-button {
-  font-family: inherit;
-  cursor: pointer;
-  border: none;
-  outline: none;
+button { font-family: inherit; cursor: pointer; border: none; outline: none; }
+a      { color: inherit; text-decoration: none; }
+
+/* ── Headings — Manrope ─────────────────────────────────────────────────── */
+h1, h2, h3, h4 {
+  font-family: 'Manrope', 'Inter', sans-serif;
+  letter-spacing: -0.02em;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-/* Shared button styles */
+/* ── Shared button system ───────────────────────────────────────────────── */
 .btn {
-  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 24px;
   border-radius: var(--radius-sm);
-  font-size: 16px;
-  font-weight: 600;
+  font-family: 'Manrope', 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
   width: 100%;
-  transition: all 0.25s ease;
-  letter-spacing: 0.02em;
+  transition: all 0.2s ease;
+  letter-spacing: -0.01em;
+  position: relative;
+  overflow: hidden;
 }
+.btn:active { transform: scale(0.97); }
 
-.btn:active {
-  transform: scale(0.97);
-}
-
+/* Primary — gradient */
 .btn-primary {
-  background: var(--gradient-warm);
-  color: #0D0B1A;
-  box-shadow: 0 4px 20px var(--primary-glow);
+  background: var(--gradient-primary);
+  color: #1E222B;
+  box-shadow: 0 4px 16px rgba(255, 107, 107, 0.28);
 }
-
-.btn-primary:hover {
-  box-shadow: 0 6px 30px rgba(255, 92, 106, 0.4);
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 6px 24px rgba(255, 107, 107, 0.38);
   transform: translateY(-1px);
 }
-
 .btn-primary:disabled {
-  opacity: 0.35;
+  opacity: 0.45;
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
 }
 
+/* Secondary — white/surface */
 .btn-secondary {
-  background: var(--bg-glass);
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(12px);
-}
-
-.btn-secondary:hover {
+  background: var(--bg-card);
   color: var(--text);
+  border: 1.5px solid var(--border);
+  box-shadow: var(--shadow-xs);
+}
+.btn-secondary:hover {
   border-color: var(--border-hover);
   background: var(--bg-card-hover);
+  box-shadow: var(--shadow);
 }
 
-/* Shared back button */
-.back-btn {
-  background: var(--bg-glass);
+/* Ghost — transparent */
+.btn-ghost {
+  background: transparent;
   color: var(--text-muted);
-  padding: 10px;
-  margin: 0 0 20px -4px;
-  border-radius: var(--radius-sm);
+  border: none;
+  box-shadow: none;
+  padding: 12px 20px;
+  font-weight: 600;
+}
+.btn-ghost:hover { color: var(--text); }
+
+/* ── Back button ────────────────────────────────────────────────────────── */
+.back-btn {
   display: flex;
   align-items: center;
+  gap: 6px;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  padding: 9px 14px 9px 10px;
+  margin: 0 0 20px -4px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--border);
+  font-size: 14px;
+  font-weight: 600;
   transition: all 0.2s;
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--border);
+  box-shadow: var(--shadow-xs);
 }
-
 .back-btn:hover {
   color: var(--text);
   border-color: var(--border-hover);
+  box-shadow: var(--shadow);
+}
+
+/* ── Loader ─────────────────────────────────────────────────────────────── */
+.loader {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent-coral);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Shared card ────────────────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* ── Chip / pill tag ────────────────────────────────────────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+.chip--accent {
+  background: var(--accent-soft);
+  color: var(--accent-orange);
+  border-color: rgba(255, 138, 76, 0.2);
+}
+
+/* ── Gradient text utility ──────────────────────────────────────────────── */
+.gradient-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Mode toggle (Solo / Together) — used on all Create pages ───────────── */
+.mode-toggle {
+  display: flex;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: 28px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.mode-btn.active {
+  background: var(--gradient-primary);
+  color: #1E222B;
+  box-shadow: var(--shadow-xs);
 }

@@ -15,6 +15,7 @@ const GENRE_OPTIONS = [
 export default function CreateSeriesRoom() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  const [solo, setSolo] = useState(false)
   const [platforms, setPlatforms] = useState([])
   const [genres, setGenres] = useState([])
   const [platformOpen, setPlatformOpen] = useState(false)
@@ -51,8 +52,8 @@ export default function CreateSeriesRoom() {
     setLoading(true)
     try {
       getUserToken()
-      const room = await createSeriesRoom(platforms, genres)
-      navigate(`/room/${room.id}`, { state: { isCreator: true } })
+      const room = await createSeriesRoom(platforms, genres, { solo })
+      navigate(`/room/${room.id}`, { state: { isCreator: true, isSolo: solo } })
     } catch (err) {
       console.error('Failed to create room:', err)
       alert('Failed to create room. Please try again.')
@@ -80,8 +81,20 @@ export default function CreateSeriesRoom() {
       <div className="create-series-content">
         <div className="series-hero-icon">📺</div>
         <h1>TV Series</h1>
+
+        <div className="mode-toggle">
+          <button className={`mode-btn ${!solo ? 'active' : ''}`} onClick={() => setSolo(false)}>
+            👥 Together
+          </button>
+          <button className={`mode-btn ${solo ? 'active' : ''}`} onClick={() => setSolo(true)}>
+            👤 Solo
+          </button>
+        </div>
+
         <p className="subtitle">
-          Swipe through top-rated TV shows. When you both swipe right on the same show — it's a match!
+          {solo
+            ? 'Swipe through top-rated TV shows and build your personal watchlist.'
+            : 'Swipe through top-rated TV shows. When you both swipe right on the same show — it\'s a match!'}
         </p>
 
         {/* Streaming Platforms */}
@@ -180,7 +193,7 @@ export default function CreateSeriesRoom() {
           disabled={loading}
           onClick={handleCreate}
         >
-          {loading ? 'Creating...' : 'Create Room'}
+          {loading ? 'Creating...' : solo ? 'Start Swiping' : 'Create Room'}
         </button>
       </div>
     </div>

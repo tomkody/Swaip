@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
-import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, markRoomActive, fetchRoomMatches } from '../lib/room'
+import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, markRoomActive, fetchRoomMatches, isRoomSolo } from '../lib/room'
 import { PLATFORMS } from '../lib/platforms'
 import { fetchTopRatedMovies } from '../lib/tmdb'
 import { fetchTopRatedSeries } from '../lib/seriesFetch'
@@ -30,22 +30,23 @@ export default function Room() {
   const isCreator = location.state?.isCreator || false
 
   const [room, setRoom] = useState(null)
+  const [isSolo, setIsSolo] = useState(location.state?.isSolo || false)
   const [movies, setMovies] = useState([])
-  const moviesRef = useRef([])                         // always-current ref for subscription callback
+  const moviesRef = useRef([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [matchItem, setMatchItem] = useState(null)
   const [matches, setMatches] = useState([])
   const [liked, setLiked] = useState([])
   const [showLiked, setShowLiked] = useState(false)
   const [isDone, setIsDone] = useState(false)
-  const [doneMatches, setDoneMatches] = useState(null) // null = not fetched yet
+  const [doneMatches, setDoneMatches] = useState(null)
   const isDoneRef = useRef(false)
   const [fetchingDone, setFetchingDone] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [partnerJoined, setPartnerJoined] = useState(!isCreator)
+  const [partnerJoined, setPartnerJoined] = useState(!isCreator || (location.state?.isSolo || false))
   const [partnerJustJoined, setPartnerJustJoined] = useState(false)
-  const [hasJoined, setHasJoined] = useState(isCreator) // joiner sees welcome screen first
+  const [hasJoined, setHasJoined] = useState(isCreator)
   const [copied, setCopied] = useState(false)
   const userToken = useRef(getUserToken())
 
@@ -59,6 +60,13 @@ export default function Room() {
           return
         }
         setRoom(roomData)
+
+        // Solo flag can come from room data (for page refreshes) or location state (first load)
+        const solo = isRoomSolo(roomData) || (location.state?.isSolo || false)
+        setIsSolo(solo)
+        if (solo) {
+          setPartnerJoined(true)
+        }
 
         const { platforms, genres } = parseRoomFilters(roomData.platforms ?? roomData.topic_id)
         if (roomData.type === 'movies') {
@@ -76,9 +84,9 @@ export default function Room() {
     init()
   }, [roomId])
 
-  // Poll for partner joining (creator only) — checks every 2s until partner starts
+  // Poll for partner joining (creator only, non-solo) — checks every 2s until partner starts
   useEffect(() => {
-    if (!isCreator || partnerJoined) return
+    if (!isCreator || partnerJoined || isSolo) return
     const interval = setInterval(async () => {
       const latest = await getRoom(roomId)
       if (latest?.status === 'active') {
@@ -98,7 +106,7 @@ export default function Room() {
   useEffect(() => { moviesRef.current = movies }, [movies])
 
   useEffect(() => {
-    if (!room || (room.type !== 'movies' && room.type !== 'series')) return
+    if (!room || (room.type !== 'movies' && room.type !== 'series') || isSolo) return
 
     const unsubSwipes = subscribeToSwipes(roomId, userToken.current, (itemId) => {
       const matched = moviesRef.current.find((m) => m.id === itemId)
@@ -130,19 +138,21 @@ export default function Room() {
         setLiked((prev) => [...prev, movie])
       }
 
-      try {
-        const isMatch = await recordSwipe(roomId, userToken.current, movie.id, direction)
-        if (isMatch) {
-          setMatchItem(movie)
-          setMatches((prev) => [...prev, movie])
+      if (!isSolo) {
+        try {
+          const isMatch = await recordSwipe(roomId, userToken.current, movie.id, direction)
+          if (isMatch) {
+            setMatchItem(movie)
+            setMatches((prev) => [...prev, movie])
+          }
+        } catch (err) {
+          console.error('Failed to record swipe:', err)
         }
-      } catch (err) {
-        console.error('Failed to record swipe:', err)
       }
 
       setCurrentIndex((i) => i + 1)
     },
-    [movies, currentIndex, roomId]
+    [movies, currentIndex, roomId, isSolo]
   )
 
   function handleShare() {
@@ -256,17 +266,17 @@ export default function Room() {
 
   // Conversation mode
   if (room.type === 'conversations') {
-    return <ConversationRoom room={room} onDone={() => navigate('/')} />
+    return <ConversationRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} />
   }
 
   // Activities mode
   if (room.type === 'activities') {
-    return <ActivityRoom room={room} onDone={() => navigate('/')} />
+    return <ActivityRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} />
   }
 
   // Food mode
   if (room.type === 'food') {
-    return <FoodRoom room={room} onDone={() => navigate('/')} />
+    return <FoodRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} />
   }
 
   // Movie/Series mode — done (all swiped or clicked "I'm done")
@@ -280,11 +290,10 @@ export default function Room() {
   }
 
   if (isDone || currentIndex >= movies.length) {
-    // Always use the longer list — doneMatches grows as the partner keeps swiping
-    const matchesToShow = (doneMatches !== null && doneMatches.length >= matches.length)
-      ? doneMatches
-      : matches
-    return <RankingView matches={matchesToShow} liked={liked} room={room} movies={movies} onDone={() => navigate('/')} />
+    const matchesToShow = isSolo
+      ? liked
+      : (doneMatches !== null && doneMatches.length >= matches.length) ? doneMatches : matches
+    return <RankingView matches={matchesToShow} liked={liked} room={room} movies={movies} onDone={() => navigate('/')} isSolo={isSolo} />
   }
 
   // Movie mode — swipe UI
@@ -298,10 +307,18 @@ export default function Room() {
           <span className="room-logo-text">Swaip</span>
         </Link>
         <div className="room-header-side room-header-right">
-          {matches.length > 0 && (
-            <span className="room-matches">
-              {matches.length} match{matches.length !== 1 ? 'es' : ''}
-            </span>
+          {isSolo ? (
+            liked.length > 0 && (
+              <span className="room-matches">
+                {liked.length} pick{liked.length !== 1 ? 's' : ''}
+              </span>
+            )
+          ) : (
+            matches.length > 0 && (
+              <span className="room-matches">
+                {matches.length} match{matches.length !== 1 ? 'es' : ''}
+              </span>
+            )
           )}
           <span className="room-progress">{currentIndex + 1} / {movies.length}</span>
         </div>
@@ -318,20 +335,22 @@ export default function Room() {
 
       <div className="room-footer">
         <button className="done-early-btn" onClick={async () => {
+          if (isSolo) { setIsDone(true); return }
           setFetchingDone(true)
           const ids = await fetchRoomMatches(roomId, userToken.current)
           if (ids !== null) {
-            // Supabase: resolve IDs to movie objects
             setDoneMatches(movies.filter(m => ids.includes(m.id)))
           }
           setFetchingDone(false)
           setIsDone(true)
         }}>
-          I'm done swiping{matches.length > 0 ? ` · ${matches.length} match${matches.length !== 1 ? 'es' : ''}` : ''}
+          {isSolo
+            ? `I'm done · ${liked.length} pick${liked.length !== 1 ? 's' : ''}`
+            : `I'm done swiping${matches.length > 0 ? ` · ${matches.length} match${matches.length !== 1 ? 'es' : ''}` : ''}`}
         </button>
       </div>
 
-      {matchItem && (
+      {matchItem && !isSolo && (
         <MatchModal
           item={matchItem}
           roomType={room.type}

@@ -8,6 +8,7 @@ export default function CreateConversationRoom() {
   const navigate = useNavigate()
   const [selected, setSelected] = useState(new Set())
   const [loading, setLoading] = useState(false)
+  const [solo, setSolo] = useState(false)
 
   function toggleTopic(id) {
     setSelected((prev) => {
@@ -28,8 +29,8 @@ export default function CreateConversationRoom() {
         .map((id) => TOPICS.find((t) => t.id === id)?.name)
         .filter(Boolean)
         .join(', ')
-      const room = await createConversationRoom(topicIds, topicNames)
-      navigate(`/room/${room.id}`, { state: { isCreator: true } })
+      const room = await createConversationRoom(topicIds, topicNames, { solo })
+      navigate(`/room/${room.id}`, { state: { isCreator: true, isSolo: solo } })
     } catch (err) {
       console.error('Failed to create room:', err)
       alert('Failed to create room. Please try again.')
@@ -46,8 +47,22 @@ export default function CreateConversationRoom() {
         </svg>
       </button>
 
-      <h1>Pick Topics</h1>
-      <p className="subtitle">Choose one or more topics to explore together</p>
+      <h1>Conversations</h1>
+
+      <div className="mode-toggle" style={{ maxWidth: 360, margin: '0 auto 24px' }}>
+        <button className={`mode-btn ${!solo ? 'active' : ''}`} onClick={() => setSolo(false)}>
+          👥 Together
+        </button>
+        <button className={`mode-btn ${solo ? 'active' : ''}`} onClick={() => setSolo(true)}>
+          👤 Solo
+        </button>
+      </div>
+
+      <p className="subtitle">
+        {solo
+          ? 'Pick topics you\'re curious about and get conversation prompts just for you.'
+          : 'Choose one or more topics to explore together'}
+      </p>
 
       <div className="topic-grid">
         {TOPICS.map((topic) => (
@@ -70,7 +85,9 @@ export default function CreateConversationRoom() {
       >
         {loading
           ? 'Creating...'
-          : `Create Room${selected.size > 0 ? ` (${selected.size} topic${selected.size !== 1 ? 's' : ''})` : ''}`}
+          : solo
+            ? `Start${selected.size > 0 ? ` (${selected.size} topic${selected.size !== 1 ? 's' : ''})` : ''}`
+            : `Create Room${selected.size > 0 ? ` (${selected.size} topic${selected.size !== 1 ? 's' : ''})` : ''}`}
       </button>
     </div>
   )

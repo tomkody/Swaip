@@ -14,6 +14,7 @@ const GENRE_OPTIONS = [
 export default function CreateMovieRoom() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  const [solo, setSolo] = useState(false)
   const [platforms, setPlatforms] = useState([])
   const [genres, setGenres] = useState([])
   const [platformOpen, setPlatformOpen] = useState(false)
@@ -51,8 +52,8 @@ export default function CreateMovieRoom() {
     setLoading(true)
     try {
       getUserToken()
-      const room = await createMovieRoom(platforms, genres)
-      navigate(`/room/${room.id}`, { state: { isCreator: true } })
+      const room = await createMovieRoom(platforms, genres, { solo })
+      navigate(`/room/${room.id}`, { state: { isCreator: true, isSolo: solo } })
     } catch (err) {
       console.error('Failed to create room:', err)
       alert('Failed to create room. Please try again.')
@@ -80,8 +81,20 @@ export default function CreateMovieRoom() {
       <div className="create-movie-content">
         <div className="movie-hero-icon">🎬</div>
         <h1>Movies</h1>
+
+        <div className="mode-toggle">
+          <button className={`mode-btn ${!solo ? 'active' : ''}`} onClick={() => setSolo(false)}>
+            👥 Together
+          </button>
+          <button className={`mode-btn ${solo ? 'active' : ''}`} onClick={() => setSolo(true)}>
+            👤 Solo
+          </button>
+        </div>
+
         <p className="subtitle">
-          Swipe through top-rated movies. When you both swipe right — it's a match!
+          {solo
+            ? 'Swipe through top-rated movies and build your personal watchlist.'
+            : 'Swipe through top-rated movies. When you both swipe right — it\'s a match!'}
         </p>
 
         {/* Streaming Platforms */}
@@ -180,7 +193,7 @@ export default function CreateMovieRoom() {
           disabled={loading}
           onClick={handleCreate}
         >
-          {loading ? 'Creating...' : 'Create Room'}
+          {loading ? 'Creating...' : solo ? 'Start Swiping' : 'Create Room'}
         </button>
       </div>
     </div>

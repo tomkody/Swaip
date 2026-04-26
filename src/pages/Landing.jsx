@@ -7,9 +7,9 @@ import './Landing.css'
 
 const STEPS = [
   { icon: '1', title: 'Pick a mode', desc: 'Movies, Series, Food, Conversations, or Activities' },
-  { icon: '2', title: 'Share the link', desc: 'Send the room link to the other person' },
-  { icon: '3', title: 'Swipe or pick', desc: 'Both of you go through the options independently' },
-  { icon: '4', title: 'See your matches', desc: 'Instantly find out what you both agree on' },
+  { icon: '2', title: 'Solo or Together', desc: 'Decide alone or share the link with someone' },
+  { icon: '3', title: 'Swipe or pick', desc: 'Go through the options at your own pace' },
+  { icon: '4', title: 'See your results', desc: 'Your picks, or what you both agree on' },
 ]
 
 export default function Landing() {
@@ -21,7 +21,7 @@ export default function Landing() {
   const [dark, setDark] = useState(() => {
     const saved = localStorage.getItem('swaip-theme')
     if (saved) return saved === 'dark'
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
+    return false // default: light mode
   })
 
   useEffect(() => {
@@ -34,9 +34,6 @@ export default function Landing() {
 
   return (
     <div className="landing">
-      <div className="landing-bg-orb orb-1" />
-      <div className="landing-bg-orb orb-2" />
-
       <div className="landing-content">
         <header className="landing-header">
           <div className="landing-header-row">
@@ -55,45 +52,50 @@ export default function Landing() {
               onSavedMatches={() => setDrawerOpen(true)}
             />
           </div>
-          <p className="tagline">Swipe your way to a perfect plan.</p>
+          <h1 className="tagline">Swipe your way to a perfect plan.</h1>
         </header>
 
-        <h2 className="landing-question">What are we deciding?</h2>
+        <h2 className="landing-question">What do you want to decide?</h2>
 
         <div className="category-grid">
           <button className="category-card" onClick={() => navigate('/create/movies')}>
-            <div className="card-glow movie-glow" />
             <span className="category-emoji">🍿</span>
-            <span className="category-name">Movies</span>
-            <span className="category-desc">Find your perfect film. Match, grab popcorn, and hit play.</span>
+            <div className="category-text">
+              <span className="category-name">Movies</span>
+              <span className="category-desc">Find your perfect film. Match, grab popcorn, and hit play.</span>
+            </div>
           </button>
 
           <button className="category-card" onClick={() => navigate('/create/activities')}>
-            <div className="card-glow activity-glow" />
             <span className="category-emoji">🎯</span>
-            <span className="category-name">Activities</span>
-            <span className="category-desc">Couch or outdoors? Discover your next shared adventure.</span>
+            <div className="category-text">
+              <span className="category-name">Activities</span>
+              <span className="category-desc">Couch or outdoors? Discover your next shared adventure.</span>
+            </div>
           </button>
 
           <button className="category-card" onClick={() => navigate('/create/series')}>
-            <div className="card-glow series-glow" />
             <span className="category-emoji">📺</span>
-            <span className="category-name">TV Series</span>
-            <span className="category-desc">Your next shared binge-watch awaits. Match on top-rated shows.</span>
+            <div className="category-text">
+              <span className="category-name">TV Series</span>
+              <span className="category-desc">Your next shared binge-watch awaits. Match on top-rated shows.</span>
+            </div>
           </button>
 
           <button className="category-card" onClick={() => navigate('/create/conversations')}>
-            <div className="card-glow conv-glow" />
             <span className="category-emoji">💬</span>
-            <span className="category-name">Conversations</span>
-            <span className="category-desc">Skip the small talk. Match on deep dives, fun debates, and fresh topics.</span>
+            <div className="category-text">
+              <span className="category-name">Conversations</span>
+              <span className="category-desc">Skip the small talk. Match on deep dives, fun debates, and fresh topics.</span>
+            </div>
           </button>
 
           <button className="category-card category-card--food" onClick={() => navigate('/create/food')}>
-            <div className="card-glow food-glow" />
             <span className="category-emoji">🍽️</span>
-            <span className="category-name">Food & Dining</span>
-            <span className="category-desc">Match on a cuisine, then swipe through real restaurants near you both.</span>
+            <div className="category-text">
+              <span className="category-name">Food & Dining</span>
+              <span className="category-desc">Match on a cuisine, then swipe through real restaurants near you both.</span>
+            </div>
           </button>
         </div>
 

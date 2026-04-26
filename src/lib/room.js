@@ -1,6 +1,14 @@
 import { supabase } from './supabase'
 import { v4 as uuidv4 } from 'uuid'
 
+export function isRoomSolo(room) {
+  if (!room?.topic_id) return false
+  try {
+    const parsed = JSON.parse(room.topic_id)
+    return parsed?.solo === true
+  } catch { return false }
+}
+
 export function getUserToken() {
   let token = sessionStorage.getItem('swaip_user_token')
   if (!token) {
@@ -11,9 +19,11 @@ export function getUserToken() {
 }
 
 // Create a movie room
-export async function createMovieRoom(platforms = [], genres = []) {
+export async function createMovieRoom(platforms = [], genres = [], { solo = false } = {}) {
   const roomId = uuidv4().slice(0, 8)
-  const filters = (platforms.length || genres.length) ? JSON.stringify({ platforms, genres }) : null
+  const filters = (platforms.length || genres.length || solo)
+    ? JSON.stringify({ platforms, genres, ...(solo && { solo: true }) })
+    : null
 
   if (!supabase) {
     const room = { id: roomId, type: 'movies', platforms: filters, created_at: new Date().toISOString(), status: 'waiting' }
@@ -31,9 +41,11 @@ export async function createMovieRoom(platforms = [], genres = []) {
 }
 
 // Create a conversation room (topicIds is an array of topic IDs)
-export async function createConversationRoom(topicIds, topicNames) {
+export async function createConversationRoom(topicIds, topicNames, { solo = false } = {}) {
   const roomId = uuidv4().slice(0, 8)
-  const topicIdJson = JSON.stringify(topicIds)
+  const topicIdJson = solo
+    ? JSON.stringify({ topicIds, solo: true })
+    : JSON.stringify(topicIds)
 
   if (!supabase) {
     const room = {
@@ -65,9 +77,11 @@ export async function createConversationRoom(topicIds, topicNames) {
 }
 
 // Create a TV series room
-export async function createSeriesRoom(platforms = [], genres = []) {
+export async function createSeriesRoom(platforms = [], genres = [], { solo = false } = {}) {
   const roomId = uuidv4().slice(0, 8)
-  const filters = (platforms.length || genres.length) ? JSON.stringify({ platforms, genres }) : null
+  const filters = (platforms.length || genres.length || solo)
+    ? JSON.stringify({ platforms, genres, ...(solo && { solo: true }) })
+    : null
 
   if (!supabase) {
     const room = { id: roomId, type: 'series', platforms: filters, created_at: new Date().toISOString(), status: 'waiting' }
@@ -124,10 +138,10 @@ export async function checkMutualSwipesByIds(roomId, userToken, itemIds) {
 }
 
 // Create a food room
-export async function createFoodRoom({ lat, lng, locationName, radius } = {}) {
+export async function createFoodRoom({ lat, lng, locationName, radius, countryCode, solo = false } = {}) {
   const roomId = uuidv4().slice(0, 8)
   const locationData = (lat != null && lng != null)
-    ? JSON.stringify({ lat, lng, locationName: locationName || '', radius: radius || 5000 })
+    ? JSON.stringify({ lat, lng, locationName: locationName || '', radius: radius || 5000, countryCode: countryCode || null, ...(solo && { solo: true }) })
     : null
   if (!supabase) {
     const room = { id: roomId, type: 'food', topic_id: locationData, created_at: new Date().toISOString(), status: 'waiting' }
@@ -143,12 +157,11 @@ export async function createFoodRoom({ lat, lng, locationName, radius } = {}) {
 }
 
 // Create an activity room
-export async function createActivityRoom({ lat, lng, locationName, radius } = {}) {
+export async function createActivityRoom({ lat, lng, locationName, radius, solo = false } = {}) {
   const roomId = uuidv4().slice(0, 8)
 
-  // Store location + radius as JSON in topic_id field (same pattern as movie filters)
   const locationData = (lat != null && lng != null)
-    ? JSON.stringify({ lat, lng, locationName: locationName || '', radius: radius || 5000 })
+    ? JSON.stringify({ lat, lng, locationName: locationName || '', radius: radius || 5000, ...(solo && { solo: true }) })
     : null
 
   if (!supabase) {

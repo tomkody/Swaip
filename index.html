@@ -3,46 +3,170 @@
   <head>
     <meta charset="UTF-8" />
 
+    <!-- Viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+    <!-- Primary meta -->
+    <title>Swaip — Swipe Together, Decide Together | Couple Decision App</title>
+    <meta name="description" content="Swaip ends couple debates: swipe together on movies, restaurants, TV series & activities, then instantly see what you both agreed on. Free, no sign-up required." />
+    <meta name="keywords" content="couple decision app, what to watch together, where to eat app, date night app, movie picker couple, restaurant picker couple, couples app, swipe together app, decide together, what to do tonight, relationship app, TV series picker" />
+    <meta name="author" content="Swaip" />
+    <meta name="application-name" content="Swaip" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Canonical -->
+    <link rel="canonical" href="https://swaip.app/" />
+
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/logo.png" />
-    <link rel="apple-touch-icon" href="/logo.png" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Swaip" />
-    <meta name="theme-color" content="#0D0B1A" />
-
-    <!-- Viewport -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-
-    <!-- Primary meta -->
-    <title>Swaip — The App for Decision Making as a Couple</title>
-    <meta name="description" content="Swaip is the couple decision app that ends endless debates. Swipe together on movies, restaurants, activities and TV series. The app for decision — decide in seconds." />
-    <meta name="keywords" content="couple decision app, the app for decision, swipe together, decide together, what to watch, where to eat, date night app, relationship app, couples app, movie picker, restaurant picker" />
+    <meta name="theme-color" content="#FF6B6B" />
+    <meta name="msapplication-TileColor" content="#FF6B6B" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://swaip.app/" />
-    <meta property="og:title" content="Swaip — The App for Decision Making as a Couple" />
-    <meta property="og:description" content="Stop debating what to watch or do. Both of you swipe, Swaip reveals what you agree on." />
+    <meta property="og:site_name" content="Swaip" />
+    <meta property="og:title" content="Swaip — Swipe Together, Decide Together" />
+    <meta property="og:description" content="Stop debating what to watch or where to eat. Both of you swipe, Swaip instantly reveals what you agree on. Movies, restaurants, TV series, activities & more." />
     <meta property="og:image" content="https://swaip.app/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:site_name" content="Swaip" />
+    <meta property="og:image:alt" content="Swaip app — swipe right on what you want, see what you both agree on" />
+    <meta property="og:locale" content="en_US" />
 
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@swaipapp" />
     <meta name="twitter:title" content="Swaip — Swipe Together, Decide Together" />
-    <meta name="twitter:description" content="Stop debating what to watch or do. Both of you swipe, Swaip reveals what you agree on." />
+    <meta name="twitter:description" content="Stop debating what to watch or where to eat. Both swipe, Swaip reveals what you agree on. Free, no sign-up." />
     <meta name="twitter:image" content="https://swaip.app/og-image.png" />
+    <meta name="twitter:image:alt" content="Swaip couple decision app" />
 
-    <!-- Fonts -->
+    <!-- Fonts — preconnect first, then stylesheet -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Preload critical app asset -->
+    <link rel="preload" href="/logo.png" as="image" />
+
+    <!-- Structured data — WebApplication + Organization + FAQ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://swaip.app/#app",
+          "name": "Swaip",
+          "url": "https://swaip.app",
+          "description": "Swaip is a free couple decision app that ends debates. Both people swipe simultaneously on movies, restaurants, TV series, and activities — Swaip instantly reveals only what you both want.",
+          "applicationCategory": "LifestyleApplication",
+          "operatingSystem": "Web, iOS, Android",
+          "browserRequirements": "Requires JavaScript",
+          "inLanguage": "en",
+          "isAccessibleForFree": true,
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "featureList": [
+            "Movie matching for couples",
+            "TV series matching",
+            "Restaurant and food discovery",
+            "Activity planner for couples",
+            "Conversation topic matching",
+            "No sign-up required",
+            "Real-time matching",
+            "Works on any device"
+          ],
+          "screenshot": "https://swaip.app/og-image.png",
+          "publisher": {
+            "@id": "https://swaip.app/#org"
+          }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://swaip.app/#org",
+          "name": "Swaip",
+          "url": "https://swaip.app",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://swaip.app/logo.png",
+            "width": 512,
+            "height": 512
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://swaip.app/#website",
+          "name": "Swaip",
+          "url": "https://swaip.app",
+          "publisher": { "@id": "https://swaip.app/#org" },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://swaip.app/?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is Swaip?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Swaip is a free couple decision app that helps you and your partner agree on what to watch, where to eat, or what to do — without endless back-and-forth. Both of you swipe on options independently, and Swaip instantly reveals what you both liked."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How does Swaip work?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Pick a category (movies, restaurants, TV series, or activities), share the room link with your partner via text or WhatsApp, both swipe independently on your own phones, and Swaip instantly shows only what you both agreed on."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is Swaip free?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, Swaip is completely free with no sign-up or account required. Just open the app, create a room, and share the link."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What can couples use Swaip to decide?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Swaip helps couples decide on: movies to watch together, TV series to binge, restaurants and cuisines for dinner, activities and places to visit nearby, and conversation topics for deeper connection."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Do both people need to download an app?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No download needed. Swaip is a web app that works in any browser. Share the room link and your partner can join instantly without installing anything."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

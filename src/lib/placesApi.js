@@ -1,5 +1,65 @@
 import { placeIdToNumId } from './activities'
 
+// ── Chain / brand deduplication ───────────────────────────────────────────────
+// Known international chain prefixes (lowercase, normalized).
+// A place whose name starts with one of these gets that prefix as its brand key,
+// so only the single best location of that chain survives deduplication.
+const CHAIN_PREFIXES = [
+  "mcdonald's", "mcdonalds", "burger king", "kfc", "subway",
+  "pizza hut", "domino's", "dominos", "starbucks", "costa coffee",
+  "costa", "tim hortons", "dunkin'", "dunkin", "krispy kreme",
+  "papa john's", "papa johns", "little caesars", "five guys", "shake shack",
+  "wendy's", "wendys", "taco bell", "popeyes", "chipotle",
+  "nando's", "nandos", "wagamama", "pizza express", "leon",
+  "greggs", "wingstop", "whataburger", "sonic drive-in", "sonic",
+  "arby's", "arbys", "dairy queen", "jollibee", "hardee's", "carl's jr",
+  "white castle", "culver's", "raising cane's", "in-n-out",
+  "buffalo wild wings", "applebee's", "denny's", "ihop",
+  "olive garden", "red lobster", "outback steakhouse", "texas roadhouse",
+  "baskin-robbins", "haagen-dazs", "ben & jerry's",
+  "moe's southwest grill", "jimmy john's", "jersey mike's",
+  "firehouse subs", "potbelly", "quiznos",
+  "pret a manger", "pret", "paul bakery", "paul",
+  "true burger", "honest burger",
+  "pizza inn", "papa murphy's",
+  "church's chicken", "bojangles",
+  "long john silver's", "captain d's",
+  "panera bread", "panera",
+  "panda express", "p.f. chang's",
+  "chili's", "t.g.i. friday's", "tgi fridays",
+  "red robin", "ihop", "denny's",
+  "pizza 9", "kebab house", "doner shack",
+]
+
+/**
+ * Return a stable brand key for a place title.
+ * Two places with the same brand key are considered the same chain.
+ * - Known chains: returns the matched prefix (e.g. "mcdonald's")
+ * - Unknown places: returns text before the first separator (e.g. "U Fleků")
+ */
+export function getBrandKey(title) {
+  if (!title) return ''
+  const norm = title
+    .toLowerCase()
+    .replace(/[''´`]/g, "'")   // normalize apostrophes
+    .replace(/[®™©]/g, '')     // strip trademark symbols
+    .trim()
+
+  // Check against known chain prefixes first
+  for (const prefix of CHAIN_PREFIXES) {
+    if (norm === prefix || norm.startsWith(prefix + ' ') ||
+        norm.startsWith(prefix + '-') || norm.startsWith(prefix + '(')) {
+      return prefix
+    }
+  }
+
+  // Strip everything after a separator: -, –, |, (, ·, comma
+  const sep = norm.match(/^(.+?)\s*[-–|·,(]/)
+  if (sep && sep[1].length > 1) return sep[1].trim()
+
+  return norm
+}
+
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 const BASE = 'https://places.googleapis.com/v1'
 
@@ -75,28 +135,42 @@ function formatPlace(place, centerLat, centerLng) {
 
   // Extract today's opening hours from weekdayDescriptions
   // Google uses Mon=0…Sun=6; JS getDay() uses Sun=0, Mon=1…Sat=6
-  let todayHours = null   // full string e.g. "9:00 AM – 10:00 PM"
-  let opensAt = null      // e.g. "9:00 AM" or "Tomorrow 9:00 AM" — shown when closed
+  let todayHours = null   // full string e.g. "9:00 AM – 10:00 PM" or "9:00 – 22:00" (24h)
+  let opensAt = null      // e.g. "9:00 AM" or "Tomorrow 9:00" — shown when closed
+  let closesAt = null     // e.g. "10:00 PM" or "22:00" — shown when open
+
+  // Matches both 12-hour ("9:00 AM") and 24-hour ("9:00", "22:00") time formats
+  const TIME_RE = /\d{1,2}:\d{2}(?:\s*[AP]M)?/gi
+  const firstTime = s => (s || '').match(/\d{1,2}:\d{2}(?:\s*[AP]M)?/i)?.[0] ?? null
+  const lastTime  = s => { const m = [...(s || '').matchAll(TIME_RE)]; return m.length ? m[m.length-1][0] : null }
+  const hasTime   = s => /\d{1,2}:\d{2}/.test(s || '')
+
   const weekday = place.currentOpeningHours?.weekdayDescriptions
-  if (weekday && weekday.length === 7) {
+  if (weekday && weekday.length > 0) {
     const jsDay = new Date().getDay()                  // 0=Sun … 6=Sat
     const googleIdx = jsDay === 0 ? 6 : jsDay - 1     // 0=Mon … 6=Sun
 
-    // Strip the day-name prefix ("Monday: ") to get just the hours
+    // Strip the day-name prefix — works for any locale ("Monday: ", "Po ", "Lundi: " …)
     const strip = s => (s || '').replace(/^[^:]+:\s*/, '').trim()
-    todayHours = strip(weekday[googleIdx]) || null
+    todayHours = strip(weekday[googleIdx] || '') || null
+
+    if (isOpen === true && hasTime(todayHours)) {
+      // Last time in the range = closing time (works for both AM/PM and 24h)
+      closesAt = lastTime(todayHours)
+    }
 
     if (isOpen === false) {
-      if (todayHours && todayHours !== 'Closed') {
-        // Closed right now but opens later today — grab first time in the string
-        const m = todayHours.match(/(\d{1,2}:\d{2}\s*[AP]M)/i)
-        if (m) opensAt = m[1]
+      if (hasTime(todayHours)) {
+        // Place has hours today but is currently closed — show opening time
+        opensAt = firstTime(todayHours)
       } else {
-        // Closed all day — look at tomorrow
-        const tomorrowHours = strip(weekday[(googleIdx + 1) % 7])
-        if (tomorrowHours && tomorrowHours !== 'Closed') {
-          const m = tomorrowHours.match(/(\d{1,2}:\d{2}\s*[AP]M)/i)
-          if (m) opensAt = `Tomorrow ${m[1]}`
+        // Closed all day today (or no parseable time) — scan upcoming days
+        for (let d = 1; d <= 7; d++) {
+          const nextHours = strip(weekday[(googleIdx + d) % 7] || '')
+          if (hasTime(nextHours)) {
+            opensAt = (d === 1 ? 'Tomorrow ' : '') + firstTime(nextHours)
+            break
+          }
         }
       }
     }
@@ -129,6 +203,7 @@ function formatPlace(place, centerLat, centerLng) {
     isOpen,
     todayHours,
     opensAt,
+    closesAt,
     lat: loc.latitude ?? null,
     lng: loc.longitude ?? null,
   }
@@ -206,8 +281,18 @@ export async function fetchNearbyPlaces(lat, lng, radius, types, roomId) {
     throw new Error(err?.error?.message || `Nearby search failed: ${res.status}`)
   }
 
+  // Primary types that should never appear in Food or Activities results
+  const BLOCKED_TYPES = new Set([
+    'gas_station', 'fuel', 'car_wash', 'car_dealer', 'car_rental', 'car_repair',
+    'parking', 'parking_lot', 'atm', 'bank', 'post_office',
+    'laundry', 'storage', 'moving_company', 'cemetery',
+  ])
+
   const data = await res.json()
-  const places = (data.places || []).map(p => formatPlace(p, lat, lng))
+  const places = (data.places || [])
+    .filter(p => !BLOCKED_TYPES.has(p.primaryType))          // no gas stations etc.
+    .map(p => formatPlace(p, lat, lng))
+    .filter(p => p.rating == null || p.rating >= 4)
 
   // Shuffle with seeded random using roomId for deterministic order
   const rng = roomId ? seededRandom(roomId) : Math.random
@@ -216,5 +301,23 @@ export async function fetchNearbyPlaces(lat, lng, radius, types, roomId) {
     ;[places[i], places[j]] = [places[j], places[i]]
   }
 
-  return places.slice(0, 20)
+  // Open places always come first — closed ones bubble to the back
+  places.sort((a, b) => {
+    const rank = p => p.isOpen === true ? 0 : p.isOpen === false ? 1 : 2
+    return rank(a) - rank(b)
+  })
+
+  // Deduplicate chains: keep only the first (= best: open + shuffled) per brand.
+  // e.g. 8 McDonald's locations → 1 McDonald's.
+  const brandSeen = new Set()
+  const deduped = []
+  for (const p of places) {
+    const brand = getBrandKey(p.title)
+    if (!brandSeen.has(brand)) {
+      brandSeen.add(brand)
+      deduped.push(p)
+    }
+  }
+
+  return deduped.slice(0, 20)
 }

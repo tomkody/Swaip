@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import confetti from 'canvas-confetti'
-import { FOOD_CATEGORIES } from '../lib/foodCategories'
-import { fetchNearbyPlaces } from '../lib/placesApi'
+import { FOOD_CATEGORIES, buildLocalCuisineCategory } from '../lib/foodCategories'
+import { fetchNearbyPlaces, getBrandKey } from '../lib/placesApi'
 import {
   getUserToken,
   recordSwipe,
@@ -187,12 +187,16 @@ function CategoryCard({ category, onSwipe, active }) {
 
 // ─── Main FoodRoom component ──────────────────────────────────────────────────
 
-export default function FoodRoom({ room, onDone }) {
+export default function FoodRoom({ room, onDone, isSolo = false }) {
   const userToken = useRef(getUserToken())
   const location = parseLocation(room.topic_id)
 
+  // Build the full category list: static categories + dynamic Local Cuisine for this region
+  const localCuisine = buildLocalCuisineCategory(location?.countryCode)
+  const ALL_FOOD_CATS = [...FOOD_CATEGORIES, localCuisine]
+
   // Same shuffled order for everyone in this room
-  const FOOD_CATS = seededShuffle(FOOD_CATEGORIES, room.id)
+  const FOOD_CATS = seededShuffle(ALL_FOOD_CATS, room.id)
 
   const initialData = parseRoomFoodData(room)
   const [phase, setPhase] = useState(initialData.phase)
@@ -201,6 +205,7 @@ export default function FoodRoom({ room, onDone }) {
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [matches, setMatches] = useState([])
+  const [likedPlaces, setLikedPlaces] = useState([])
   const [matchItem, setMatchItem] = useState(null)
   const [isDone, setIsDone] = useState(false)
 
@@ -213,14 +218,20 @@ export default function FoodRoom({ room, onDone }) {
   const placesTransitionFiredRef = useRef(false)
   const pendingSwipesRef = useRef([])
   const likedCatIdsRef = useRef(new Set())
+  const rejectedBrandsRef = useRef(new Set())
 
   useEffect(() => { isDoneRef.current = isDone }, [isDone])
 
   const finishedSwiping = phase === 'places' && places.length > 0 && currentIndex >= places.length && !isDone
 
+  // Solo: auto-complete when all places swiped
+  useEffect(() => {
+    if (isSolo && finishedSwiping) setIsDone(true)
+  }, [isSolo, finishedSwiping]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Poll for matches while waiting for partner ────────────────────────────
   useEffect(() => {
-    if (!finishedSwiping) return
+    if (!finishedSwiping || isSolo) return
     const interval = setInterval(async () => {
       try {
         const ids = await fetchRoomMatches(room.id, userToken.current)
@@ -238,10 +249,11 @@ export default function FoodRoom({ room, onDone }) {
       } catch { /* non-fatal */ }
     }, 3000)
     return () => clearInterval(interval)
-  }, [finishedSwiping, room.id, places]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [finishedSwiping, isSolo, room.id, places]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Authoritative match fetch when results screen opens ──────────────────
   useEffect(() => {
+    if (isSolo) return
     const showingResults = isDone || (phase === 'places' && places.length > 0 && currentIndex >= places.length)
     if (!showingResults || places.length === 0) return
     fetchRoomMatches(room.id, userToken.current)
@@ -259,25 +271,24 @@ export default function FoodRoom({ room, onDone }) {
         }
       })
       .catch(() => {})
-  }, [isDone, currentIndex, places.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, isDone, currentIndex, places.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Subscribe to partner place swipes ────────────────────────────────────
   useEffect(() => {
+    if (isSolo) return
     const unsub = subscribeToSwipes(room.id, userToken.current, (itemId) => {
       const numId = Number(itemId)
       if (phase === 'places') {
         const place = places.find(p => p.numId === numId)
         if (place) {
           setMatches(prev => prev.find(m => m.id === place.id) ? prev : [...prev, place])
-          if (!isDoneRef.current) {
-            setMatchItem(place)
-            confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
-          }
+          setMatchItem(place)
+          confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
         }
       }
     })
     return unsub
-  }, [room.id, phase, places]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, room.id, phase, places]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── fetchAndTransitionToPlaces ────────────────────────────────────────────
   const fetchAndTransitionToPlaces = useCallback(async (matchedCats) => {
@@ -289,15 +300,32 @@ export default function FoodRoom({ room, onDone }) {
 
     let allPlaces = []
     if (location?.lat != null && matchedCats.length > 0) {
-      const seenIds = new Set()
+      // Fetch per-category lists, then interleave round-robin (Italian, Japanese, Italian, Japanese…)
+      const perCat = []
       for (const cat of matchedCats) {
         try {
           const fetched = await fetchNearbyPlaces(location.lat, location.lng, location.radius || 5000, cat.types, room.id)
-          for (const p of fetched) {
+          perCat.push(fetched)
+        } catch (err) {
+          console.error('[FoodRoom] fetch error for', cat.label, err)
+          perCat.push([])
+        }
+      }
+      const seenIds = new Set()
+      const maxLen = Math.max(0, ...perCat.map(a => a.length))
+      for (let i = 0; i < maxLen; i++) {
+        for (const catPlaces of perCat) {
+          if (i < catPlaces.length) {
+            const p = catPlaces[i]
             if (!seenIds.has(p.id)) { seenIds.add(p.id); allPlaces.push(p) }
           }
-        } catch (err) { console.error('[FoodRoom] fetch error for', cat.label, err) }
+        }
       }
+      // Open places first — stable sort preserves interleave order within each group
+      allPlaces.sort((a, b) => {
+        const rank = p => p.isOpen === true ? 0 : p.isOpen === false ? 1 : 2
+        return rank(a) - rank(b)
+      })
     }
 
     setFetchingPlaces(false)
@@ -322,29 +350,32 @@ export default function FoodRoom({ room, onDone }) {
     setWaitingForPartner(false)
   }, [location, room.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── handleCategoriesDone (sentinel logic) ────────────────────────────────
+  // ── handleCategoriesDone ──────────────────────────────────────────────────
   const handleCategoriesDone = useCallback(async () => {
+    if (isSolo) {
+      const likedCats = FOOD_CATS.filter(c => likedCatIdsRef.current.has(c.numId))
+      const catsToUse = likedCats.length > 0 ? likedCats : []
+      await fetchAndTransitionToPlaces(catsToUse)
+      return
+    }
     setWaitingForPartner(true)
     try {
-      // Wait for all pending category swipes to reach DB before sending sentinel
       await Promise.all(pendingSwipesRef.current)
       pendingSwipesRef.current = []
 
       const isBothDone = await recordSwipe(room.id, userToken.current, FOOD_CAT_DONE_NUMID, 'right')
       if (isBothDone) {
-        // I'm second to finish — fetch all matched categories from DB authoritatively
         const allMatchIds = await fetchRoomMatches(room.id, userToken.current)
         const matchedCats = FOOD_CATS.filter(c => allMatchIds?.includes(c.numId))
         await fetchAndTransitionToPlaces(matchedCats)
       }
-      // else: I'm first — wait for partner via subscribeToRoomChanges/polling
     } catch (err) {
       console.error('[FoodRoom] handleCategoriesDone error:', err)
       setWaitingForPartner(false)
     }
-  }, [room.id, FOOD_CATS, fetchAndTransitionToPlaces]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, room.id, FOOD_CATS, fetchAndTransitionToPlaces]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── handleCategorySwipe (no early exit, collect pending swipes) ──────────
+  // ── handleCategorySwipe ────────────────────────────────────────────────────
   const handleCategorySwipe = useCallback(async (direction) => {
     const cat = FOOD_CATS[currentIndex]
     if (!cat) return
@@ -353,17 +384,20 @@ export default function FoodRoom({ room, onDone }) {
 
     if (direction === 'right') {
       likedCatIdsRef.current.add(cat.numId)
-      const promise = recordSwipe(room.id, userToken.current, cat.numId, direction).catch(console.error)
-      pendingSwipesRef.current.push(promise)
+      if (!isSolo) {
+        const promise = recordSwipe(room.id, userToken.current, cat.numId, direction).catch(console.error)
+        pendingSwipesRef.current.push(promise)
+      }
     }
 
     if (newIndex >= FOOD_CATS.length) {
       handleCategoriesDone()
     }
-  }, [currentIndex, room.id, FOOD_CATS, handleCategoriesDone]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, currentIndex, room.id, FOOD_CATS, handleCategoriesDone]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Subscribe to room changes (detect partner fetched places) ────────────
   useEffect(() => {
+    if (isSolo) return
     const unsub = subscribeToRoomChanges(room.id, (updatedRoom) => {
       const data = parseRoomFoodData(updatedRoom)
       if (data.phase === 'places' && phase === 'categories') {
@@ -382,11 +416,11 @@ export default function FoodRoom({ room, onDone }) {
       }
     })
     return unsub
-  }, [room.id, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, room.id, phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Polling fallback ──────────────────────────────────────────────────────
   useEffect(() => {
-    if (phase !== 'categories') return
+    if (phase !== 'categories' || isSolo) return
     const interval = setInterval(async () => {
       try {
         const latest = await getRoom(room.id)
@@ -404,39 +438,107 @@ export default function FoodRoom({ room, onDone }) {
       } catch {}
     }, 3000)
     return () => clearInterval(interval)
-  }, [room.id, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, room.id, phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Swipe a restaurant ────────────────────────────────────────────────────
   const handlePlaceSwipe = useCallback(async (direction) => {
     const place = places[currentIndex]
     if (!place) return
 
-    setCurrentIndex(i => i + 1)
+    if (direction === 'left') {
+      rejectedBrandsRef.current.add(getBrandKey(place.title))
+    }
+
+    let nextIndex = currentIndex + 1
+    while (nextIndex < places.length && rejectedBrandsRef.current.has(getBrandKey(places[nextIndex].title))) {
+      nextIndex++
+    }
+    setCurrentIndex(nextIndex)
+
     if (direction !== 'right') return
 
-    try {
-      const isMatch = await recordSwipe(room.id, userToken.current, place.numId, direction)
-      if (isMatch) {
-        setMatchItem(place)
-        setMatches(prev => prev.find(m => m.id === place.id) ? prev : [...prev, place])
-        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
+    setLikedPlaces(prev => prev.find(p => p.id === place.id) ? prev : [...prev, place])
+
+    if (!isSolo) {
+      try {
+        const isMatch = await recordSwipe(room.id, userToken.current, place.numId, direction)
+        if (isMatch) {
+          setMatchItem(place)
+          setMatches(prev => prev.find(m => m.id === place.id) ? prev : [...prev, place])
+          confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
+        }
+      } catch (err) {
+        console.error('recordSwipe error:', err)
       }
-    } catch (err) {
-      console.error('recordSwipe error:', err)
     }
-  }, [places, currentIndex, room.id])
+  }, [isSolo, places, currentIndex, room.id])
+
+  // ── Place match modal (together mode only) ────────────────────────────────
+  if (matchItem && !isSolo) {
+    const canKeepSwiping = !isDone && currentIndex < places.length
+    return (
+      <div className="act-match-overlay">
+        <div className="act-match-modal">
+          <span className="act-match-emoji-big">🎉</span>
+          <h1>It's a Match!</h1>
+          <p className="act-match-subtitle">You both want to eat here</p>
+
+          <div className="act-match-card">
+            {matchItem.poster ? (
+              <img src={matchItem.poster} alt={matchItem.title} className="act-match-img" />
+            ) : (
+              <div className="act-match-img-placeholder">{matchedCategories[0]?.emoji || '🍽️'}</div>
+            )}
+            <div className="act-match-info">
+              <h2>{matchItem.title}</h2>
+              {matchItem.rating && <p className="act-match-rating">★ {matchItem.rating}</p>}
+              {matchItem.isOpen != null && (
+                <p className="act-match-hours">
+                  <span style={{ color: matchItem.isOpen ? '#22c55e' : '#ef4444' }}>
+                    {matchItem.isOpen ? '● Open' : '● Closed'}
+                  </span>
+                  {matchItem.isOpen && matchItem.closesAt ? ` · until ${matchItem.closesAt}` : ''}
+                  {!matchItem.isOpen && matchItem.opensAt ? ` · opens ${matchItem.opensAt}` : ''}
+                </p>
+              )}
+              {matchItem.address && <p className="act-match-address">{matchItem.address}</p>}
+            </div>
+          </div>
+
+          <div className="act-match-actions">
+            {canKeepSwiping ? (
+              <>
+                <button className="btn btn-primary act-match-cta" onClick={() => setMatchItem(null)}>
+                  Keep Swiping · {places.length - currentIndex} left
+                </button>
+                <p className="act-match-cta-hint">Don't stop — there might be more matches!</p>
+                <button className="act-match-skip" onClick={() => { setMatchItem(null); setIsDone(true) }}>
+                  See all results
+                </button>
+              </>
+            ) : (
+              <button className="btn btn-primary act-match-cta" onClick={() => { setMatchItem(null); setIsDone(true) }}>
+                See All Matches
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // ── Results → RankingView ─────────────────────────────────────────────────
   if (isDone) {
-    // Normalize places: use numId as id so RankingView's subscribeToSwipes matching works
     const normalizedPlaces = places.map(p => ({ ...p, id: p.numId }))
-    const normalizedMatches = matches.map(p => ({ ...p, id: p.numId }))
+    const resultsToShow = isSolo ? likedPlaces : matches
+    const normalizedResults = resultsToShow.map(p => ({ ...p, id: p.numId }))
     return (
       <RankingView
-        matches={normalizedMatches}
+        matches={normalizedResults}
         room={room}
         movies={normalizedPlaces}
         onDone={onDone}
+        isSolo={isSolo}
       />
     )
   }
@@ -478,15 +580,15 @@ export default function FoodRoom({ room, onDone }) {
           ) : matchedCategories.length > 0 ? (
             <>
               <div className="act-transition-emoji">🎉</div>
-              <h2>You matched on {matchedCategories.length} cuisine{matchedCategories.length !== 1 ? 's' : ''}!</h2>
+              <h2>{isSolo ? 'Finding' : 'You matched on'} {matchedCategories.length} cuisine{matchedCategories.length !== 1 ? 's' : ''}{isSolo ? '…' : '!'}</h2>
               <p className="act-transition-sub">{matchedCategories.map(c => `${c.emoji} ${c.label}`).join(' · ')}</p>
               <div className="loader" style={{ marginTop: 20 }} />
             </>
           ) : (
             <>
               <div className="act-transition-emoji">😅</div>
-              <h2>No cuisine matches</h2>
-              <p className="act-transition-sub">You didn't agree on any cuisines. Try creating a new room!</p>
+              <h2>{isSolo ? 'No cuisines selected' : 'No cuisine matches'}</h2>
+              <p className="act-transition-sub">{isSolo ? 'Swipe right on at least one cuisine to see restaurants.' : 'You didn\'t agree on any cuisines. Try creating a new room!'}</p>
             </>
           )}
         </div>
@@ -503,47 +605,6 @@ export default function FoodRoom({ room, onDone }) {
           <h2>Couldn't load restaurants</h2>
           <p className="act-error-sub">{placesError}</p>
           <button className="btn btn-secondary" style={{ marginTop: 10 }} onClick={onDone}>Go home</button>
-        </div>
-      </div>
-    )
-  }
-
-  // ── Match modal ───────────────────────────────────────────────────────────
-  if (matchItem) {
-    return (
-      <div className="act-match-overlay">
-        <div className="act-match-modal">
-          <span className="act-match-emoji-big">🎉</span>
-          <h1>It's a Match!</h1>
-          <p className="act-match-subtitle">You both want to eat here</p>
-
-          <div className="act-match-card">
-            {matchItem.poster ? (
-              <img src={matchItem.poster} alt={matchItem.title} className="act-match-img" />
-            ) : (
-              <div className="act-match-img-placeholder">{matchedCategories[0]?.emoji || '🍽️'}</div>
-            )}
-            <div className="act-match-info">
-              <h2>{matchItem.title}</h2>
-              {matchItem.rating && <p className="act-match-rating">★ {matchItem.rating}</p>}
-              {matchItem.address && <p className="act-match-address">{matchItem.address}</p>}
-            </div>
-          </div>
-
-          <div className="act-match-actions">
-            {currentIndex < places.length ? (
-              <button className="btn btn-primary" onClick={() => setMatchItem(null)}>
-                Keep Swiping
-              </button>
-            ) : (
-              <button className="btn btn-primary" onClick={() => { setMatchItem(null); setIsDone(true) }}>
-                See All Matches
-              </button>
-            )}
-            <button className="btn btn-secondary" onClick={() => { setMatchItem(null); setIsDone(true) }}>
-              See All Matches
-            </button>
-          </div>
         </div>
       </div>
     )
@@ -638,7 +699,7 @@ export default function FoodRoom({ room, onDone }) {
         </div>
 
         <div className="act-footer">
-          <p className="act-footer-hint">Swipe right on all cuisines you'd both enjoy</p>
+          <p className="act-footer-hint">{isSolo ? 'Swipe right on cuisines you enjoy' : 'Swipe right on all cuisines you\'d both enjoy'}</p>
         </div>
       </div>
     )
@@ -653,9 +714,9 @@ export default function FoodRoom({ room, onDone }) {
           {matchedCategories.map(c => c.emoji).join(' ')} Restaurants
         </span>
         <div className="act-header-right">
-          {matches.length > 0 && (
-            <span className="act-match-count">{matches.length} match{matches.length !== 1 ? 'es' : ''}</span>
-          )}
+          {isSolo
+            ? likedPlaces.length > 0 && <span className="act-match-count">{likedPlaces.length} pick{likedPlaces.length !== 1 ? 's' : ''}</span>
+            : matches.length > 0 && <span className="act-match-count">{matches.length} match{matches.length !== 1 ? 'es' : ''}</span>}
           <span className="act-progress">{currentIndex + 1} / {places.length}</span>
         </div>
       </div>
@@ -671,7 +732,9 @@ export default function FoodRoom({ room, onDone }) {
 
       <div className="act-footer">
         <button className="done-early-btn" onClick={() => setIsDone(true)}>
-          I'm done swiping{matches.length > 0 ? ` · ${matches.length} match${matches.length !== 1 ? 'es' : ''}` : ''}
+          {isSolo
+            ? `I'm done · ${likedPlaces.length} pick${likedPlaces.length !== 1 ? 's' : ''}`
+            : `I'm done swiping${matches.length > 0 ? ` · ${matches.length} match${matches.length !== 1 ? 'es' : ''}` : ''}`}
         </button>
       </div>
     </div>

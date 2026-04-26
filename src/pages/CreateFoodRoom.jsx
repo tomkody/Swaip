@@ -12,50 +12,101 @@ const RADIUS_OPTIONS = [
   { label: '20 km', value: 20000 },
 ]
 
+// Reverse-geocode coordinates → ISO country code (via Nominatim, non-blocking)
+async function detectCountryCode(lat, lng) {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+      { headers: { 'Accept-Language': 'en' } }
+    )
+    const data = await res.json()
+    return (data.address?.country_code || '').toUpperCase() || null
+  } catch {
+    return null
+  }
+}
+
 export default function CreateFoodRoom() {
   const navigate = useNavigate()
   const [locationText, setLocationText] = useState('')
   const [pinnedCoords, setPinnedCoords] = useState(null)
+  const [pinnedCountryCode, setPinnedCountryCode] = useState(null)
   const [radius, setRadius] = useState(5000)
   const [loading, setLoading] = useState(false)
   const [geoLoading, setGeoLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [solo, setSolo] = useState(false)
 
-  async function handleUseMyLocation() {
-    if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser.')
-      return
-    }
+  function handleUseMyLocation() {
     setGeoLoading(true)
     setError(null)
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords
-        setPinnedCoords({ lat: latitude, lng: longitude })
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
-            { headers: { 'Accept-Language': 'en' } }
+
+    // Failsafe: stop spinner after 20 s no matter what
+    const failsafe = setTimeout(() => {
+      setGeoLoading(false)
+      setError('Could not detect your location. Please type a city name.')
+    }, 20000)
+
+    // After GPS succeeds: reverse-geocode for human label + country code, then stop spinner
+    function applyCoords(latitude, longitude) {
+      setPinnedCoords({ lat: latitude, lng: longitude })
+      const ctrl = new AbortController()
+      const t = setTimeout(() => ctrl.abort(), 6000)
+      fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+        { headers: { 'Accept-Language': 'en' }, signal: ctrl.signal }
+      )
+        .then(r => r.json())
+        .then(d => {
+          setLocationText(
+            d.address?.neighbourhood || d.address?.suburb ||
+            d.address?.city_district || d.address?.city ||
+            d.address?.town || d.address?.village || 'My Location'
           )
-          const data = await res.json()
-          const label =
-            data.address?.neighbourhood ||
-            data.address?.suburb ||
-            data.address?.city_district ||
-            data.address?.city ||
-            data.address?.town ||
-            data.address?.village ||
-            'My Location'
-          setLocationText(label)
-        } catch {
-          setLocationText('My Location')
-        }
-        setGeoLoading(false)
+          setPinnedCountryCode((d.address?.country_code || '').toUpperCase() || null)
+        })
+        .catch(() => { setLocationText('My Location'); setPinnedCountryCode(null) })
+        .finally(() => { clearTimeout(t); setGeoLoading(false) })
+    }
+
+    // IP-based fallback — used when GPS is unavailable or denied
+    function tryIpFallback() {
+      const ctrl = new AbortController()
+      const t = setTimeout(() => ctrl.abort(), 8000)
+      fetch('https://ipapi.co/json/', { signal: ctrl.signal })
+        .then(r => r.json())
+        .then(d => {
+          clearTimeout(t)
+          if (!d.latitude || !d.longitude) throw new Error('no coords')
+          clearTimeout(failsafe)
+          setPinnedCoords({ lat: d.latitude, lng: d.longitude })
+          setLocationText(d.city || d.region || 'My Location')
+          setPinnedCountryCode((d.country_code || '').toUpperCase() || null)
+          setGeoLoading(false)
+        })
+        .catch(() => {
+          clearTimeout(t)
+          clearTimeout(failsafe)
+          setGeoLoading(false)
+          setError('Could not detect your location. Please type a city name.')
+        })
+    }
+
+    if (!navigator.geolocation) {
+      tryIpFallback()
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        clearTimeout(failsafe)
+        applyCoords(pos.coords.latitude, pos.coords.longitude)
       },
       () => {
-        setError('Could not get your location. Please type a city name.')
-        setGeoLoading(false)
-      }
+        // GPS denied or unavailable — silently fall back to IP geolocation
+        tryIpFallback()
+      },
+      { maximumAge: 300000 }
     )
   }
 
@@ -68,11 +119,13 @@ export default function CreateFoodRoom() {
     setError(null)
     try {
       getUserToken()
-      let lat, lng, locationName
+      let lat, lng, locationName, countryCode
+
       if (pinnedCoords) {
         lat = pinnedCoords.lat
         lng = pinnedCoords.lng
         locationName = locationText.trim() || 'My Location'
+        countryCode = pinnedCountryCode // already fetched during GPS lookup
       } else {
         try {
           const geo = await geocodeLocation(locationText.trim())
@@ -89,9 +142,12 @@ export default function CreateFoodRoom() {
           setLoading(false)
           return
         }
+        // Detect country from the resolved coordinates (non-blocking — null is fine)
+        countryCode = await detectCountryCode(lat, lng)
       }
-      const room = await createFoodRoom({ lat, lng, locationName, radius })
-      navigate(`/room/${room.id}`, { state: { isCreator: true } })
+
+      const room = await createFoodRoom({ lat, lng, locationName, radius, countryCode, solo })
+      navigate(`/room/${room.id}`, { state: { isCreator: true, isSolo: solo } })
     } catch (err) {
       console.error('Failed to create room:', err)
       setError('Failed to create room. Please try again.')
@@ -111,8 +167,20 @@ export default function CreateFoodRoom() {
       <div className="create-activity-content">
         <div className="activity-hero-icon">🍽️</div>
         <h1>Food & Dining</h1>
+
+        <div className="mode-toggle">
+          <button className={`mode-btn ${!solo ? 'active' : ''}`} onClick={() => setSolo(false)}>
+            👥 Together
+          </button>
+          <button className={`mode-btn ${solo ? 'active' : ''}`} onClick={() => setSolo(true)}>
+            👤 Solo
+          </button>
+        </div>
+
         <p className="subtitle">
-          Swipe through cuisines — when you match, discover real restaurants nearby you'd both enjoy!
+          {solo
+            ? 'Swipe through cuisines and discover restaurants nearby — perfect for planning tonight\'s dinner.'
+            : 'Swipe through cuisines — when you match, discover real restaurants nearby you\'d both enjoy!'}
         </p>
 
         <div className="activity-form">
@@ -123,7 +191,7 @@ export default function CreateFoodRoom() {
               type="text"
               placeholder="City or address…"
               value={locationText}
-              onChange={e => { setLocationText(e.target.value); setPinnedCoords(null); setError(null) }}
+              onChange={e => { setLocationText(e.target.value); setPinnedCoords(null); setPinnedCountryCode(null); setError(null) }}
               onKeyDown={e => e.key === 'Enter' && handleCreate()}
             />
             <button
@@ -156,7 +224,7 @@ export default function CreateFoodRoom() {
             disabled={loading || geoLoading}
             onClick={handleCreate}
           >
-            {loading ? 'Creating…' : 'Create Room'}
+            {loading ? 'Creating…' : solo ? 'Start Now' : 'Create Room'}
           </button>
         </div>
       </div>

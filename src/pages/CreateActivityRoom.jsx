@@ -15,49 +15,75 @@ const RADIUS_OPTIONS = [
 export default function CreateActivityRoom() {
   const navigate = useNavigate()
   const [locationText, setLocationText] = useState('')
-  const [pinnedCoords, setPinnedCoords] = useState(null) // { lat, lng } from GPS — bypasses geocoding
+  const [pinnedCoords, setPinnedCoords] = useState(null)
   const [radius, setRadius] = useState(5000)
   const [loading, setLoading] = useState(false)
   const [geoLoading, setGeoLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [solo, setSolo] = useState(false)
 
-  async function handleUseMyLocation() {
-    if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser.')
-      return
-    }
+  function handleUseMyLocation() {
     setGeoLoading(true)
     setError(null)
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords
-        // Store exact GPS coordinates — no geocoding roundtrip
-        setPinnedCoords({ lat: latitude, lng: longitude })
-        // Reverse geocode just for the display label (does not affect actual coords used)
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
-            { headers: { 'Accept-Language': 'en' } }
+
+    const failsafe = setTimeout(() => {
+      setGeoLoading(false)
+      setError('Could not detect your location. Please type a city name.')
+    }, 20000)
+
+    function applyCoords(latitude, longitude) {
+      setPinnedCoords({ lat: latitude, lng: longitude })
+      const ctrl = new AbortController()
+      const t = setTimeout(() => ctrl.abort(), 6000)
+      fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+        { headers: { 'Accept-Language': 'en' }, signal: ctrl.signal }
+      )
+        .then(r => r.json())
+        .then(d => {
+          setLocationText(
+            d.address?.neighbourhood || d.address?.suburb ||
+            d.address?.city_district || d.address?.city ||
+            d.address?.town || d.address?.village || 'My Location'
           )
-          const data = await res.json()
-          const label =
-            data.address?.neighbourhood ||
-            data.address?.suburb ||
-            data.address?.city_district ||
-            data.address?.city ||
-            data.address?.town ||
-            data.address?.village ||
-            'My Location'
-          setLocationText(label)
-        } catch {
-          setLocationText('My Location')
-        }
-        setGeoLoading(false)
+        })
+        .catch(() => { setLocationText('My Location') })
+        .finally(() => { clearTimeout(t); setGeoLoading(false) })
+    }
+
+    function tryIpFallback() {
+      const ctrl = new AbortController()
+      const t = setTimeout(() => ctrl.abort(), 8000)
+      fetch('https://ipapi.co/json/', { signal: ctrl.signal })
+        .then(r => r.json())
+        .then(d => {
+          clearTimeout(t)
+          if (!d.latitude || !d.longitude) throw new Error('no coords')
+          clearTimeout(failsafe)
+          setPinnedCoords({ lat: d.latitude, lng: d.longitude })
+          setLocationText(d.city || d.region || 'My Location')
+          setGeoLoading(false)
+        })
+        .catch(() => {
+          clearTimeout(t)
+          clearTimeout(failsafe)
+          setGeoLoading(false)
+          setError('Could not detect your location. Please type a city name.')
+        })
+    }
+
+    if (!navigator.geolocation) {
+      tryIpFallback()
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        clearTimeout(failsafe)
+        applyCoords(pos.coords.latitude, pos.coords.longitude)
       },
-      () => {
-        setError('Could not get your location. Please type a city name.')
-        setGeoLoading(false)
-      }
+      () => { tryIpFallback() },
+      { maximumAge: 300000 }
     )
   }
 
@@ -73,7 +99,6 @@ export default function CreateActivityRoom() {
 
       let lat, lng, locationName
       if (pinnedCoords) {
-        // Use exact GPS coordinates — skip geocoding entirely
         lat = pinnedCoords.lat
         lng = pinnedCoords.lng
         locationName = locationText.trim() || 'My Location'
@@ -84,7 +109,6 @@ export default function CreateActivityRoom() {
           lng = geo.lng
           locationName = geo.name
         } catch (geoErr) {
-          console.error('Geocode failed:', geoErr.message)
           const msg = geoErr.message || ''
           if (msg.includes('API key') || msg.includes('not configured') || msg.includes('403') || msg.includes('REQUEST_DENIED')) {
             setError('Google Maps API key issue — check the deployment environment variables (VITE_GOOGLE_MAPS_API_KEY).')
@@ -98,8 +122,8 @@ export default function CreateActivityRoom() {
         }
       }
 
-      const room = await createActivityRoom({ lat, lng, locationName, radius })
-      navigate(`/room/${room.id}`, { state: { isCreator: true } })
+      const room = await createActivityRoom({ lat, lng, locationName, radius, solo })
+      navigate(`/room/${room.id}`, { state: { isCreator: true, isSolo: solo } })
     } catch (err) {
       console.error('Failed to create room:', err)
       setError('Failed to create room. Please try again.')
@@ -119,8 +143,20 @@ export default function CreateActivityRoom() {
       <div className="create-activity-content">
         <div className="activity-hero-icon">🎯</div>
         <h1>Activities</h1>
+
+        <div className="mode-toggle">
+          <button className={`mode-btn ${!solo ? 'active' : ''}`} onClick={() => setSolo(false)}>
+            👥 Together
+          </button>
+          <button className={`mode-btn ${solo ? 'active' : ''}`} onClick={() => setSolo(true)}>
+            👤 Solo
+          </button>
+        </div>
+
         <p className="subtitle">
-          Swipe through categories, find a match, then discover real places nearby you'd both enjoy!
+          {solo
+            ? 'Swipe through activity categories and discover real places nearby just for you!'
+            : 'Swipe through categories, find a match, then discover real places nearby you\'d both enjoy!'}
         </p>
 
         <div className="activity-form">
@@ -164,7 +200,7 @@ export default function CreateActivityRoom() {
             disabled={loading || geoLoading}
             onClick={handleCreate}
           >
-            {loading ? 'Creating…' : 'Create Room'}
+            {loading ? 'Creating…' : solo ? 'Start Now' : 'Create Room'}
           </button>
         </div>
       </div>

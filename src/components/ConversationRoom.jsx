@@ -34,9 +34,10 @@ function seededShuffle(arr, seed) {
   return a
 }
 
-export default function ConversationRoom({ room, onDone }) {
-  let topicIds
-  try { topicIds = JSON.parse(room.topic_id) } catch { topicIds = [] }
+export default function ConversationRoom({ room, onDone, isSolo = false }) {
+  let rawTopic
+  try { rawTopic = JSON.parse(room.topic_id) } catch { rawTopic = [] }
+  const topicIds = Array.isArray(rawTopic) ? rawTopic : (rawTopic?.topicIds || [])
   const allSubtopics = getSubtopicsForTopics(topicIds)
 
   // Pick 15 cards, seeded by roomId so both partners see identical ordering
@@ -67,15 +68,16 @@ export default function ConversationRoom({ room, onDone }) {
   const userToken = useRef(getUserToken())
   const hasConfettied = useRef(false)
 
-  // Subscribe to partner's selections
+  // Subscribe to partner's selections (together mode only)
   useEffect(() => {
+    if (isSolo) return
     const unsub = subscribeToConversationSelections(
       room.id,
       userToken.current,
       () => setPartnerSubmitted(true)
     )
     return unsub
-  }, [room.id])
+  }, [isSolo, room.id])
 
   // Check for matches when both have submitted
   const checkMatches = useCallback(async () => {
@@ -113,6 +115,11 @@ export default function ConversationRoom({ room, onDone }) {
     try {
       await submitConversationSelections(room.id, userToken.current, likedIdsRef.current)
       setSubmitted(true)
+      if (isSolo) {
+        // Solo: own picks are the result
+        setMatches(likedIdsRef.current)
+        return
+      }
       const result = await getConversationMatches(room.id, userToken.current)
       if (result.partnerSubmitted) {
         setPartnerSubmitted(true)
@@ -149,10 +156,12 @@ export default function ConversationRoom({ room, onDone }) {
         <div className="conv-results">
           {matchedCards.length > 0 ? (
             <>
-              <div className="results-emoji">🎉</div>
-              <h2 className="results-title">You both matched!</h2>
+              <div className="results-emoji">{isSolo ? '✨' : '🎉'}</div>
+              <h2 className="results-title">{isSolo ? 'Your topics' : 'You both matched!'}</h2>
               <p className="results-subtitle">
-                {matchedCards.length} topic{matchedCards.length !== 1 ? 's' : ''} you both want to talk about
+                {isSolo
+                  ? `${matchedCards.length} topic${matchedCards.length !== 1 ? 's' : ''} you want to explore`
+                  : `${matchedCards.length} topic${matchedCards.length !== 1 ? 's' : ''} you both want to talk about`}
               </p>
 
               <div className="results-section">
@@ -238,7 +247,7 @@ export default function ConversationRoom({ room, onDone }) {
   return (
     <div className="conv-swipe-page">
       <div className="conv-swipe-header">
-        <p className="conv-swipe-label">Swipe right on topics you want to talk about</p>
+        <p className="conv-swipe-label">{isSolo ? 'Swipe right on topics you want to explore' : 'Swipe right on topics you want to talk about'}</p>
         <span className="conv-swipe-progress">{currentIndex + 1} / {cards.length}</span>
       </div>
 

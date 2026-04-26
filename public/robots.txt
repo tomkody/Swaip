@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /room/
+
+# Don't index create-room flows — they're functional pages, not content
+Disallow: /create/
+
+Sitemap: https://swaip.app/sitemap.xml

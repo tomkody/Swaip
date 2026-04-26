@@ -3,7 +3,7 @@ import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRo
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import './RankingView.css'
 
-export default function RankingView({ matches: initialMatches, liked = [], room, movies = [], onDone }) {
+export default function RankingView({ matches: initialMatches, liked = [], room, movies = [], onDone, isSolo = false }) {
   const userToken = useRef(getUserToken())
   const [matches, setMatches] = useState(initialMatches)
   const [top3, setTop3] = useState([])
@@ -13,27 +13,29 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
   const [sharing, setSharing] = useState(false)
   const dragFrom = useRef(null)
 
-  // Check if partner already submitted + subscribe — results update in background
+  // Partner ranking subscription — together mode only
   const checkPartner = useCallback(async () => {
+    if (isSolo) return
     const { partnerRanking, partnerSubmitted } = await getRankings(room.id, userToken.current)
     if (partnerSubmitted) setPartnerRanks(partnerRanking)
-  }, [room.id])
+  }, [isSolo, room.id])
 
   useEffect(() => {
+    if (isSolo) return
     checkPartner()
     const unsub = subscribeToRankings(room.id, userToken.current, () => checkPartner())
     return unsub
-  }, [room.id, checkPartner])
+  }, [isSolo, room.id, checkPartner])
 
-  // Keep polling for partner rankings every 15s while in results (they may still be picking)
   useEffect(() => {
-    if (phase !== 'results') return
+    if (phase !== 'results' || isSolo) return
     const interval = setInterval(checkPartner, 15000)
     return () => clearInterval(interval)
-  }, [phase, checkPartner])
+  }, [phase, isSolo, checkPartner])
 
-  // Real-time match updates — fires even after we're in results
+  // Real-time match updates — together mode only
   useEffect(() => {
+    if (isSolo) return
     const unsub = subscribeToSwipes(room.id, userToken.current, (itemId) => {
       const numId = Number(itemId)
       const matched = movies.find(m => m.id === numId || m.id === itemId)
@@ -42,10 +44,11 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
       }
     })
     return unsub
-  }, [room.id, movies])
+  }, [isSolo, room.id, movies])
 
-  // Poll for new matches every 12s
+  // Poll for new matches — together mode only
   useEffect(() => {
+    if (isSolo) return
     const poll = async () => {
       const ids = await fetchRoomMatches(room.id, userToken.current)
       if (ids !== null && ids.length > 0 && movies.length > 0) {
@@ -56,7 +59,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
     poll()
     const interval = setInterval(poll, 12000)
     return () => clearInterval(interval)
-  }, [room.id, movies])
+  }, [isSolo, room.id, movies])
 
   function toggleItem(item) {
     setTop3(prev => {
@@ -129,17 +132,21 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
       <div className="rv-page">
         {/* Hero */}
         <div className="rv-results-hero">
-          <div className="rv-icon">{matches.length > 0 ? '🎉' : '😅'}</div>
+          <div className="rv-icon">{matches.length > 0 ? (isSolo ? '✨' : '🎉') : '😅'}</div>
           <h2>{matches.length > 0
-            ? `You matched on ${matches.length} ${typeLabel}!`
-            : `No matches this time`
+            ? isSolo ? `Your picks: ${matches.length} ${typeLabel}` : `You matched on ${matches.length} ${typeLabel}!`
+            : isSolo ? `Nothing picked this time` : `No matches this time`
           }</h2>
           <p className="rv-hero-sub">
             {matches.length === 0
-              ? 'Try swiping more next time!'
+              ? (isSolo ? 'Swipe right on more next time!' : 'Try swiping more next time!')
               : hasMyPicks
-                ? `We swiped through ${movies.length} ${typeLabel} and ${top3.length === 1 ? 'this is my #1 pick' : `these are my top ${top3.length}`}:`
-                : `Here's everything you both want to watch:`}
+                ? isSolo
+                  ? `Out of ${movies.length} ${typeLabel} — ${top3.length === 1 ? 'this is my #1 pick' : `these are my top ${top3.length}`}:`
+                  : `We swiped through ${movies.length} ${typeLabel} and ${top3.length === 1 ? 'this is my #1 pick' : `these are my top ${top3.length}`}:`
+                : isSolo
+                  ? `Everything you liked:`
+                  : `Here's everything you both want to watch:`}
           </p>
         </div>
 
@@ -158,6 +165,13 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   <div className="rv-result-info">
                     <strong>{m.title}</strong>
                     <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                    {m.isOpen != null && (
+                      <span className={`rv-hours ${m.isOpen ? 'rv-hours--open' : 'rv-hours--closed'}`}>
+                        {m.isOpen ? '● Open' : '● Closed'}
+                        {m.isOpen && m.closesAt ? ` · until ${m.closesAt}` : ''}
+                        {!m.isOpen && m.opensAt ? ` · opens ${m.opensAt}` : ''}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -168,7 +182,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
         {/* Other matches */}
         {rest.length > 0 && (
           <div className="rv-match-list">
-            <p className="rv-label">All Matches ({matches.length})</p>
+            <p className="rv-label">{isSolo ? `All Picks (${matches.length})` : `All Matches (${matches.length})`}</p>
             {rest.map(m => (
               <div key={m.id} className="rv-result-card">
                 <div className="rv-result-card-inner">
@@ -178,6 +192,13 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   <div className="rv-result-info">
                     <strong>{m.title}</strong>
                     <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                    {m.isOpen != null && (
+                      <span className={`rv-hours ${m.isOpen ? 'rv-hours--open' : 'rv-hours--closed'}`}>
+                        {m.isOpen ? '● Open' : '● Closed'}
+                        {m.isOpen && m.closesAt ? ` · until ${m.closesAt}` : ''}
+                        {!m.isOpen && m.opensAt ? ` · opens ${m.opensAt}` : ''}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -197,6 +218,13 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   <div className="rv-result-info">
                     <strong>{m.title}</strong>
                     <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                    {m.isOpen != null && (
+                      <span className={`rv-hours ${m.isOpen ? 'rv-hours--open' : 'rv-hours--closed'}`}>
+                        {m.isOpen ? '● Open' : '● Closed'}
+                        {m.isOpen && m.closesAt ? ` · until ${m.closesAt}` : ''}
+                        {!m.isOpen && m.opensAt ? ` · opens ${m.opensAt}` : ''}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -230,7 +258,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
     <div className="rv-page">
       <div className="rv-ranking-header">
         <h2>Pick Your Top {maxPicks > 0 ? maxPicks : ''}</h2>
-        <p>{matches.length} match{matches.length !== 1 ? 'es' : ''} · tap to rank · drag to reorder</p>
+        <p>{matches.length} {isSolo ? 'pick' : 'match'}{matches.length !== 1 ? 's' : ''} · tap to rank · drag to reorder</p>
       </div>
 
       {/* Top 3 slots */}
@@ -258,10 +286,10 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
         ))}
       </div>
 
-      {/* Mutual matches */}
+      {/* Matches / picks list */}
       <div className="rv-match-list">
-        <p className="rv-label">🤝 Mutual Matches ({matches.length})</p>
-        {matches.length === 0 && <p className="rv-empty">No matches yet — still waiting for your partner.</p>}
+        <p className="rv-label">{isSolo ? `✨ Your Picks (${matches.length})` : `🤝 Mutual Matches (${matches.length})`}</p>
+        {matches.length === 0 && <p className="rv-empty">{isSolo ? 'Nothing picked yet.' : 'No matches yet — still waiting for your partner.'}</p>}
         {matches.map(m => {
           const inTop = isInTop3(m.id)
           const rank = rankOf(m.id)
@@ -278,6 +306,13 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
               <div className="rv-match-info">
                 <strong>{m.title}</strong>
                 <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                {m.isOpen != null && (
+                  <span className={`rv-hours ${m.isOpen ? 'rv-hours--open' : 'rv-hours--closed'}`}>
+                    {m.isOpen ? '● Open' : '● Closed'}
+                    {m.isOpen && m.closesAt ? ` · until ${m.closesAt}` : ''}
+                    {!m.isOpen && m.opensAt ? ` · opens ${m.opensAt}` : ''}
+                  </span>
+                )}
               </div>
               <div className={`rv-badge ${inTop ? 'rv-badge-ranked' : full ? 'rv-badge-full' : 'rv-badge-add'}`}>
                 {inTop ? `#${rank}` : full ? '—' : '+'}
@@ -287,8 +322,8 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
         })}
       </div>
 
-      {/* My full selection — all movies I swiped right on */}
-      {liked.length > 0 && (
+      {/* My full selection — all movies I swiped right on (together mode only) */}
+      {liked.length > 0 && !isSolo && (
         <div className="rv-match-list rv-my-selection">
           <p className="rv-label">👤 My Selection ({liked.length})</p>
           <p className="rv-selection-note">Everything you liked — waiting to see what your partner picked too.</p>
