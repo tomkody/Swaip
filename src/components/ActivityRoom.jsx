@@ -696,6 +696,19 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
         </div>
 
         <div className="act-footer">
+          {currentIndex > 0 && (
+            <button
+              className="done-early-btn"
+              onClick={handleCategoriesDone}
+              disabled={fetchingPlaces}
+            >
+              {fetchingPlaces
+                ? 'Finding places…'
+                : likedCatIdsRef.current.size > 0
+                  ? `I'm done · ${likedCatIdsRef.current.size} categor${likedCatIdsRef.current.size !== 1 ? 'ies' : 'y'} picked`
+                  : `I'm done`}
+            </button>
+          )}
           <p className="act-footer-hint">{isSolo ? 'Swipe right on activities you enjoy' : 'Swipe right on all activities you\'d both enjoy'}</p>
         </div>
       </div>

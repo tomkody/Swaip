@@ -699,6 +699,19 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
         </div>
 
         <div className="act-footer">
+          {currentIndex > 0 && (
+            <button
+              className="done-early-btn"
+              onClick={handleCategoriesDone}
+              disabled={fetchingPlaces}
+            >
+              {fetchingPlaces
+                ? 'Finding restaurants…'
+                : likedCatIdsRef.current.size > 0
+                  ? `I'm done · ${likedCatIdsRef.current.size} cuisine${likedCatIdsRef.current.size !== 1 ? 's' : ''} picked`
+                  : `I'm done`}
+            </button>
+          )}
           <p className="act-footer-hint">{isSolo ? 'Swipe right on cuisines you enjoy' : 'Swipe right on all cuisines you\'d both enjoy'}</p>
         </div>
       </div>
