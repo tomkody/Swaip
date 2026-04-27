@@ -606,6 +606,16 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   }
 
   // ── No-location error / places fetch error ────────────────────────────────
+  function retryCategories() {
+    placesTransitionFiredRef.current = false
+    likedCatIdsRef.current = new Set()
+    setPhase('categories')
+    setPlaces([])
+    setMatchedCategories([])
+    setCurrentIndex(0)
+    setPlacesError(null)
+  }
+
   if (phase === 'places' && placesError) {
     return (
       <div className="act-center">
@@ -613,7 +623,10 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
           <div className="act-error-icon">😕</div>
           <h2>Couldn't load places</h2>
           <p className="act-error-sub">{placesError}</p>
-          <button className="btn btn-secondary" style={{ marginTop: 10 }} onClick={onDone}>
+          <button className="btn btn-primary" style={{ marginTop: 10 }} onClick={retryCategories}>
+            Try different categories
+          </button>
+          <button className="btn btn-secondary" style={{ marginTop: 8 }} onClick={onDone}>
             Go home
           </button>
         </div>
@@ -630,9 +643,10 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
           <h2>No places found</h2>
           <p className="act-error-sub">
             We couldn't find any {matchedCategories.map(c => c.label).join(' or ') || 'places'} nearby.
-            {!location ? ' Add a location when creating the room to see real nearby places.' : ' Try a larger search radius.'}
+            {!location ? ' Add a location when creating the room to see real nearby places.' : ' Try a different category.'}
           </p>
-          <button className="btn btn-secondary" onClick={onDone}>Go home</button>
+          <button className="btn btn-primary" onClick={retryCategories}>Try different categories</button>
+          <button className="btn btn-secondary" style={{ marginTop: 8 }} onClick={onDone}>Go home</button>
         </div>
       </div>
     )

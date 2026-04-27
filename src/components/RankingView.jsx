@@ -115,6 +115,20 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
         mode: 'matches',
         typeLabel,
       })
+      // Try native share sheet first (mobile), fall back to download
+      if (navigator.share && navigator.canShare) {
+        try {
+          const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
+          const file = new File([blob], 'swaip-matches.png', { type: 'image/png' })
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: 'Swaip Results' })
+            return
+          }
+        } catch (shareErr) {
+          if (shareErr.name !== 'AbortError') console.warn('Share failed, falling back:', shareErr)
+          else return // user cancelled — don't download
+        }
+      }
       downloadCanvas(canvas, `swaip-matches.png`)
     } catch (err) { console.error('Share error:', err) }
     finally { setSharing(false) }

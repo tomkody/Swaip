@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import './SwipeCard.css'
 
 const SWIPE_THRESHOLD = 100
@@ -18,6 +18,19 @@ export default function SwipeCard({ item, onSwipe, active }) {
   const [leaving, setLeaving] = useState(null)
   const [flipped, setFlipped] = useState(false)
   const [gettingLocation, setGettingLocation] = useState(false)
+
+  // ── Keyboard shortcuts (← nope, → like) ──────────────────────────
+  useEffect(() => {
+    if (!active) return
+    function onKey(e) {
+      if (isLeavingRef.current) return
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+      if (e.key === 'ArrowLeft')  swipeVia('left')
+      if (e.key === 'ArrowRight') swipeVia('right')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [active]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Directions ────────────────────────────────────────────────────
   function handleDirections(e) {

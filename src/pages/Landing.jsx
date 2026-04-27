@@ -62,7 +62,7 @@ export default function Landing() {
             <span className="category-emoji">🍿</span>
             <div className="category-text">
               <span className="category-name">Movies</span>
-              <span className="category-desc">Find your perfect film. Match, grab popcorn, and hit play.</span>
+              <span className="category-desc">Pick a film solo or find one you both love. Grab popcorn and hit play.</span>
             </div>
           </button>
 
@@ -70,7 +70,7 @@ export default function Landing() {
             <span className="category-emoji">🎯</span>
             <div className="category-text">
               <span className="category-name">Activities</span>
-              <span className="category-desc">Couch or outdoors? Discover your next shared adventure.</span>
+              <span className="category-desc">Couch or outdoors? Find your next adventure, solo or together.</span>
             </div>
           </button>
 
@@ -78,7 +78,7 @@ export default function Landing() {
             <span className="category-emoji">📺</span>
             <div className="category-text">
               <span className="category-name">TV Series</span>
-              <span className="category-desc">Your next shared binge-watch awaits. Match on top-rated shows.</span>
+              <span className="category-desc">Your next binge-watch awaits. Pick alone or match with someone.</span>
             </div>
           </button>
 
@@ -86,7 +86,7 @@ export default function Landing() {
             <span className="category-emoji">💬</span>
             <div className="category-text">
               <span className="category-name">Conversations</span>
-              <span className="category-desc">Skip the small talk. Match on deep dives, fun debates, and fresh topics.</span>
+              <span className="category-desc">Skip the small talk. Explore deep dives, fun debates, and fresh topics.</span>
             </div>
           </button>
 
@@ -94,7 +94,7 @@ export default function Landing() {
             <span className="category-emoji">🍽️</span>
             <div className="category-text">
               <span className="category-name">Food & Dining</span>
-              <span className="category-desc">Match on a cuisine, then swipe through real restaurants near you both.</span>
+              <span className="category-desc">Pick a cuisine, then swipe through real restaurants near you.</span>
             </div>
           </button>
         </div>

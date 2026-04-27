@@ -597,6 +597,16 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
   }
 
   // ── Places fetch error ────────────────────────────────────────────────────
+  function retryCategories() {
+    placesTransitionFiredRef.current = false
+    likedCatIdsRef.current = new Set()
+    setPhase('categories')
+    setPlaces([])
+    setMatchedCategories([])
+    setCurrentIndex(0)
+    setPlacesError(null)
+  }
+
   if (phase === 'places' && placesError) {
     return (
       <div className="act-center">
@@ -604,7 +614,10 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
           <div className="act-error-icon">😕</div>
           <h2>Couldn't load restaurants</h2>
           <p className="act-error-sub">{placesError}</p>
-          <button className="btn btn-secondary" style={{ marginTop: 10 }} onClick={onDone}>Go home</button>
+          <button className="btn btn-primary" style={{ marginTop: 10 }} onClick={retryCategories}>
+            Try different cuisines
+          </button>
+          <button className="btn btn-secondary" style={{ marginTop: 8 }} onClick={onDone}>Go home</button>
         </div>
       </div>
     )
@@ -619,9 +632,10 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
           <h2>No restaurants found</h2>
           <p className="act-error-sub">
             We couldn't find any {matchedCategories.map(c => c.label).join(' or ') || 'restaurants'} nearby.
-            {!location ? ' Add a location when creating the room.' : ' Try a larger search radius.'}
+            {!location ? ' Add a location when creating the room.' : ' Try a different cuisine.'}
           </p>
-          <button className="btn btn-secondary" onClick={onDone}>Go home</button>
+          <button className="btn btn-primary" onClick={retryCategories}>Try different cuisines</button>
+          <button className="btn btn-secondary" style={{ marginTop: 8 }} onClick={onDone}>Go home</button>
         </div>
       </div>
     )
