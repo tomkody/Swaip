@@ -188,7 +188,8 @@ export default function CreateFoodRoom() {
                   className={`player-chip ${playerCount === n ? 'active' : ''}`}
                   onClick={() => setPlayerCount(n)}
                 >
-                  {'👤'.repeat(n > 3 ? 1 : n)}{n > 3 ? `×${n}` : ''} {n}
+                  <span className="player-chip-num">{n}</span>
+                  <span className="player-chip-sub">people</span>
                 </button>
               ))}
             </div>

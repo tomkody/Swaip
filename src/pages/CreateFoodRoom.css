@@ -51,15 +51,15 @@
   width: 100%;
 }
 
-/* Reuse activity room player count styles */
-.create-food .player-count-row { margin-bottom: 20px; }
+/* Player count picker — same design as CreateActivityRoom */
+.create-food .player-count-row { margin-bottom: 24px; }
 .create-food .player-count-label {
   display: block;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
-  margin-bottom: 10px;
-  letter-spacing: 0.02em;
+  margin-bottom: 12px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: center;
 }
@@ -67,24 +67,37 @@
   display: flex;
   gap: 8px;
   justify-content: center;
-  flex-wrap: wrap;
 }
 .create-food .player-chip {
-  padding: 10px 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 4px;
   background: var(--bg-card);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  font-size: 14px;
-  font-weight: 700;
   cursor: pointer;
   transition: all 0.18s;
-  min-width: 52px;
+  font-family: inherit;
 }
-.create-food .player-chip:hover { border-color: var(--border-hover); color: var(--text); }
-.create-food .player-chip.active {
-  background: var(--gradient-primary);
-  border-color: var(--accent-coral);
-  color: #1E222B;
-  box-shadow: var(--shadow-xs);
+.create-food .player-chip:hover { border-color: var(--border-hover); background: var(--bg-card-hover); }
+.create-food .player-chip.active { background: var(--gradient-primary); border-color: transparent; box-shadow: var(--shadow-xs); }
+.create-food .player-chip-num {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text);
+  font-family: 'Manrope', 'Inter', sans-serif;
+  letter-spacing: -0.03em;
 }
+.create-food .player-chip.active .player-chip-num { color: #1E222B; }
+.create-food .player-chip-sub {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.create-food .player-chip.active .player-chip-sub { color: rgba(30, 34, 43, 0.7); }
