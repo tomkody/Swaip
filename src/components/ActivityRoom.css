@@ -194,6 +194,13 @@
   margin-bottom: 16px;
 }
 
+.act-waiting-participants {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-orange);
+  margin: 4px 0 0;
+}
+
 .act-waiting-text {
   color: var(--text-muted);
   font-size: 15px;

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
-import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, markRoomActive, fetchRoomMatches, isRoomSolo } from '../lib/room'
+import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, markRoomActive, fetchRoomMatches, isRoomSolo, getRoomPlayerCount } from '../lib/room'
 import { PLATFORMS } from '../lib/platforms'
 import { fetchTopRatedMovies } from '../lib/tmdb'
 import { fetchTopRatedSeries } from '../lib/seriesFetch'
@@ -204,7 +204,7 @@ export default function Room() {
       <div className="room-center">
         <div className="join-screen">
           <div className="join-icon">{info.emoji}</div>
-          <p className="join-invited">Your friend invited you!</p>
+          <p className="join-invited">{getRoomPlayerCount(room) > 2 ? `You've been invited to a group!` : `Your friend invited you!`}</p>
           <h2 className="join-title">{info.label} Room</h2>
           <p className="join-desc">{info.desc}</p>
           <button className="btn btn-primary join-btn" onClick={() => { markRoomActive(roomId); setHasJoined(true) }}>
@@ -231,11 +231,12 @@ export default function Room() {
 
   // Creator waiting for partner
   if (isCreator && !partnerJoined) {
+    const pc = getRoomPlayerCount(room)
     return (
       <div className="room-center">
         <div className="waiting">
           <div className="waiting-icon">⏳</div>
-          <h2>Waiting for your partner</h2>
+          <h2>{pc > 2 ? `Waiting for your group` : `Waiting for your partner`}</h2>
           <p className="waiting-genre">
             {room.type === 'movies' ? '🎬 Movies' : room.type === 'series' ? '📺 TV Series' : room.type === 'activities' ? '🎯 Activities' : room.type === 'food' ? '🍽️ Food & Dining' : `💬 ${room.topic_name}`}
           </p>

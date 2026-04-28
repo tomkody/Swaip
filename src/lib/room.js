@@ -9,6 +9,55 @@ export function isRoomSolo(room) {
   } catch { return false }
 }
 
+// Read playerCount stored in topic_id JSON (defaults to 2)
+export function getRoomPlayerCount(room) {
+  if (!room?.topic_id) return 2
+  try {
+    const parsed = JSON.parse(room.topic_id)
+    return parsed?.playerCount || 2
+  } catch { return 2 }
+}
+
+// Count how many distinct users have any swipe in this room
+export async function getParticipantCount(roomId) {
+  if (!supabase) {
+    const key = `swaip_swipes_${roomId}`
+    const swipes = JSON.parse(localStorage.getItem(key) || '[]')
+    return new Set(swipes.map(s => s.user_token)).size
+  }
+  const { data, error } = await supabase
+    .from('swipes').select('user_token').eq('room_id', roomId)
+  if (error || !data) return 0
+  return new Set(data.map(s => s.user_token)).size
+}
+
+// Return vote counts per item: { [itemId]: numberOfUsersWhoLikedIt }
+export async function fetchVoteCounts(roomId) {
+  if (!supabase) {
+    const key = `swaip_swipes_${roomId}`
+    const swipes = JSON.parse(localStorage.getItem(key) || '[]')
+    const byItem = {}
+    for (const s of swipes) {
+      if (s.direction !== 'right') continue
+      const id = Number(s.item_id)
+      if (!byItem[id]) byItem[id] = new Set()
+      byItem[id].add(s.user_token)
+    }
+    return Object.fromEntries(Object.entries(byItem).map(([id, set]) => [id, set.size]))
+  }
+  const { data, error } = await supabase
+    .from('swipes').select('user_token, item_id')
+    .eq('room_id', roomId).eq('direction', 'right')
+  if (error || !data) return {}
+  const byItem = {}
+  for (const s of data) {
+    const id = Number(s.item_id)
+    if (!byItem[id]) byItem[id] = new Set()
+    byItem[id].add(s.user_token)
+  }
+  return Object.fromEntries(Object.entries(byItem).map(([id, set]) => [id, set.size]))
+}
+
 export function getUserToken() {
   let token = sessionStorage.getItem('swaip_user_token')
   if (!token) {
@@ -99,7 +148,7 @@ export async function createSeriesRoom(platforms = [], genres = [], { solo = fal
 }
 
 // Check for any mutual right-swipe among a given list of numeric item IDs
-export async function checkMutualSwipesByIds(roomId, userToken, itemIds) {
+export async function checkMutualSwipesByIds(roomId, userToken, itemIds, playerCount = 2) {
   if (!itemIds || itemIds.length === 0) return null
 
   if (!supabase) {
@@ -114,7 +163,7 @@ export async function checkMutualSwipesByIds(roomId, userToken, itemIds) {
       byItem[id].add(s.user_token)
     }
     for (const [itemId, tokens] of Object.entries(byItem)) {
-      if (tokens.size >= 2) return Number(itemId)
+      if (tokens.size >= playerCount) return Number(itemId)
     }
     return null
   }
@@ -132,17 +181,18 @@ export async function checkMutualSwipesByIds(roomId, userToken, itemIds) {
     byItem[s.item_id].add(s.user_token)
   }
   for (const [itemId, tokens] of Object.entries(byItem)) {
-    if (tokens.size >= 2) return Number(itemId)
+    if (tokens.size >= playerCount) return Number(itemId)
   }
   return null
 }
 
 // Create a food room
-export async function createFoodRoom({ lat, lng, locationName, radius, countryCode, solo = false } = {}) {
+export async function createFoodRoom({ lat, lng, locationName, radius, countryCode, solo = false, playerCount = 2 } = {}) {
   const roomId = uuidv4().slice(0, 8)
+  const pc = solo ? 1 : Math.max(2, Math.min(6, playerCount))
   const locationData = (lat != null && lng != null)
-    ? JSON.stringify({ lat, lng, locationName: locationName || '', radius: radius || 5000, countryCode: countryCode || null, ...(solo && { solo: true }) })
-    : null
+    ? JSON.stringify({ lat, lng, locationName: locationName || '', radius: radius || 5000, countryCode: countryCode || null, ...(solo && { solo: true }), ...(pc > 2 && { playerCount: pc }) })
+    : (solo || pc > 2 ? JSON.stringify({ ...(solo && { solo: true }), ...(pc > 2 && { playerCount: pc }) }) : null)
   if (!supabase) {
     const room = { id: roomId, type: 'food', topic_id: locationData, created_at: new Date().toISOString(), status: 'waiting' }
     localStorage.setItem(`swaip_room_${roomId}`, JSON.stringify(room))
@@ -157,12 +207,13 @@ export async function createFoodRoom({ lat, lng, locationName, radius, countryCo
 }
 
 // Create an activity room
-export async function createActivityRoom({ lat, lng, locationName, radius, solo = false } = {}) {
+export async function createActivityRoom({ lat, lng, locationName, radius, solo = false, playerCount = 2 } = {}) {
   const roomId = uuidv4().slice(0, 8)
+  const pc = solo ? 1 : Math.max(2, Math.min(6, playerCount))
 
   const locationData = (lat != null && lng != null)
-    ? JSON.stringify({ lat, lng, locationName: locationName || '', radius: radius || 5000, ...(solo && { solo: true }) })
-    : null
+    ? JSON.stringify({ lat, lng, locationName: locationName || '', radius: radius || 5000, ...(solo && { solo: true }), ...(pc > 2 && { playerCount: pc }) })
+    : (solo || pc > 2 ? JSON.stringify({ ...(solo && { solo: true }), ...(pc > 2 && { playerCount: pc }) }) : null)
 
   if (!supabase) {
     const room = {
@@ -231,7 +282,8 @@ export function subscribeToRoomChanges(roomId, onUpdate) {
 }
 
 // Fetch actual mutual matches from DB (authoritative source)
-export async function fetchRoomMatches(roomId, userToken) {
+// playerCount = how many players must all agree for a match
+export async function fetchRoomMatches(roomId, userToken, playerCount = 2) {
   if (!supabase) return null // demo mode: caller uses in-memory matches
 
   const { data, error } = await supabase
@@ -245,16 +297,16 @@ export async function fetchRoomMatches(roomId, userToken) {
   const byUser = {}
   for (const row of data) {
     if (!byUser[row.user_token]) byUser[row.user_token] = new Set()
-    byUser[row.user_token].add(Number(row.item_id)) // normalize to number for === comparisons
+    byUser[row.user_token].add(Number(row.item_id))
   }
 
   const users = Object.keys(byUser)
-  if (users.length < 2) return [] // partner hasn't swiped yet
+  if (users.length < playerCount) return [] // not enough players yet
 
-  const otherUser = users.find(u => u !== userToken)
-  const mine = byUser[userToken] || new Set()
-  const theirs = byUser[otherUser] || new Set()
-  return [...mine].filter(id => theirs.has(id)) // mutual right-swipe IDs
+  // An item matches when ALL playerCount users liked it
+  const allSets = users.map(u => byUser[u])
+  const candidateSet = byUser[userToken] || new Set()
+  return [...candidateSet].filter(id => allSets.every(s => s.has(id)))
 }
 
 // Mark room as active (joiner has started)
@@ -303,14 +355,14 @@ export async function getRoom(roomId) {
   return data
 }
 
-// Record a swipe (movies only)
-export async function recordSwipe(roomId, userToken, itemId, direction) {
+// Record a swipe — returns true when playerCount distinct users all liked this item
+export async function recordSwipe(roomId, userToken, itemId, direction, playerCount = 2) {
   if (!supabase) {
     const key = `swaip_swipes_${roomId}`
     const swipes = JSON.parse(localStorage.getItem(key) || '[]')
     swipes.push({ room_id: roomId, user_token: userToken, item_id: itemId, direction })
     localStorage.setItem(key, JSON.stringify(swipes))
-    return checkLocalMatch(roomId, itemId, userToken, direction)
+    return checkLocalMatch(roomId, itemId, userToken, direction, playerCount)
   }
 
   const { error } = await supabase
@@ -322,25 +374,26 @@ export async function recordSwipe(roomId, userToken, itemId, direction) {
   if (direction === 'right') {
     const { data: matchSwipes } = await supabase
       .from('swipes')
-      .select()
+      .select('user_token')
       .eq('room_id', roomId)
       .eq('item_id', itemId)
       .eq('direction', 'right')
-      .neq('user_token', userToken)
 
-    return matchSwipes && matchSwipes.length > 0
+    const uniqueTokens = new Set(matchSwipes?.map(s => s.user_token) || [])
+    return uniqueTokens.size >= playerCount
   }
 
   return false
 }
 
-function checkLocalMatch(roomId, itemId, userToken, direction) {
+function checkLocalMatch(roomId, itemId, userToken, direction, playerCount = 2) {
   if (direction !== 'right') return false
   const key = `swaip_swipes_${roomId}`
   const swipes = JSON.parse(localStorage.getItem(key) || '[]')
-  return swipes.some(
-    (s) => s.item_id === itemId && s.direction === 'right' && s.user_token !== userToken
+  const tokens = new Set(
+    swipes.filter(s => s.item_id === itemId && s.direction === 'right').map(s => s.user_token)
   )
+  return tokens.size >= playerCount
 }
 
 // Submit conversation selections (conversations only)
@@ -403,7 +456,7 @@ export async function getConversationMatches(roomId, userToken) {
 }
 
 // Subscribe to swipes (movies)
-export function subscribeToSwipes(roomId, userToken, onMatch) {
+export function subscribeToSwipes(roomId, userToken, onMatch, playerCount = 2) {
   if (!supabase) return () => {}
 
   const channel = supabase
@@ -419,15 +472,16 @@ export function subscribeToSwipes(roomId, userToken, onMatch) {
       async (payload) => {
         const swipe = payload.new
         if (swipe.user_token !== userToken && swipe.direction === 'right') {
+          // Fire match when all playerCount distinct users have liked this item
           const { data } = await supabase
             .from('swipes')
-            .select()
+            .select('user_token')
             .eq('room_id', roomId)
             .eq('item_id', swipe.item_id)
             .eq('direction', 'right')
-            .eq('user_token', userToken)
 
-          if (data && data.length > 0) {
+          const uniqueTokens = new Set(data?.map(s => s.user_token) || [])
+          if (uniqueTokens.size >= playerCount) {
             onMatch(Number(swipe.item_id))
           }
         }

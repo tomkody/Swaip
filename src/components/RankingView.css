@@ -207,6 +207,14 @@
 }
 .rv-match-info span { font-size: 12px; color: var(--text-muted); }
 
+.rv-vote-count {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: var(--accent-orange) !important;
+  display: block;
+  margin-top: 2px;
+}
+
 .rv-hours {
   display: block;
   font-size: 11px;

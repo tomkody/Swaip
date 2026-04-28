@@ -126,6 +126,48 @@
   color: #1E222B;
 }
 
+/* ── Player count picker ─────────────────────────────────────────── */
+.player-count-row {
+  margin-bottom: 20px;
+}
+
+.player-count-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.player-count-chips {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.player-chip {
+  padding: 10px 16px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+  min-width: 52px;
+}
+.player-chip:hover { border-color: var(--border-hover); color: var(--text); }
+.player-chip.active {
+  background: var(--gradient-primary);
+  border-color: var(--accent-coral);
+  color: #1E222B;
+  box-shadow: var(--shadow-xs);
+}
+
 .create-error {
   font-size: 13px;
   color: #FF5C6A;

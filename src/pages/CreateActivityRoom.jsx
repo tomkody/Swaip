@@ -21,6 +21,7 @@ export default function CreateActivityRoom() {
   const [geoLoading, setGeoLoading] = useState(false)
   const [error, setError] = useState(null)
   const [solo, setSolo] = useState(false)
+  const [playerCount, setPlayerCount] = useState(2)
 
   function handleUseMyLocation() {
     setGeoLoading(true)
@@ -122,7 +123,7 @@ export default function CreateActivityRoom() {
         }
       }
 
-      const room = await createActivityRoom({ lat, lng, locationName, radius, solo })
+      const room = await createActivityRoom({ lat, lng, locationName, radius, solo, playerCount })
       navigate(`/room/${room.id}`, { state: { isCreator: true, isSolo: solo } })
     } catch (err) {
       console.error('Failed to create room:', err)
@@ -153,10 +154,29 @@ export default function CreateActivityRoom() {
           </button>
         </div>
 
+        {!solo && (
+          <div className="player-count-row">
+            <span className="player-count-label">How many people?</span>
+            <div className="player-count-chips">
+              {[2, 3, 4, 5, 6].map(n => (
+                <button
+                  key={n}
+                  className={`player-chip ${playerCount === n ? 'active' : ''}`}
+                  onClick={() => setPlayerCount(n)}
+                >
+                  {'👤'.repeat(n > 3 ? 1 : n)}{n > 3 ? `×${n}` : ''} {n}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <p className="subtitle">
           {solo
             ? 'Swipe through activity categories and discover real places nearby just for you!'
-            : 'Swipe through categories, find a match, then discover real places nearby you\'d both enjoy!'}
+            : playerCount === 2
+              ? 'Swipe through categories, find a match, then discover real places nearby you\'d both enjoy!'
+              : `Up to ${playerCount} people swipe independently — see what everyone agrees on!`}
         </p>
 
         <div className="activity-form">

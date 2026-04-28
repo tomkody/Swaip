@@ -36,6 +36,7 @@ export default function CreateFoodRoom() {
   const [geoLoading, setGeoLoading] = useState(false)
   const [error, setError] = useState(null)
   const [solo, setSolo] = useState(false)
+  const [playerCount, setPlayerCount] = useState(2)
 
   function handleUseMyLocation() {
     setGeoLoading(true)
@@ -146,7 +147,7 @@ export default function CreateFoodRoom() {
         countryCode = await detectCountryCode(lat, lng)
       }
 
-      const room = await createFoodRoom({ lat, lng, locationName, radius, countryCode, solo })
+      const room = await createFoodRoom({ lat, lng, locationName, radius, countryCode, solo, playerCount })
       navigate(`/room/${room.id}`, { state: { isCreator: true, isSolo: solo } })
     } catch (err) {
       console.error('Failed to create room:', err)
@@ -177,10 +178,29 @@ export default function CreateFoodRoom() {
           </button>
         </div>
 
+        {!solo && (
+          <div className="player-count-row">
+            <span className="player-count-label">How many people?</span>
+            <div className="player-count-chips">
+              {[2, 3, 4, 5, 6].map(n => (
+                <button
+                  key={n}
+                  className={`player-chip ${playerCount === n ? 'active' : ''}`}
+                  onClick={() => setPlayerCount(n)}
+                >
+                  {'👤'.repeat(n > 3 ? 1 : n)}{n > 3 ? `×${n}` : ''} {n}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <p className="subtitle">
           {solo
             ? 'Swipe through cuisines and discover restaurants nearby — perfect for planning tonight\'s dinner.'
-            : 'Swipe through cuisines — when you match, discover real restaurants nearby you\'d both enjoy!'}
+            : playerCount === 2
+              ? 'Swipe through cuisines — when you match, discover real restaurants nearby you\'d both enjoy!'
+              : `Up to ${playerCount} people swipe independently — see what everyone agrees on!`}
         </p>
 
         <div className="activity-form">

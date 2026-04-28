@@ -10,6 +10,9 @@ import {
   subscribeToRoomChanges,
   getRoom,
   fetchRoomMatches,
+  getRoomPlayerCount,
+  getParticipantCount,
+  fetchVoteCounts,
 } from '../lib/room'
 import SwipeCard from './SwipeCard'
 import RankingView from './RankingView'
@@ -53,7 +56,8 @@ function parseRoomFoodData(room) {
   const matchedCategories = topicData._matched_categories ||
     (topicData._matched_category ? [topicData._matched_category] : [])
   const places = topicData._places || []
-  return { phase, matchedCategories, places }
+  const playerCount = topicData.playerCount || 2
+  return { phase, matchedCategories, places, playerCount }
 }
 
 // ─── Category Card ────────────────────────────────────────────────────────────
@@ -202,12 +206,15 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
   const [phase, setPhase] = useState(initialData.phase)
   const [matchedCategories, setMatchedCategories] = useState(initialData.matchedCategories)
   const [places, setPlaces] = useState(initialData.places)
+  const playerCount = isSolo ? 1 : (initialData.playerCount || getRoomPlayerCount(room))
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [matches, setMatches] = useState([])
   const [likedPlaces, setLikedPlaces] = useState([])
   const [matchItem, setMatchItem] = useState(null)
   const [isDone, setIsDone] = useState(false)
+  const [participantCount, setParticipantCount] = useState(1)
+  const [voteCounts, setVoteCounts] = useState({})
 
   const [transitioning, setTransitioning] = useState(false)
   const [fetchingPlaces, setFetchingPlaces] = useState(false)
@@ -229,12 +236,22 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
     if (isSolo && finishedSwiping) setIsDone(true)
   }, [isSolo, finishedSwiping]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Poll for matches while waiting for partner ────────────────────────────
+  // ── Track participant count ───────────────────────────────────────────────
+  useEffect(() => {
+    if (isSolo) return
+    getParticipantCount(room.id).then(setParticipantCount).catch(() => {})
+    const interval = setInterval(() => {
+      getParticipantCount(room.id).then(setParticipantCount).catch(() => {})
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [isSolo, room.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Poll for matches while waiting for group ──────────────────────────────
   useEffect(() => {
     if (!finishedSwiping || isSolo) return
     const interval = setInterval(async () => {
       try {
-        const ids = await fetchRoomMatches(room.id, userToken.current)
+        const ids = await fetchRoomMatches(room.id, userToken.current, playerCount)
         if (!ids) return
         const canonical = places.filter(p => ids.includes(p.numId))
         if (canonical.length > 0) {
@@ -256,7 +273,10 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
     if (isSolo) return
     const showingResults = isDone || (phase === 'places' && places.length > 0 && currentIndex >= places.length)
     if (!showingResults || places.length === 0) return
-    fetchRoomMatches(room.id, userToken.current)
+
+    fetchVoteCounts(room.id).then(setVoteCounts).catch(() => {})
+
+    fetchRoomMatches(room.id, userToken.current, playerCount)
       .then(ids => {
         if (!ids || ids.length === 0) return
         const canonical = places.filter(p => ids.includes(p.numId))
@@ -273,7 +293,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
       .catch(() => {})
   }, [isSolo, isDone, currentIndex, places.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Subscribe to partner place swipes ────────────────────────────────────
+  // ── Subscribe to group place swipes ──────────────────────────────────────
   useEffect(() => {
     if (isSolo) return
     const unsub = subscribeToSwipes(room.id, userToken.current, (itemId) => {
@@ -286,7 +306,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
           confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
         }
       }
-    })
+    }, playerCount)
     return unsub
   }, [isSolo, room.id, phase, places]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -363,9 +383,9 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
       await Promise.all(pendingSwipesRef.current)
       pendingSwipesRef.current = []
 
-      const isBothDone = await recordSwipe(room.id, userToken.current, FOOD_CAT_DONE_NUMID, 'right')
-      if (isBothDone) {
-        const allMatchIds = await fetchRoomMatches(room.id, userToken.current)
+      const isAllDone = await recordSwipe(room.id, userToken.current, FOOD_CAT_DONE_NUMID, 'right', playerCount)
+      if (isAllDone) {
+        const allMatchIds = await fetchRoomMatches(room.id, userToken.current, playerCount)
         const matchedCats = FOOD_CATS.filter(c => allMatchIds?.includes(c.numId))
         await fetchAndTransitionToPlaces(matchedCats)
       }
@@ -373,7 +393,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
       console.error('[FoodRoom] handleCategoriesDone error:', err)
       setWaitingForPartner(false)
     }
-  }, [isSolo, room.id, FOOD_CATS, fetchAndTransitionToPlaces]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, room.id, playerCount, FOOD_CATS, fetchAndTransitionToPlaces]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── handleCategorySwipe ────────────────────────────────────────────────────
   const handleCategorySwipe = useCallback(async (direction) => {
@@ -461,7 +481,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
 
     if (!isSolo) {
       try {
-        const isMatch = await recordSwipe(room.id, userToken.current, place.numId, direction)
+        const isMatch = await recordSwipe(room.id, userToken.current, place.numId, direction, playerCount)
         if (isMatch) {
           setMatchItem(place)
           setMatches(prev => prev.find(m => m.id === place.id) ? prev : [...prev, place])
@@ -471,7 +491,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
         console.error('recordSwipe error:', err)
       }
     }
-  }, [isSolo, places, currentIndex, room.id])
+  }, [isSolo, places, currentIndex, room.id, playerCount])
 
   // ── Place match modal (together mode only) ────────────────────────────────
   if (matchItem && !isSolo) {
@@ -531,7 +551,14 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
   if (isDone) {
     const normalizedPlaces = places.map(p => ({ ...p, id: p.numId }))
     const resultsToShow = isSolo ? likedPlaces : matches
-    const normalizedResults = resultsToShow.map(p => ({ ...p, id: p.numId }))
+
+    let finalResults = resultsToShow
+    if (!isSolo && resultsToShow.length === 0 && playerCount > 2 && Object.keys(voteCounts).length > 0) {
+      const sorted = [...normalizedPlaces].sort((a, b) => (voteCounts[b.id] || 0) - (voteCounts[a.id] || 0))
+      finalResults = sorted.filter(p => (voteCounts[p.id] || 0) >= 2).slice(0, 10)
+    }
+
+    const normalizedResults = finalResults.map(p => ({ ...p, id: p.numId }))
     return (
       <RankingView
         matches={normalizedResults}
@@ -539,19 +566,33 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
         movies={normalizedPlaces}
         onDone={onDone}
         isSolo={isSolo}
+        playerCount={playerCount}
+        voteCounts={voteCounts}
       />
     )
   }
 
-  // ── Waiting for partner to finish categories ──────────────────────────────
+  // ── Waiting for group to finish categories ───────────────────────────────
   if (waitingForPartner && !transitioning) {
     const likedCats = FOOD_CATS.filter(c => likedCatIdsRef.current.has(c.numId))
+    const othersNeeded = playerCount - 1
     return (
       <div className="act-center">
         <div className="act-waiting">
           <div className="act-waiting-icon">⏳</div>
-          <h2>Waiting for your partner…</h2>
-          <p className="act-waiting-text">You've picked your cuisines. Hang tight!</p>
+          <h2>{playerCount > 2 ? 'Waiting for the group…' : 'Waiting for your partner…'}</h2>
+          {playerCount > 2 && (
+            <p className="act-waiting-participants">
+              {participantCount >= playerCount
+                ? `All ${playerCount} players have joined`
+                : `${participantCount} of ${playerCount} players joined`}
+            </p>
+          )}
+          <p className="act-waiting-text">
+            {playerCount > 2
+              ? `You've picked your cuisines. Waiting for the other ${othersNeeded} player${othersNeeded !== 1 ? 's' : ''}.`
+              : `You've picked your cuisines. Hang tight!`}
+          </p>
           {likedCats.length > 0 && (
             <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 8 }}>
               Your picks: {likedCats.map(c => `${c.emoji} ${c.label}`).join(', ')}
@@ -641,18 +682,25 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
     )
   }
 
-  // ── Waiting for partner to finish swiping places ─────────────────────────
+  // ── Waiting for group to finish swiping places ───────────────────────────
   if (finishedSwiping) {
     return (
       <div className="act-center">
         <div className="act-waiting">
           <div className="act-waiting-icon">⏳</div>
-          <h2>Waiting for your partner…</h2>
+          <h2>{playerCount > 2 ? 'Waiting for the group…' : 'Waiting for your partner…'}</h2>
+          {playerCount > 2 && (
+            <p className="act-waiting-participants">
+              {participantCount >= playerCount
+                ? `All ${playerCount} players have joined`
+                : `${participantCount} of ${playerCount} players joined`}
+            </p>
+          )}
           <p className="act-waiting-text">
             You've swiped through all {places.length} restaurants.
             {matches.length > 0
-              ? ` You've already matched on ${matches.length} place${matches.length !== 1 ? 's' : ''}!`
-              : ' Waiting to see if you agree on any…'}
+              ? ` ${playerCount > 2 ? 'Group matched on' : 'You\'ve matched on'} ${matches.length} place${matches.length !== 1 ? 's' : ''}!`
+              : playerCount > 2 ? ' Waiting to see what the group agrees on…' : ' Waiting to see if you agree on any…'}
           </p>
           <div className="loader" style={{ margin: '16px auto' }} />
           {matches.length > 0 && (
@@ -726,7 +774,13 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
                   : `I'm done`}
             </button>
           )}
-          <p className="act-footer-hint">{isSolo ? 'Swipe right on cuisines you enjoy' : 'Swipe right on all cuisines you\'d both enjoy'}</p>
+          <p className="act-footer-hint">
+            {isSolo
+              ? 'Swipe right on cuisines you enjoy'
+              : playerCount > 2
+                ? `Swipe right on what you enjoy — matches need all ${playerCount} to agree`
+                : 'Swipe right on all cuisines you\'d both enjoy'}
+          </p>
         </div>
       </div>
     )

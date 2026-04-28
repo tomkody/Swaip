@@ -3,7 +3,7 @@ import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRo
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import './RankingView.css'
 
-export default function RankingView({ matches: initialMatches, liked = [], room, movies = [], onDone, isSolo = false }) {
+export default function RankingView({ matches: initialMatches, liked = [], room, movies = [], onDone, isSolo = false, playerCount = 2, voteCounts = {} }) {
   const userToken = useRef(getUserToken())
   const [matches, setMatches] = useState(initialMatches)
   const [top3, setTop3] = useState([])
@@ -153,14 +153,18 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
           }</h2>
           <p className="rv-hero-sub">
             {matches.length === 0
-              ? (isSolo ? 'Swipe right on more next time!' : 'Try swiping more next time!')
+              ? (isSolo ? 'Swipe right on more next time!' : playerCount > 2 ? 'No unanimous group picks — try again with fewer people or different picks!' : 'Try swiping more next time!')
               : hasMyPicks
                 ? isSolo
                   ? `Out of ${movies.length} ${typeLabel} — ${top3.length === 1 ? 'this is my #1 pick' : `these are my top ${top3.length}`}:`
-                  : `We swiped through ${movies.length} ${typeLabel} and ${top3.length === 1 ? 'this is my #1 pick' : `these are my top ${top3.length}`}:`
+                  : playerCount > 2
+                    ? `Group of ${playerCount} swiped ${movies.length} ${typeLabel} — here's what everyone agreed on:`
+                    : `We swiped through ${movies.length} ${typeLabel} and ${top3.length === 1 ? 'this is my #1 pick' : `these are my top ${top3.length}`}:`
                 : isSolo
                   ? `Everything you liked:`
-                  : `Here's everything you both want to watch:`}
+                  : playerCount > 2
+                    ? `Everything your group of ${playerCount} all agreed on:`
+                    : `Here's everything you both want to watch:`}
           </p>
         </div>
 
@@ -196,7 +200,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
         {/* Other matches */}
         {rest.length > 0 && (
           <div className="rv-match-list">
-            <p className="rv-label">{isSolo ? `All Picks (${matches.length})` : `All Matches (${matches.length})`}</p>
+            <p className="rv-label">{isSolo ? `All Picks (${matches.length})` : playerCount > 2 ? `Group Picks (${matches.length})` : `All Matches (${matches.length})`}</p>
             {rest.map(m => (
               <div key={m.id} className="rv-result-card">
                 <div className="rv-result-card-inner">
@@ -206,6 +210,9 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   <div className="rv-result-info">
                     <strong>{m.title}</strong>
                     <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                    {playerCount > 2 && voteCounts[m.id] && (
+                      <span className="rv-vote-count">{voteCounts[m.id]}/{playerCount} voted</span>
+                    )}
                     {m.isOpen != null && (
                       <span className={`rv-hours ${m.isOpen ? 'rv-hours--open' : 'rv-hours--closed'}`}>
                         {m.isOpen ? '● Open' : '● Closed'}
@@ -232,6 +239,9 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   <div className="rv-result-info">
                     <strong>{m.title}</strong>
                     <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                    {playerCount > 2 && voteCounts[m.id] && (
+                      <span className="rv-vote-count">{voteCounts[m.id]}/{playerCount} voted</span>
+                    )}
                     {m.isOpen != null && (
                       <span className={`rv-hours ${m.isOpen ? 'rv-hours--open' : 'rv-hours--closed'}`}>
                         {m.isOpen ? '● Open' : '● Closed'}
