@@ -22,6 +22,7 @@ export default function CreateActivityRoom() {
   const [error, setError] = useState(null)
   const [solo, setSolo] = useState(false)
   const [playerCount, setPlayerCount] = useState(2)
+  const [showPlayerPicker, setShowPlayerPicker] = useState(false)
 
   function handleUseMyLocation() {
     setGeoLoading(true)
@@ -156,19 +157,37 @@ export default function CreateActivityRoom() {
 
         {!solo && (
           <div className="player-count-row">
-            <span className="player-count-label">How many people?</span>
-            <div className="player-count-chips">
-              {[2, 3, 4, 5, 6].map(n => (
-                <button
-                  key={n}
-                  className={`player-chip ${playerCount === n ? 'active' : ''}`}
-                  onClick={() => setPlayerCount(n)}
-                >
-                  <span className="player-chip-num">{n}</span>
-                  <span className="player-chip-sub">people</span>
-                </button>
-              ))}
-            </div>
+            <button
+              className="player-count-select"
+              onClick={() => setShowPlayerPicker(p => !p)}
+            >
+              <span>👥 {playerCount} people</span>
+              <svg
+                width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                className={showPlayerPicker ? 'rotated' : ''}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {showPlayerPicker && (
+              <div className="player-count-dropdown">
+                {[2, 3, 4, 5, 6].map(n => (
+                  <button
+                    key={n}
+                    className={`player-count-option ${playerCount === n ? 'active' : ''}`}
+                    onClick={() => { setPlayerCount(n); setShowPlayerPicker(false) }}
+                  >
+                    <span>{n} people</span>
+                    {playerCount === n && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
