@@ -3,10 +3,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px 20px 24px;
+  padding: 12px 16px 32px;
 }
 
-/* Orbs removed from design — keep class for compat */
 .landing-bg-orb { display: none; }
 
 .landing-content {
@@ -17,15 +16,15 @@
 /* ── Header ──────────────────────────────────────────────────────── */
 .landing-header {
   text-align: center;
-  margin-bottom: 24px;
-  padding-top: 0;
+  margin-bottom: 28px;
+  padding-top: 4px;
 }
 
 .landing-header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .landing-logo-center {
@@ -44,36 +43,36 @@
 }
 
 .history-btn {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--bg-card);
-  border: 1.5px solid var(--border);
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
-  transition: all 0.2s;
+  transition: transform 0.15s, box-shadow 0.15s;
   box-shadow: var(--shadow-xs);
 }
 .history-btn:hover {
-  color: var(--text);
-  background: var(--bg-card-hover);
-  border-color: var(--border-hover);
   box-shadow: var(--shadow);
+}
+.history-btn:active {
+  transform: scale(0.90);
 }
 
 .logo-mark {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   flex-shrink: 0;
 }
 
 .tagline {
-  font-family: 'Inter', -apple-system, sans-serif; /* override global h1 Manrope */
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
   font-size: 14px;
-  font-weight: 500;
-  letter-spacing: normal;                          /* override global h1 -0.02em */
+  font-weight: 400;
+  letter-spacing: 0;
   color: var(--text-muted);
   margin: 0;
   line-height: 1.5;
@@ -81,19 +80,20 @@
 
 /* ── Section headline ────────────────────────────────────────────── */
 .landing-question {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0 0 16px;
-  text-align: center;
-  color: var(--text);
-  letter-spacing: -0.02em;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 10px 4px;
+  text-align: left;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 /* ── Category cards grid ─────────────────────────────────────────── */
 .category-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 20px;
 }
 
@@ -105,48 +105,31 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 0;
-  padding: 24px 16px 20px;
+  padding: 18px 16px 16px;
   background: var(--bg-card);
-  border: 1.5px solid var(--border);
+  border: none;
   border-radius: var(--radius);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  text-align: center;
+  transition: transform 0.2s cubic-bezier(0.34,1.1,0.64,1), box-shadow 0.2s;
+  text-align: left;
   width: 100%;
   overflow: hidden;
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--shadow);
 }
-
-/* Gradient accent strip — slides in from left on hover */
-.category-card::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--gradient-primary);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.25s ease;
-}
-.category-card:hover::before { transform: scaleX(1); }
 
 .card-glow { display: none; }
 
-/* Food card — full-width row layout */
+/* Food card — full-width row */
 .category-card--food {
   grid-column: 1 / -1;
   flex-direction: row;
   align-items: center;
-  text-align: left;
-  gap: 16px;
-  padding: 20px 22px;
+  gap: 14px;
+  padding: 16px 18px;
 }
 
 .category-card:hover {
-  border-color: var(--border-hover);
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
@@ -154,78 +137,103 @@
 .category-card:active {
   transform: scale(0.97);
   transition-duration: 0.1s;
+  box-shadow: var(--shadow-xs);
 }
 
+/* Emoji icon container — iOS app icon style */
 .category-emoji {
-  font-size: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 13px;
+  background: var(--accent-soft);
+  font-size: 26px;
   line-height: 1;
-  display: block;
-  margin-bottom: 14px;
-}
-
-/* Food emoji sits beside text */
-.category-card--food .category-emoji {
-  font-size: 44px;
-  margin-bottom: 0;
+  margin-bottom: 12px;
   flex-shrink: 0;
 }
 
-/* Text wrapper — groups name + desc for row layout */
+/* Food emoji: slightly bigger icon */
+.category-card--food .category-emoji {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  font-size: 28px;
+  margin-bottom: 0;
+}
+
+/* Text group */
 .category-text {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
+  flex: 1;
 }
 
 .category-name {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: -0.01em;
-  font-family: 'Manrope', 'Inter', sans-serif;
+  letter-spacing: -0.2px;
+  font-family: -apple-system, 'Manrope', BlinkMacSystemFont, sans-serif;
   line-height: 1.2;
   display: block;
 }
 
 .category-desc {
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.45;
   color: var(--text-muted);
 }
+
+/* Disclosure chevron on food card */
+.category-card--food .category-chevron {
+  display: block;
+  color: var(--text-soft);
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+.category-chevron { display: none; }
 
 /* ── How-it-works toggle ─────────────────────────────────────────── */
 .how-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  margin: 0 auto 14px;
+  gap: 5px;
+  margin: 0 auto 12px;
   background: none;
   color: var(--text-muted);
   font-size: 14px;
   font-weight: 500;
-  padding: 8px 16px;
+  padding: 8px 14px;
   border-radius: var(--radius-pill);
-  transition: color 0.2s;
+  transition: color 0.15s;
 }
 .how-toggle:hover { color: var(--text); }
 
-.how-arrow { transition: transform 0.25s; }
+.how-arrow { transition: transform 0.22s cubic-bezier(0.4,0,0.2,1); }
 .how-arrow.open { transform: rotate(180deg); }
 
 /* How section */
-.how-section { animation: slideDown 0.3s ease; }
+.how-section { animation: slideDown 0.25s cubic-bezier(0.4,0,0.2,1); }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-12px); }
+  from { opacity: 0; transform: translateY(-10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 .how-steps {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 1px;
+  margin-bottom: 10px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
 }
 
 .how-step {
@@ -234,20 +242,19 @@
   gap: 14px;
   padding: 14px 16px;
   background: var(--bg-card);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-xs);
+  border-bottom: 0.5px solid var(--separator);
 }
+.how-step:last-child { border-bottom: none; }
 
 .step-num {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: var(--gradient-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #1E222B;
   flex-shrink: 0;
@@ -256,9 +263,10 @@
 
 .step-title {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   margin-bottom: 2px;
   color: var(--text);
+  letter-spacing: -0.1px;
 }
 
 .step-desc {
@@ -271,14 +279,14 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 14px 16px;
-  background: var(--accent-soft);
-  border: 1.5px solid rgba(255, 138, 76, 0.2);
-  border-radius: var(--radius-sm);
+  padding: 13px 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-xs);
 }
 
 .tip-icon {
-  font-size: 18px;
+  font-size: 17px;
   flex-shrink: 0;
   margin-top: 1px;
 }

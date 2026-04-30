@@ -9,13 +9,19 @@
 
 .create-movie-content {
   text-align: center;
-  padding-top: 40px;
+  padding-top: 8px;
 }
 
 .movie-hero-icon {
-  font-size: 56px;
-  margin-bottom: 12px;
-  filter: drop-shadow(0 4px 12px rgba(255, 92, 106, 0.3));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  background: var(--accent-soft);
+  font-size: 34px;
+  margin: 0 auto 14px;
 }
 
 .create-movie h1 {

@@ -96,6 +96,9 @@ export default function Landing() {
               <span className="category-name">Food & Dining</span>
               <span className="category-desc">Pick a cuisine, then swipe through real restaurants near you.</span>
             </div>
+            <svg className="category-chevron" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="1 1 7 7 1 13" />
+            </svg>
           </button>
         </div>
 
