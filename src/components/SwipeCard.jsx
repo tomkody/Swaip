@@ -39,19 +39,12 @@ export default function SwipeCard({ item, onSwipe, active }) {
     const googleUrl = (origin) =>
       `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=walking${origin ? `&origin=${origin}` : ''}`
 
-    // iOS: deep-link to native Maps app — it uses device GPS automatically,
-    // no popup-blocker issues, and stays on the Swaip page in the background.
-    if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-      window.location.href = `maps://?daddr=${dest}&dirflg=w`
-      return
-    }
-
-    // Desktop / Android: window.open MUST happen synchronously inside the click
-    // handler — Safari and Chrome block it if called inside an async callback.
-    // Open a blank window now, then fill its URL once we have the origin.
+    // window.open MUST be called synchronously inside the click handler —
+    // Safari (desktop + iOS) blocks it if called inside any async callback.
+    // Open a blank window now, then navigate it once we have the origin.
     const win = window.open('', '_blank', 'noopener,noreferrer')
     if (!win) {
-      // Popup was blocked — navigate current tab as last resort
+      // Popup blocked — navigate current tab as last resort
       window.location.href = googleUrl()
       return
     }
@@ -71,7 +64,7 @@ export default function SwipeCard({ item, onSwipe, active }) {
         setGettingLocation(false)
         win.location.href = googleUrl()
       },
-      { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     )
   }
 

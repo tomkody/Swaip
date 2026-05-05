@@ -69,7 +69,7 @@ export default function CreateActivityRoom() {
     navigator.geolocation.getCurrentPosition(
       (pos) => applyCoords(pos.coords.latitude, pos.coords.longitude),
       onDenied,
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
     )
   }
 
