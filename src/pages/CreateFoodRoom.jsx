@@ -84,7 +84,17 @@ export default function CreateFoodRoom() {
     }
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => applyCoords(pos.coords.latitude, pos.coords.longitude),
+      (pos) => {
+        const { latitude, longitude, accuracy } = pos.coords
+        applyCoords(latitude, longitude)
+        // accuracy is in metres — anything above 200m means iOS gave approximate location
+        if (accuracy > 200) {
+          setError(
+            `⚠️ Approximate location only (±${Math.round(accuracy / 1000 * 10) / 10} km). ` +
+            `For precise results: Settings → Privacy & Security → Location Services → Safari Websites → enable Precise Location.`
+          )
+        }
+      },
       onDenied,
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
     )
