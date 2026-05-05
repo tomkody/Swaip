@@ -28,10 +28,17 @@ export default function CreateActivityRoom() {
     setGeoLoading(true)
     setError(null)
 
-    const failsafe = setTimeout(() => {
+    // Safari on iOS requires explicit permission — if denied, GPS fails and
+    // IP-based fallbacks can be 50–200 km off. We no longer silently fall back.
+    function onDenied() {
       setGeoLoading(false)
-      setError('Could not detect your location. Please type a city name.')
-    }, 20000)
+      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
+      setError(
+        isIOS
+          ? 'Location access denied. Go to Settings → Safari → Location → Allow, then try again. Or type your city below.'
+          : 'Location access denied. Please allow it in your browser settings, or type your city below.'
+      )
+    }
 
     function applyCoords(latitude, longitude) {
       setPinnedCoords({ lat: latitude, lng: longitude })
@@ -53,39 +60,16 @@ export default function CreateActivityRoom() {
         .finally(() => { clearTimeout(t); setGeoLoading(false) })
     }
 
-    function tryIpFallback() {
-      const ctrl = new AbortController()
-      const t = setTimeout(() => ctrl.abort(), 8000)
-      fetch('https://ipapi.co/json/', { signal: ctrl.signal })
-        .then(r => r.json())
-        .then(d => {
-          clearTimeout(t)
-          if (!d.latitude || !d.longitude) throw new Error('no coords')
-          clearTimeout(failsafe)
-          setPinnedCoords({ lat: d.latitude, lng: d.longitude })
-          setLocationText(d.city || d.region || 'My Location')
-          setGeoLoading(false)
-        })
-        .catch(() => {
-          clearTimeout(t)
-          clearTimeout(failsafe)
-          setGeoLoading(false)
-          setError('Could not detect your location. Please type a city name.')
-        })
-    }
-
     if (!navigator.geolocation) {
-      tryIpFallback()
+      setGeoLoading(false)
+      setError('Geolocation is not supported by this browser. Please type your city below.')
       return
     }
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        clearTimeout(failsafe)
-        applyCoords(pos.coords.latitude, pos.coords.longitude)
-      },
-      () => { tryIpFallback() },
-      { maximumAge: 300000 }
+      (pos) => applyCoords(pos.coords.latitude, pos.coords.longitude),
+      onDenied,
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
     )
   }
 

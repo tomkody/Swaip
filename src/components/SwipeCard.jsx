@@ -36,10 +36,28 @@ export default function SwipeCard({ item, onSwipe, active }) {
   function handleDirections(e) {
     e.stopPropagation()
     const dest = `${item.lat},${item.lng}`
-    const base = `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=walking`
+    const googleUrl = (origin) =>
+      `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=walking${origin ? `&origin=${origin}` : ''}`
+
+    // iOS: deep-link to native Maps app — it uses device GPS automatically,
+    // no popup-blocker issues, and stays on the Swaip page in the background.
+    if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+      window.location.href = `maps://?daddr=${dest}&dirflg=w`
+      return
+    }
+
+    // Desktop / Android: window.open MUST happen synchronously inside the click
+    // handler — Safari and Chrome block it if called inside an async callback.
+    // Open a blank window now, then fill its URL once we have the origin.
+    const win = window.open('', '_blank', 'noopener,noreferrer')
+    if (!win) {
+      // Popup was blocked — navigate current tab as last resort
+      window.location.href = googleUrl()
+      return
+    }
 
     if (!navigator.geolocation) {
-      window.open(base, '_blank', 'noopener,noreferrer')
+      win.location.href = googleUrl()
       return
     }
 
@@ -47,14 +65,13 @@ export default function SwipeCard({ item, onSwipe, active }) {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setGettingLocation(false)
-        const origin = `${pos.coords.latitude},${pos.coords.longitude}`
-        window.open(`${base}&origin=${origin}`, '_blank', 'noopener,noreferrer')
+        win.location.href = googleUrl(`${pos.coords.latitude},${pos.coords.longitude}`)
       },
       () => {
         setGettingLocation(false)
-        window.open(base, '_blank', 'noopener,noreferrer')
+        win.location.href = googleUrl()
       },
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
     )
   }
 
