@@ -122,7 +122,8 @@ export default function CreateActivityRoom() {
       navigate(`/room/${room.id}`, { state: { isCreator: true, isSolo: solo } })
     } catch (err) {
       console.error('Failed to create room:', err)
-      setError('Failed to create room. Please try again.')
+      const msg = err?.message || err?.details || err?.hint || JSON.stringify(err) || 'Unknown error'
+      setError(`Failed to create room: ${msg}`)
     } finally {
       setLoading(false)
     }
