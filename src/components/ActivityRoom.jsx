@@ -59,7 +59,7 @@ function parseRoomActivityData(room) {
 
   let places = topicData._places || []
   if (places.length === 0 && room.places) {
-    try { places = JSON.parse(room.places) } catch {}
+    try { places = JSON.parse(room.places) } catch { /* not JSON — keep default */ }
   }
 
   const playerCount = topicData.playerCount || 2
@@ -237,7 +237,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   // Solo: auto-complete when all places swiped
   useEffect(() => {
     if (isSolo && finishedSwiping) setIsDone(true)
-  }, [isSolo, finishedSwiping]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, finishedSwiping])  
 
   // ── Poll for new matches while waiting for partner to finish ─────────────
   useEffect(() => {
@@ -256,10 +256,10 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
             return merged
           })
         }
-      } catch (e) { /* non-fatal */ }
+      } catch { /* non-fatal */ }
     }, 3000)
     return () => clearInterval(interval)
-  }, [finishedSwiping, isSolo, room.id, places]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [finishedSwiping, isSolo, room.id, places])  
 
   // ── Track participant count (for N-player waiting UI) ────────────────────
   useEffect(() => {
@@ -269,7 +269,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       getParticipantCount(room.id).then(setParticipantCount).catch(() => {})
     }, 5000)
     return () => clearInterval(interval)
-  }, [isSolo, room.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, room.id])  
 
   // ── Authoritative matches from DB when results screen opens ──────────────
   useEffect(() => {
@@ -324,6 +324,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     setFetchingPlaces(true)
 
     let allPlaces = []
+    let fetchError = null
     if (location?.lat != null && matchedCats.length > 0) {
       // Fetch per-category lists, then interleave round-robin (park, coffee, park, coffee…)
       const perCat = []
@@ -333,6 +334,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
           perCat.push(fetched)
         } catch (err) {
           console.error('[ActivityRoom] fetch error for', cat.label, err)
+          fetchError = fetchError || err   // remember the first real API/network failure
           perCat.push([])
         }
       }
@@ -357,6 +359,16 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
 
     setFetchingPlaces(false)
 
+    // If we got nothing back AND a fetch actually failed, show the real error
+    // instead of the misleading "No places found nearby" empty state.
+    if (allPlaces.length === 0 && fetchError) {
+      setPlacesError(fetchError.message || 'Something went wrong loading places. Please try again.')
+      setPhase('places')
+      setTransitioning(false)
+      setWaitingForPartner(false)
+      return
+    }
+
     try {
       await updateActivityRoomPhase(room.id, { phase: 'places', matched_categories: matchedCats, places: allPlaces, locationData: location })
     } catch (err) { console.error('[ActivityRoom] updateActivityRoomPhase error:', err) }
@@ -368,14 +380,14 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
         const data = parseRoomActivityData(canonical)
         if (data.places.length > 0) allPlaces = data.places
       }
-    } catch {}
+    } catch { /* canonical read failed — use local allPlaces */ }
 
     setPlaces(allPlaces)
     setPhase('places')
     setCurrentIndex(0)
     setTransitioning(false)
     setWaitingForPartner(false)
-  }, [location, room.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [location, room.id])  
 
   // ── handleCategoriesDone ──────────────────────────────────────────────────
   const handleCategoriesDone = useCallback(async () => {
@@ -401,7 +413,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       console.error('[ActivityRoom] handleCategoriesDone error:', err)
       setWaitingForPartner(false)
     }
-  }, [isSolo, room.id, playerCount, ACTIVITY_CATEGORIES, fetchAndTransitionToPlaces]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, room.id, playerCount, ACTIVITY_CATEGORIES, fetchAndTransitionToPlaces])  
 
   // ── handleCategorySwipe ────────────────────────────────────────────────────
   const handleCategorySwipe = useCallback(async (direction) => {
@@ -421,7 +433,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     if (newIndex >= ACTIVITY_CATEGORIES.length) {
       handleCategoriesDone()
     }
-  }, [isSolo, currentIndex, room.id, ACTIVITY_CATEGORIES, handleCategoriesDone]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, currentIndex, room.id, ACTIVITY_CATEGORIES, handleCategoriesDone])  
 
   // ── Subscribe to room data changes (partner fetched places → both transition) ──
   useEffect(() => {
@@ -444,7 +456,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       }
     })
     return unsub
-  }, [isSolo, room.id, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, room.id, phase])  
 
   // ── Polling fallback: check room every 3s while waiting for partner ────────
   useEffect(() => {
@@ -463,10 +475,10 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
           setWaitingForPartner(false)
           setTransitioning(false)
         }
-      } catch (e) { /* non-fatal */ }
+      } catch { /* non-fatal */ }
     }, 3000)
     return () => clearInterval(interval)
-  }, [isSolo, room.id, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, room.id, phase])  
 
   // ── Place swipe handler ───────────────────────────────────────────────────
   const handlePlaceSwipe = useCallback(async (direction) => {

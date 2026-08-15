@@ -51,7 +51,7 @@ function parseLocation(topicId) {
 // ── Parse phase/places/matched_categories from room row ──────────────────────
 function parseRoomFoodData(room) {
   let topicData = {}
-  try { topicData = JSON.parse(room.topic_id || '{}') } catch {}
+  try { topicData = JSON.parse(room.topic_id || '{}') } catch { /* not JSON — keep default */ }
   const phase = topicData._phase || 'categories'
   const matchedCategories = topicData._matched_categories ||
     (topicData._matched_category ? [topicData._matched_category] : [])
@@ -234,7 +234,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
   // Solo: auto-complete when all places swiped
   useEffect(() => {
     if (isSolo && finishedSwiping) setIsDone(true)
-  }, [isSolo, finishedSwiping]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, finishedSwiping])  
 
   // ── Track participant count ───────────────────────────────────────────────
   useEffect(() => {
@@ -244,7 +244,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
       getParticipantCount(room.id).then(setParticipantCount).catch(() => {})
     }, 5000)
     return () => clearInterval(interval)
-  }, [isSolo, room.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, room.id])  
 
   // ── Poll for matches while waiting for group ──────────────────────────────
   useEffect(() => {
@@ -319,6 +319,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
     setFetchingPlaces(true)
 
     let allPlaces = []
+    let fetchError = null
     if (location?.lat != null && matchedCats.length > 0) {
       // Fetch per-category lists, then interleave round-robin (Italian, Japanese, Italian, Japanese…)
       const perCat = []
@@ -328,6 +329,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
           perCat.push(fetched)
         } catch (err) {
           console.error('[FoodRoom] fetch error for', cat.label, err)
+          fetchError = fetchError || err   // remember the first real API/network failure
           perCat.push([])
         }
       }
@@ -350,6 +352,16 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
 
     setFetchingPlaces(false)
 
+    // If we got nothing back AND a fetch actually failed, show the real error
+    // instead of the misleading "No restaurants found nearby" empty state.
+    if (allPlaces.length === 0 && fetchError) {
+      setPlacesError(fetchError.message || 'Something went wrong loading places. Please try again.')
+      setPhase('places')
+      setTransitioning(false)
+      setWaitingForPartner(false)
+      return
+    }
+
     try {
       await updateActivityRoomPhase(room.id, { phase: 'places', matched_categories: matchedCats, places: allPlaces, locationData: location })
     } catch (err) { console.error('[FoodRoom] updateActivityRoomPhase error:', err) }
@@ -361,14 +373,14 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
         const data = parseRoomFoodData(canonical)
         if (data.places.length > 0) allPlaces = data.places
       }
-    } catch {}
+    } catch { /* canonical read failed — use local allPlaces */ }
 
     setPlaces(allPlaces)
     setPhase('places')
     setCurrentIndex(0)
     setTransitioning(false)
     setWaitingForPartner(false)
-  }, [location, room.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [location, room.id])  
 
   // ── handleCategoriesDone ──────────────────────────────────────────────────
   const handleCategoriesDone = useCallback(async () => {
@@ -393,7 +405,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
       console.error('[FoodRoom] handleCategoriesDone error:', err)
       setWaitingForPartner(false)
     }
-  }, [isSolo, room.id, playerCount, FOOD_CATS, fetchAndTransitionToPlaces]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, room.id, playerCount, FOOD_CATS, fetchAndTransitionToPlaces])  
 
   // ── handleCategorySwipe ────────────────────────────────────────────────────
   const handleCategorySwipe = useCallback(async (direction) => {
@@ -413,7 +425,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
     if (newIndex >= FOOD_CATS.length) {
       handleCategoriesDone()
     }
-  }, [isSolo, currentIndex, room.id, FOOD_CATS, handleCategoriesDone]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, currentIndex, room.id, FOOD_CATS, handleCategoriesDone])  
 
   // ── Subscribe to room changes (detect partner fetched places) ────────────
   useEffect(() => {
@@ -436,7 +448,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
       }
     })
     return unsub
-  }, [isSolo, room.id, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, room.id, phase])  
 
   // ── Polling fallback ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -455,10 +467,10 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
           setWaitingForPartner(false)
           setTransitioning(false)
         }
-      } catch {}
+      } catch { /* non-fatal */ }
     }, 3000)
     return () => clearInterval(interval)
-  }, [isSolo, room.id, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSolo, room.id, phase])  
 
   // ── Swipe a restaurant ────────────────────────────────────────────────────
   const handlePlaceSwipe = useCallback(async (direction) => {
