@@ -37,7 +37,6 @@ export default function Room() {
   const [matchItem, setMatchItem] = useState(null)
   const [matches, setMatches] = useState([])
   const [liked, setLiked] = useState([])
-  const [showLiked, setShowLiked] = useState(false)
   const [isDone, setIsDone] = useState(false)
   const [doneMatches, setDoneMatches] = useState(null)
   const isDoneRef = useRef(false)

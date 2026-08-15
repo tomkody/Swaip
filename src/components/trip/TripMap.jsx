@@ -64,7 +64,7 @@ export default function TripMap({ activities, centerCoords }) {
   useEffect(() => {
     if (!mapRef.current) return
     placeMarkers(activities)
-  }, [activities]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activities])  
 
   function placeMarkers(acts) {
     const g = window.google?.maps

@@ -82,9 +82,6 @@ function ErrorScreen({ error, onRetry }) {
 
 function DashboardHeader({ tripData, form, onShare }) {
   const navigate = useNavigate()
-  const destName = typeof form.destination === 'object'
-    ? form.destination.displayName
-    : form.destination
 
   return (
     <header className="dash-header">
