@@ -294,19 +294,21 @@ export async function fetchRoomMatches(roomId, userToken, playerCount = 2) {
 
   if (error || !data) return []
 
-  const byUser = {}
+  // Count distinct users who liked each item, and track this user's own likes.
+  const likersByItem = {}
+  const myLikes = new Set()
   for (const row of data) {
-    if (!byUser[row.user_token]) byUser[row.user_token] = new Set()
-    byUser[row.user_token].add(Number(row.item_id))
+    const id = Number(row.item_id)
+    if (!likersByItem[id]) likersByItem[id] = new Set()
+    likersByItem[id].add(row.user_token)
+    if (row.user_token === userToken) myLikes.add(id)
   }
 
-  const users = Object.keys(byUser)
-  if (users.length < playerCount) return [] // not enough players yet
-
-  // An item matches when ALL playerCount users liked it
-  const allSets = users.map(u => byUser[u])
-  const candidateSet = byUser[userToken] || new Set()
-  return [...candidateSet].filter(id => allSets.every(s => s.has(id)))
+  // A match = an item THIS user liked that at least playerCount distinct users liked.
+  // Keyed off playerCount (not "every participant") so results agree with the
+  // real-time match check in recordSwipe / subscribeToSwipes even when more
+  // people are in the room than the configured player count.
+  return [...myLikes].filter(id => likersByItem[id].size >= playerCount)
 }
 
 // Mark room as active (joiner has started)
@@ -481,7 +483,11 @@ export function subscribeToSwipes(roomId, userToken, onMatch, playerCount = 2) {
             .eq('direction', 'right')
 
           const uniqueTokens = new Set(data?.map(s => s.user_token) || [])
-          if (uniqueTokens.size >= playerCount) {
+          // Only notify THIS user when they are actually part of the match.
+          // Without the has(userToken) check, a match between other people in
+          // the room would wrongly pop "It's a Match!" for someone who never
+          // liked the item.
+          if (uniqueTokens.size >= playerCount && uniqueTokens.has(userToken)) {
             onMatch(Number(swipe.item_id))
           }
         }
