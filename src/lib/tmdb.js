@@ -12,7 +12,7 @@ const MOVIES_WITH_GENRES = MOVIES.map(m => ({
 }))
 
 // Regions the nightly refresh job populates (see api/refresh-movies.js).
-const CATALOG_REGIONS = ['CZ', 'US', 'GB', 'DE']
+const CATALOG_REGIONS = ['US', 'GB', 'CA', 'AU', 'IE', 'DE', 'FR', 'ES', 'IT', 'NL', 'BR', 'MX', 'IN', 'CZ', 'PL', 'SE']
 
 // Mulberry32 — reliable 32-bit seeded PRNG using Math.imul
 function seededRandom(seed) {

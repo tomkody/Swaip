@@ -43,25 +43,39 @@ async function tmdb(path, token, params = {}) {
   return res.json()
 }
 
-// Quality-filtered movie ids. Requires a high vote floor AND a release at least
-// ~6 months ago, so ratings have settled — this keeps out very-recent titles whose
-// inflated/volatile vote_average would otherwise leapfrog established classics.
-async function discoverIds(token, { pages, minVotes }) {
-  const settledBefore = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+const DAY = 24 * 60 * 60 * 1000
+const isoDaysAgo = days => new Date(Date.now() - days * DAY).toISOString().slice(0, 10)
+
+// Page through a /discover/movie query, collecting ids.
+async function discoverPages(token, params, pages) {
   const ids = []
   for (let page = 1; page <= pages; page++) {
-    const d = await tmdb('/discover/movie', token, {
-      sort_by: 'vote_average.desc',
-      'vote_count.gte': minVotes,
-      'primary_release_date.lte': settledBefore,
-      include_adult: 'false',
-      language: 'en-US',
-      page,
-    })
+    const d = await tmdb('/discover/movie', token, { ...params, include_adult: 'false', language: 'en-US', page })
     for (const m of d.results) ids.push(m.id)
     if (page >= d.total_pages) break
   }
-  return [...new Set(ids)]
+  return ids
+}
+
+// Established top-rated films: high vote floor + released >=6 months ago, so
+// ratings have settled (keeps out vote-gamed fresh titles).
+function discoverTopRated(token, { pages, minVotes }) {
+  return discoverPages(token, {
+    sort_by: 'vote_average.desc',
+    'vote_count.gte': minVotes,
+    'primary_release_date.lte': isoDaysAgo(180),
+  }, pages)
+}
+
+// Recent popular releases (last ~2 years) with enough votes to be real — this
+// is what surfaces new/trending hits alongside the classics.
+function discoverFresh(token, { pages }) {
+  return discoverPages(token, {
+    sort_by: 'popularity.desc',
+    'vote_count.gte': 300,
+    'primary_release_date.gte': isoDaysAgo(730),
+    'primary_release_date.lte': isoDaysAgo(0),
+  }, pages)
 }
 
 function fmtRuntime(min) {
@@ -70,36 +84,49 @@ function fmtRuntime(min) {
   return h ? `${h}h ${m}m` : `${m}m`
 }
 
-// Build one row per (movie, region). One /movie/{id} call per movie returns
-// full detail AND all-region watch providers via append_to_response.
-export async function buildCatalog({ token, regions, pages = 3, minVotes = 5000 }) {
-  const ids = await discoverIds(token, { pages, minVotes })
+// Map a TMDB detail response (with appended watch/providers) → one row per region.
+function detailToRows(id, detail, regions) {
+  const base = {
+    tmdb_id: id,
+    title: detail.title,
+    year: (detail.release_date || '').slice(0, 4),
+    rating: detail.vote_average ? Number(detail.vote_average.toFixed(1)) : null,
+    runtime: fmtRuntime(detail.runtime),
+    genres: (detail.genres || []).map(g => normalizeGenre(g.name)),
+    poster_url: detail.poster_path ? `https://image.tmdb.org/t/p/w500${detail.poster_path}` : null,
+    overview: detail.overview || '',
+  }
+  const provByRegion = detail['watch/providers']?.results || {}
+  return regions.map(region => {
+    const flatrate = provByRegion[region]?.flatrate || []
+    const platforms = [...new Set(flatrate.map(providerToPlatform).filter(Boolean))]
+    return { ...base, region, platforms }
+  })
+}
+
+// Build one row per (movie, region). Combines established classics with recent
+// popular releases. One /movie/{id} call per movie returns full detail AND
+// all-region watch providers (append_to_response); those calls run in parallel
+// batches so a larger catalog still finishes well within the function timeout.
+export async function buildCatalog({ token, regions, pages = 12, minVotes = 5000, freshPages = 3, concurrency = 12 }) {
+  const [classics, fresh] = await Promise.all([
+    discoverTopRated(token, { pages, minVotes }),
+    discoverFresh(token, { pages: freshPages }),
+  ])
+  const ids = [...new Set([...classics, ...fresh])]
+
   const rows = []
-
-  for (const id of ids) {
-    let detail
-    try {
-      detail = await tmdb(`/movie/${id}`, token, { append_to_response: 'watch/providers', language: 'en-US' })
-    } catch {
-      continue // skip a title that fails rather than aborting the whole run
-    }
-
-    const base = {
-      tmdb_id: id,
-      title: detail.title,
-      year: (detail.release_date || '').slice(0, 4),
-      rating: detail.vote_average ? Number(detail.vote_average.toFixed(1)) : null,
-      runtime: fmtRuntime(detail.runtime),
-      genres: (detail.genres || []).map(g => normalizeGenre(g.name)),
-      poster_url: detail.poster_path ? `https://image.tmdb.org/t/p/w500${detail.poster_path}` : null,
-      overview: detail.overview || '',
-    }
-
-    const provByRegion = detail['watch/providers']?.results || {}
-    for (const region of regions) {
-      const flatrate = provByRegion[region]?.flatrate || []
-      const platforms = [...new Set(flatrate.map(providerToPlatform).filter(Boolean))]
-      rows.push({ ...base, region, platforms })
+  for (let i = 0; i < ids.length; i += concurrency) {
+    const batch = ids.slice(i, i + concurrency)
+    const details = await Promise.all(
+      batch.map(id =>
+        tmdb(`/movie/${id}`, token, { append_to_response: 'watch/providers', language: 'en-US' })
+          .then(d => [id, d])
+          .catch(() => null)  // skip a failing title rather than aborting the run
+      )
+    )
+    for (const entry of details) {
+      if (entry) rows.push(...detailToRows(entry[0], entry[1], regions))
     }
   }
   return rows

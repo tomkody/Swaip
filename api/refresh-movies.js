@@ -1,6 +1,9 @@
 import { buildCatalog } from './_lib/catalog.js'
 import { createClient } from '@supabase/supabase-js'
 
+// Allow up to 60s — the larger catalog fetches hundreds of titles' providers.
+export const config = { maxDuration: 60 }
+
 // Nightly cron (see vercel.json). Rebuilds the movie catalog from TMDB and
 // upserts it into Supabase. Vercel Cron sends `Authorization: Bearer <CRON_SECRET>`
 // when the CRON_SECRET env var is set — that's the only way in.
@@ -17,9 +20,10 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'missing TMDB_READ_TOKEN / SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY' })
   }
 
-  const regions = (process.env.REGIONS || 'CZ,US,GB,DE').split(',')
+  const regions = (process.env.REGIONS || 'US,GB,CA,AU,IE,DE,FR,ES,IT,NL,BR,MX,IN,CZ,PL,SE').split(',')
   try {
-    const rows = await buildCatalog({ token, regions, pages: 5, minVotes: 5000 })
+    // ~240 established classics + ~60 recent popular releases, per region.
+    const rows = await buildCatalog({ token, regions, pages: 12, minVotes: 5000, freshPages: 3 })
     const supabase = createClient(url, key, { auth: { persistSession: false } })
 
     const runStamp = new Date().toISOString()
