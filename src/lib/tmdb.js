@@ -92,15 +92,24 @@ async function loadCatalog(region) {
 
 // Region-accurate catalog from Supabase, populated nightly from TMDB.
 // Falls back to US, then the bundled static list, so it can never render empty.
+// Load a region's catalog and keep only titles actually streamable on one of
+// our tracked platforms — we tell users they'll find it on one of them, so we
+// don't surface titles that aren't on any. Returns null if none.
+async function loadStreamable(region) {
+  const rows = await loadCatalog(region)
+  const streamable = rows ? rows.map(rowToMovie).filter(m => m.platforms.length > 0) : []
+  return streamable.length ? streamable : null
+}
+
 export async function fetchTopRatedMovies(roomId, platforms = [], genres = []) {
   if (!supabase) return fetchStaticMovies(roomId, platforms, genres)
   try {
     const region = detectRegion()
-    let rows = await loadCatalog(CATALOG_REGIONS.includes(region) ? region : 'US')
-    if (!rows && region !== 'US') rows = await loadCatalog('US')
-    if (!rows) return fetchStaticMovies(roomId, platforms, genres)
+    let streamable = await loadStreamable(CATALOG_REGIONS.includes(region) ? region : 'US')
+    if (!streamable && region !== 'US') streamable = await loadStreamable('US')
+    if (!streamable) return fetchStaticMovies(roomId, platforms, genres)
 
-    const pool = filterPool(rows.map(rowToMovie), platforms, genres)
+    const pool = filterPool(streamable, platforms, genres)
     return shuffleSeeded(pool, roomId).slice(0, 50)
   } catch (e) {
     console.error('[tmdb] catalog read failed, using static list:', e)
