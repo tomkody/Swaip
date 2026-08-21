@@ -1,8 +1,8 @@
 .mode-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 22px;
+  gap: 9px;
+  margin-bottom: 20px;
 }
 
 .mode-card {
@@ -10,15 +10,14 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 3px;
-  padding: 15px 14px 14px;
+  gap: 2px;
+  padding: 13px;
   text-align: left;
   background: var(--bg-card);
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-xs);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, transform 0.1s, box-shadow 0.15s;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
 }
 
 .mode-card:active {
@@ -28,20 +27,19 @@
 .mode-card.selected {
   border-color: var(--primary);
   background: var(--accent-soft);
-  box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
 .mode-card-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
   background: var(--bg-surface);
-  font-size: 23px;
+  font-size: 20px;
   line-height: 1;
-  margin-bottom: 9px;
+  margin-bottom: 8px;
   transition: background 0.15s;
 }
 
@@ -50,14 +48,14 @@
 }
 
 .mode-card-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.2px;
 }
 
 .mode-card-desc {
-  font-size: 12px;
+  font-size: 11.5px;
   line-height: 1.35;
   color: var(--text-muted);
 }

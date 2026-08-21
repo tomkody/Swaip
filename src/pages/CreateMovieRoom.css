@@ -16,33 +16,28 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 18px;
+  width: 56px;
+  height: 56px;
+  border-radius: 15px;
   background: var(--accent-soft);
-  font-size: 34px;
-  margin: 0 auto 14px;
+  font-size: 29px;
+  margin: 0 auto 12px;
 }
 
 .create-movie h1 {
-  font-size: 32px;
+  font-size: 25px;
   font-weight: 800;
-  margin: 0 0 8px;
-  background: var(--gradient-warm);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  margin: 0 0 5px;
+  color: var(--text);
   letter-spacing: -0.5px;
 }
 
 .create-movie .subtitle {
   color: var(--text-muted);
-  font-size: 15px;
-  line-height: 1.6;
-  margin: 0 0 32px;
-  max-width: 340px;
-  margin-left: auto;
-  margin-right: auto;
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 0 auto 22px;
+  max-width: 300px;
 }
 
 .movie-preview {
@@ -143,13 +138,12 @@
 
 /* Collapsible filter sections */
 .filter-section {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   text-align: left;
   background: var(--bg-card);
-  border: 1.5px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
-  box-shadow: var(--shadow-xs);
 }
 
 .filter-header {
@@ -157,7 +151,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
+  padding: 13px 15px;
   background: none;
   border: none;
   color: var(--text);
