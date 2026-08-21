@@ -220,6 +220,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
   const [fetchingPlaces, setFetchingPlaces] = useState(false)
   const [placesError, setPlacesError] = useState(null)
   const [waitingForPartner, setWaitingForPartner] = useState(false)
+  const [waitedLong, setWaitedLong] = useState(false)
 
   const isDoneRef = useRef(false)
   const placesTransitionFiredRef = useRef(false)
@@ -230,6 +231,19 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
   useEffect(() => { isDoneRef.current = isDone }, [isDone])
 
   const finishedSwiping = phase === 'places' && places.length > 0 && currentIndex >= places.length && !isDone
+
+  // Ref so the swipe subscription can tell if we're already on the results/waiting
+  // screen — a late match shouldn't pop a modal over it (matches the movie flow).
+  const resultsShownRef = useRef(false)
+  useEffect(() => { resultsShownRef.current = isDone || finishedSwiping }, [isDone, finishedSwiping])
+
+  // Escape hatch: if a partner never taps "done", surface a "Continue" option
+  // after a wait so the user isn't stuck on the cuisine screen forever.
+  useEffect(() => {
+    if (!waitingForPartner) { setWaitedLong(false); return }
+    const t = setTimeout(() => setWaitedLong(true), 20000)
+    return () => clearTimeout(t)
+  }, [waitingForPartner])
 
   // Solo: auto-complete when all places swiped
   useEffect(() => {
@@ -302,8 +316,11 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
         const place = places.find(p => p.numId === numId)
         if (place) {
           setMatches(prev => prev.find(m => m.id === place.id) ? prev : [...prev, place])
-          setMatchItem(place)
-          confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
+          // Only celebrate while still swiping — not over the results/waiting screen.
+          if (!resultsShownRef.current) {
+            setMatchItem(place)
+            confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
+          }
         }
       }
     }, playerCount)
@@ -611,6 +628,20 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
             </p>
           )}
           <div className="loader" style={{ margin: '16px auto' }} />
+          {waitedLong && (
+            <button
+              className="btn btn-primary"
+              style={{ width: '100%', marginTop: 8 }}
+              onClick={async () => {
+                const ids = await fetchRoomMatches(room.id, userToken.current, playerCount)
+                let cats = FOOD_CATS.filter(c => ids?.includes(c.numId))
+                if (cats.length === 0) cats = likedCats
+                await fetchAndTransitionToPlaces(cats)
+              }}
+            >
+              Continue without waiting
+            </button>
+          )}
         </div>
       </div>
     )
