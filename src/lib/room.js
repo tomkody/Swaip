@@ -351,7 +351,7 @@ export async function getRoom(roomId) {
     .from('rooms')
     .select()
     .eq('id', roomId)
-    .single()
+    .maybeSingle()
 
   if (error) return null
   return data

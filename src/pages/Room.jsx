@@ -69,7 +69,7 @@ export default function Room() {
 
         const { platforms, genres } = parseRoomFilters(roomData.platforms ?? roomData.topic_id)
         if (roomData.type === 'movies') {
-          setMovies(fetchTopRatedMovies(roomData.id, platforms, genres))
+          setMovies(await fetchTopRatedMovies(roomData.id, platforms, genres))
         } else if (roomData.type === 'series') {
           setMovies(fetchTopRatedSeries(roomData.id, platforms, genres))
         }
