@@ -32,9 +32,21 @@
 }
 
 .mode-card-icon {
-  font-size: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--bg-surface);
+  font-size: 23px;
   line-height: 1;
-  margin-bottom: 3px;
+  margin-bottom: 9px;
+  transition: background 0.15s;
+}
+
+.mode-card.selected .mode-card-icon {
+  background: rgba(255, 107, 107, 0.15);
 }
 
 .mode-card-title {

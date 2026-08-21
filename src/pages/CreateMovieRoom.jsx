@@ -12,6 +12,13 @@ const GENRE_OPTIONS = [
   'Sci-Fi', 'Thriller', 'War', 'Western',
 ]
 
+const GENRE_EMOJI = {
+  Action: '💥', Adventure: '🧭', Animation: '🧸', Biography: '📖',
+  Comedy: '😂', Crime: '🚔', Drama: '🎭', Fantasy: '🐉',
+  Horror: '👻', Musical: '🎵', Mystery: '🔍', Romance: '❤️',
+  'Sci-Fi': '🚀', Thriller: '😱', War: '⚔️', Western: '🤠',
+}
+
 export default function CreateMovieRoom() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
@@ -172,7 +179,9 @@ export default function CreateMovieRoom() {
                       className={`filter-btn ${active ? 'active' : ''}`}
                       onClick={() => toggleGenre(g)}
                     >
-                      {active && <span className="filter-check">✓</span>}
+                      {active
+                        ? <span className="filter-check">✓</span>
+                        : <span className="filter-emoji">{GENRE_EMOJI[g]}</span>}
                       {g}
                     </button>
                   )

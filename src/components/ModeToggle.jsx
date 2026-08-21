@@ -14,7 +14,7 @@ export default function ModeToggle({ solo, onChange }) {
       >
         <span className="mode-card-check" aria-hidden="true">✓</span>
         <span className="mode-card-icon">👥</span>
-        <span className="mode-card-title">Together</span>
+        <span className="mode-card-title">Pick together</span>
         <span className="mode-card-desc">Share a link and match on what you both want</span>
       </button>
 
@@ -27,7 +27,7 @@ export default function ModeToggle({ solo, onChange }) {
       >
         <span className="mode-card-check" aria-hidden="true">✓</span>
         <span className="mode-card-icon">👤</span>
-        <span className="mode-card-title">Solo</span>
+        <span className="mode-card-title">Pick solo</span>
         <span className="mode-card-desc">Just you — swipe at your own pace</span>
       </button>
     </div>
