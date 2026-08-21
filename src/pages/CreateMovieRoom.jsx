@@ -25,12 +25,17 @@ export default function CreateMovieRoom() {
   const [solo, setSolo] = useState(false)
   const [platforms, setPlatforms] = useState([])
   const [genres, setGenres] = useState([])
+  const [platformOpen, setPlatformOpen] = useState(false)
   const [genreOpen, setGenreOpen] = useState(false)
+  const platformRef = useRef(null)
   const genreRef = useRef(null)
 
-  // Close the genre dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(e) {
+      if (platformOpen && platformRef.current && !platformRef.current.contains(e.target)) {
+        setPlatformOpen(false)
+      }
       if (genreOpen && genreRef.current && !genreRef.current.contains(e.target)) {
         setGenreOpen(false)
       }
@@ -41,7 +46,7 @@ export default function CreateMovieRoom() {
       document.removeEventListener('mousedown', handleClickOutside)
       document.removeEventListener('touchstart', handleClickOutside)
     }
-  }, [genreOpen])
+  }, [platformOpen, genreOpen])
 
   function togglePlatform(id) {
     setPlatforms(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])
@@ -65,6 +70,10 @@ export default function CreateMovieRoom() {
     }
   }
 
+  const platformLabel = platforms.length === 0
+    ? 'All Platforms'
+    : platforms.map(id => PLATFORMS.find(p => p.id === id)?.name).filter(Boolean).join(', ')
+
   const genreLabel = genres.length === 0
     ? 'All Genres'
     : genres.join(', ')
@@ -78,41 +87,61 @@ export default function CreateMovieRoom() {
       </button>
 
       <div className="create-movie-content">
-        <header className="create-head">
-          <h1>Movies</h1>
-          <p className="create-sub">
-            {solo
-              ? 'Swipe top-rated films and build your watchlist.'
-              : 'Swipe together — you match when you both like the same film.'}
-          </p>
-        </header>
+        <div className="movie-hero-icon">🎬</div>
+        <h1>Movies</h1>
 
         <ModeToggle solo={solo} onChange={setSolo} />
 
-        {/* Streaming platforms — always-visible brand chips */}
-        <div className="pick-section">
-          <span className="pick-label">Where you watch</span>
-          <div className="plat-chips">
-            <button
-              className={`plat-chip ${platforms.length === 0 ? 'active' : ''}`}
-              onClick={() => setPlatforms([])}
+        <p className="subtitle">
+          {solo
+            ? 'Swipe through top-rated movies and build your personal watchlist.'
+            : 'Swipe through top-rated movies. When you both swipe right — it\'s a match!'}
+        </p>
+
+        {/* Streaming Platforms */}
+        <div className="filter-section" ref={platformRef}>
+          <button className="filter-header" onClick={() => setPlatformOpen(o => !o)}>
+            <span className="filter-header-left">
+              <span className="filter-icon">📡</span>
+              <span className="filter-header-title">Streaming Platforms</span>
+              <span className="filter-badge">{platformLabel}</span>
+            </span>
+            <svg
+              width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+              className={`filter-arrow ${platformOpen ? 'open' : ''}`}
             >
-              All
-            </button>
-            {PLATFORMS.map(p => {
-              const active = platforms.includes(p.id)
-              return (
-                <button
-                  key={p.id}
-                  className={`plat-chip ${active ? 'active' : ''}`}
-                  style={active ? { background: p.bg, borderColor: p.border, color: p.color } : {}}
-                  onClick={() => togglePlatform(p.id)}
-                >
-                  {p.name}
-                </button>
-              )
-            })}
-          </div>
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+
+          {platformOpen && (
+            <div className="filter-body">
+              <button
+                className={`filter-all-btn ${platforms.length === 0 ? 'active' : ''}`}
+                onClick={() => setPlatforms([])}
+              >
+                {platforms.length === 0 && <span className="filter-check">✓</span>}
+                All Platforms
+              </button>
+              <div className="filter-grid">
+                {PLATFORMS.map(p => {
+                  const active = platforms.includes(p.id)
+                  return (
+                    <button
+                      key={p.id}
+                      className={`filter-btn ${active ? 'active' : ''}`}
+                      style={active ? { background: p.bg, borderColor: p.border, color: p.color } : {}}
+                      onClick={() => togglePlatform(p.id)}
+                    >
+                      {active && <span className="filter-check">✓</span>}
+                      {p.name}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Genres */}

@@ -8,71 +8,36 @@
 }
 
 .create-movie-content {
-  text-align: left;
-  padding-top: 4px;
+  text-align: center;
+  padding-top: 8px;
 }
 
-/* iOS large-title header */
-.create-head {
-  margin-bottom: 18px;
+.movie-hero-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 15px;
+  background: var(--accent-soft);
+  font-size: 29px;
+  margin: 0 auto 12px;
 }
 
 .create-movie h1 {
-  font-size: 32px;
+  font-size: 25px;
   font-weight: 800;
-  margin: 0 0 4px;
+  margin: 0 0 5px;
   color: var(--text);
-  letter-spacing: -0.8px;
-  line-height: 1.05;
+  letter-spacing: -0.5px;
 }
 
-.create-sub {
+.create-movie .subtitle {
   color: var(--text-muted);
-  font-size: 14px;
-  line-height: 1.4;
-  margin: 0;
-}
-
-/* Inline picker section (platforms) */
-.pick-section {
-  margin-bottom: 14px;
-}
-
-.pick-label {
-  display: block;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-muted);
-  margin-bottom: 10px;
-}
-
-.plat-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.plat-chip {
-  padding: 8px 14px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border);
-  background: var(--bg-card);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, color 0.15s;
-}
-
-.plat-chip:hover { border-color: var(--border-hover); }
-
-.plat-chip.active {
-  border-color: var(--accent-orange);
-  background: var(--accent-soft);
-  color: var(--accent-orange);
-  font-weight: 700;
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 0 auto 22px;
+  max-width: 300px;
 }
 
 .movie-preview {
@@ -102,14 +67,6 @@
 
 .create-movie .create-btn {
   width: 100%;
-  margin-top: 6px;
-  /* Apple-style adaptive solid button: dark on light, light on dark */
-  background: var(--text);
-  color: var(--bg-card);
-  box-shadow: var(--shadow-md);
-}
-.create-movie .create-btn:hover:not(:disabled) {
-  box-shadow: var(--shadow-lg);
 }
 
 /* Platform selector */
