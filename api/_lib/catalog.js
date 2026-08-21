@@ -46,11 +46,11 @@ async function tmdb(path, token, params = {}) {
 const DAY = 24 * 60 * 60 * 1000
 const isoDaysAgo = days => new Date(Date.now() - days * DAY).toISOString().slice(0, 10)
 
-// Page through a /discover/movie query, collecting ids.
-async function discoverPages(token, params, pages) {
+// Page through a /discover/{movie|tv} query, collecting ids.
+async function discoverPages(token, path, params, pages) {
   const ids = []
   for (let page = 1; page <= pages; page++) {
-    const d = await tmdb('/discover/movie', token, { ...params, include_adult: 'false', language: 'en-US', page })
+    const d = await tmdb(path, token, { ...params, include_adult: 'false', language: 'en-US', page })
     for (const m of d.results) ids.push(m.id)
     if (page >= d.total_pages) break
   }
@@ -60,7 +60,7 @@ async function discoverPages(token, params, pages) {
 // Established top-rated films: high vote floor + released >=6 months ago, so
 // ratings have settled (keeps out vote-gamed fresh titles).
 function discoverTopRated(token, { pages, minVotes }) {
-  return discoverPages(token, {
+  return discoverPages(token, '/discover/movie', {
     sort_by: 'vote_average.desc',
     'vote_count.gte': minVotes,
     'primary_release_date.lte': isoDaysAgo(180),
@@ -70,7 +70,7 @@ function discoverTopRated(token, { pages, minVotes }) {
 // Recent popular releases (last ~2 years) with enough votes to be real — this
 // is what surfaces new/trending hits alongside the classics.
 function discoverFresh(token, { pages }) {
-  return discoverPages(token, {
+  return discoverPages(token, '/discover/movie', {
     sort_by: 'popularity.desc',
     'vote_count.gte': 300,
     'primary_release_date.gte': isoDaysAgo(730),
@@ -86,7 +86,7 @@ function discoverFresh(token, { pages }) {
 const PLATFORM_FLATRATE_PROVIDERS = { netflix: 8, disney: 337, max: 1899, prime: 9, apple: 350, paramount: 531 }
 
 function discoverByProvider(token, providerId, { pages, region = 'US' }) {
-  return discoverPages(token, {
+  return discoverPages(token, '/discover/movie', {
     sort_by: 'vote_average.desc',
     'vote_count.gte': 300,
     with_watch_providers: String(providerId),
@@ -147,6 +147,96 @@ export async function buildCatalog({ token, regions, pages = 12, minVotes = 5000
     )
     for (const entry of details) {
       if (entry) rows.push(...detailToRows(entry[0], entry[1], regions))
+    }
+  }
+  return rows
+}
+
+// ─── TV series ────────────────────────────────────────────────────────────────
+// TMDB TV genres are named differently from the app's series chips.
+const TV_GENRE_ALIASES = { 'Action & Adventure': 'Action', 'Sci-Fi & Fantasy': 'Sci-Fi', 'War & Politics': 'War' }
+function normalizeTvGenre(name) {
+  return TV_GENRE_ALIASES[name] || name
+}
+
+function fmtSeasons(n) {
+  if (!n) return ''
+  return n === 1 ? '1 season' : `${n} seasons`
+}
+
+// Established top-rated shows (first aired >=6 months ago). TV vote counts run
+// much lower than film, so the floor is lower.
+function discoverTvTopRated(token, { pages, minVotes }) {
+  return discoverPages(token, '/discover/tv', {
+    sort_by: 'vote_average.desc',
+    'vote_count.gte': minVotes,
+    'first_air_date.lte': isoDaysAgo(180),
+  }, pages)
+}
+
+// Recent popular shows (first aired in the last ~2 years).
+function discoverTvFresh(token, { pages }) {
+  return discoverPages(token, '/discover/tv', {
+    sort_by: 'popularity.desc',
+    'vote_count.gte': 150,
+    'first_air_date.gte': isoDaysAgo(730),
+    'first_air_date.lte': isoDaysAgo(0),
+  }, pages)
+}
+
+function discoverTvByProvider(token, providerId, { pages, region = 'US' }) {
+  return discoverPages(token, '/discover/tv', {
+    sort_by: 'vote_average.desc',
+    'vote_count.gte': 80,
+    with_watch_providers: String(providerId),
+    watch_monetization_types: 'flatrate',
+    watch_region: region,
+  }, pages)
+}
+
+// Map a TMDB /tv/{id} detail (with appended watch/providers) → one row per region.
+function tvDetailToRows(id, detail, regions) {
+  const base = {
+    tmdb_id: id,
+    title: detail.name,
+    year: (detail.first_air_date || '').slice(0, 4),
+    rating: detail.vote_average ? Number(detail.vote_average.toFixed(1)) : null,
+    runtime: fmtSeasons(detail.number_of_seasons),
+    genres: (detail.genres || []).map(g => normalizeTvGenre(g.name)),
+    poster_url: detail.poster_path ? `https://image.tmdb.org/t/p/w500${detail.poster_path}` : null,
+    overview: detail.overview || '',
+  }
+  const provByRegion = detail['watch/providers']?.results || {}
+  return regions.map(region => {
+    const flatrate = provByRegion[region]?.flatrate || []
+    const platforms = [...new Set(flatrate.map(providerToPlatform).filter(Boolean))]
+    return { ...base, region, platforms }
+  })
+}
+
+// Same shape/strategy as buildCatalog, for TV series.
+export async function buildTvCatalog({ token, regions, pages = 10, minVotes = 1500, freshPages = 3, providerPages = 2, concurrency = 16 }) {
+  const [classics, fresh, ...byProvider] = await Promise.all([
+    discoverTvTopRated(token, { pages, minVotes }),
+    discoverTvFresh(token, { pages: freshPages }),
+    ...Object.values(PLATFORM_FLATRATE_PROVIDERS).map(pid =>
+      discoverTvByProvider(token, pid, { pages: providerPages })
+    ),
+  ])
+  const ids = [...new Set([...classics, ...fresh, ...byProvider.flat()])]
+
+  const rows = []
+  for (let i = 0; i < ids.length; i += concurrency) {
+    const batch = ids.slice(i, i + concurrency)
+    const details = await Promise.all(
+      batch.map(id =>
+        tmdb(`/tv/${id}`, token, { append_to_response: 'watch/providers', language: 'en-US' })
+          .then(d => [id, d])
+          .catch(() => null)
+      )
+    )
+    for (const entry of details) {
+      if (entry) rows.push(...tvDetailToRows(entry[0], entry[1], regions))
     }
   }
   return rows

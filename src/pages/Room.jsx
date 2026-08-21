@@ -71,7 +71,7 @@ export default function Room() {
         if (roomData.type === 'movies') {
           setMovies(await fetchTopRatedMovies(roomData.id, platforms, genres))
         } else if (roomData.type === 'series') {
-          setMovies(fetchTopRatedSeries(roomData.id, platforms, genres))
+          setMovies(await fetchTopRatedSeries(roomData.id, platforms, genres))
         }
       } catch (err) {
         setError('Failed to load room')

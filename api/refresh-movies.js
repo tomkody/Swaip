@@ -1,11 +1,27 @@
-import { buildCatalog } from './_lib/catalog.js'
+import { buildCatalog, buildTvCatalog } from './_lib/catalog.js'
 import { createClient } from '@supabase/supabase-js'
 
-// Allow up to 60s — the larger catalog fetches hundreds of titles' providers.
+// Allow up to 60s — movie + TV catalogs each fetch hundreds of titles' providers.
 export const config = { maxDuration: 60 }
 
-// Nightly cron (see vercel.json). Rebuilds the movie catalog from TMDB and
-// upserts it into Supabase. Vercel Cron sends `Authorization: Bearer <CRON_SECRET>`
+// Upsert rows into a catalog table, then prune rows in the refreshed regions
+// that this run didn't touch (titles that dropped out of the top list).
+async function writeCatalog(supabase, table, rows, regions, runStamp) {
+  const stamped = rows.map(r => ({ ...r, updated_at: runStamp }))
+  const CHUNK = 500
+  for (let i = 0; i < stamped.length; i += CHUNK) {
+    const { error } = await supabase
+      .from(table)
+      .upsert(stamped.slice(i, i + CHUNK), { onConflict: 'tmdb_id,region' })
+    if (error) throw error
+  }
+  const { error: pruneErr } = await supabase
+    .from(table).delete().in('region', regions).lt('updated_at', runStamp)
+  if (pruneErr) throw pruneErr
+}
+
+// Nightly cron (see vercel.json). Rebuilds the movie + TV catalogs from TMDB and
+// upserts them into Supabase. Vercel Cron sends `Authorization: Bearer <CRON_SECRET>`
 // when the CRON_SECRET env var is set — that's the only way in.
 export default async function handler(req, res) {
   const expected = process.env.CRON_SECRET
@@ -22,31 +38,18 @@ export default async function handler(req, res) {
 
   const regions = (process.env.REGIONS || 'US,GB,CA,AU,IE,DE,FR,ES,IT,NL,BR,MX,IN,CZ,PL,SE').split(',')
   try {
-    // ~240 established classics + ~60 recent popular releases, per region.
-    const rows = await buildCatalog({ token, regions, pages: 12, minVotes: 5000, freshPages: 3 })
+    // Build both catalogs in parallel to stay well within the time budget.
+    const [movieRows, tvRows] = await Promise.all([
+      buildCatalog({ token, regions, pages: 12, minVotes: 5000, freshPages: 3, concurrency: 12 }),
+      buildTvCatalog({ token, regions, pages: 10, minVotes: 1500, freshPages: 3, concurrency: 12 }),
+    ])
+
     const supabase = createClient(url, key, { auth: { persistSession: false } })
-
     const runStamp = new Date().toISOString()
-    const stamped = rows.map(r => ({ ...r, updated_at: runStamp }))
-    const CHUNK = 500
-    for (let i = 0; i < stamped.length; i += CHUNK) {
-      const { error } = await supabase
-        .from('movie_catalog')
-        .upsert(stamped.slice(i, i + CHUNK), { onConflict: 'tmdb_id,region' })
-      if (error) throw error
-    }
+    await writeCatalog(supabase, 'movie_catalog', movieRows, regions, runStamp)
+    await writeCatalog(supabase, 'series_catalog', tvRows, regions, runStamp)
 
-    // Prune stale rows: titles that dropped out of the top list are not touched
-    // by this run, so they keep an older updated_at — delete them for the
-    // refreshed regions. Without this the catalog only ever grows.
-    const { error: pruneErr } = await supabase
-      .from('movie_catalog')
-      .delete()
-      .in('region', regions)
-      .lt('updated_at', runStamp)
-    if (pruneErr) throw pruneErr
-
-    return res.status(200).json({ ok: true, rows: rows.length, regions })
+    return res.status(200).json({ ok: true, movies: movieRows.length, series: tvRows.length, regions })
   } catch (e) {
     return res.status(500).json({ error: String(e?.message || e) })
   }

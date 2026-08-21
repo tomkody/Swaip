@@ -1,8 +1,17 @@
 import { SERIES } from './series'
 import { SERIES_PLATFORMS } from './platforms'
 import { SERIES_GENRES } from './seriesGenres'
+import { supabase } from './supabase'
 
-const SERIES_WITH_GENRES = SERIES.map(s => ({ ...s, genre: SERIES_GENRES[s.id] || '' }))
+// Static fallback catalog (used offline / when Supabase or the catalog is empty).
+const SERIES_WITH_GENRES = SERIES.map(s => ({
+  ...s,
+  genre: SERIES_GENRES[s.id] || '',
+  platforms: SERIES_PLATFORMS[s.id] || [],
+}))
+
+// Regions the nightly refresh job populates (see api/refresh-movies.js).
+const CATALOG_REGIONS = ['US', 'GB', 'CA', 'AU', 'IE', 'DE', 'FR', 'ES', 'IT', 'NL', 'BR', 'MX', 'IN', 'CZ', 'PL', 'SE']
 
 // Mulberry32 — reliable 32-bit seeded PRNG using Math.imul
 function seededRandom(seed) {
@@ -20,25 +29,79 @@ function seededRandom(seed) {
   }
 }
 
-export function fetchTopRatedSeries(roomId, platforms = [], genres = []) {
+function shuffleSeeded(arr, roomId) {
+  const out = [...arr]
+  const rng = roomId ? seededRandom(roomId) : Math.random
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1))
+    ;[out[i], out[j]] = [out[j], out[i]]
+  }
+  return out
+}
+
+// Filter by selected platforms + genres, never stranding the user: if a filter
+// empties the pool, that filter is dropped rather than showing nothing.
+function filterPool(all, platforms, genres) {
   let pool = platforms.length === 0
-    ? [...SERIES_WITH_GENRES]
-    : SERIES_WITH_GENRES.filter(s => {
-        const sp = SERIES_PLATFORMS[s.id]
-        return sp && sp.some(p => platforms.includes(p))
-      })
+    ? [...all]
+    : all.filter(s => s.platforms && s.platforms.some(p => platforms.includes(p)))
+  if (pool.length === 0) pool = [...all]
 
   if (genres.length > 0) {
     const filtered = pool.filter(s => s.genre && genres.some(g => s.genre.includes(g)))
     if (filtered.length > 0) pool = filtered
   }
+  return pool
+}
 
-  const source = pool.length > 0 ? pool : [...SERIES_WITH_GENRES]
-  const shuffled = [...source]
-  const rng = roomId ? seededRandom(roomId) : Math.random
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+function fetchStaticSeries(roomId, platforms, genres) {
+  const pool = filterPool(SERIES_WITH_GENRES, platforms, genres)
+  return shuffleSeeded(pool, roomId).slice(0, 50)
+}
+
+// Map a series_catalog row → the shape SwipeCard/MatchModal expect.
+function rowToSeries(r) {
+  return {
+    id: r.tmdb_id,
+    title: r.title,
+    poster: r.poster_url,
+    rating: r.rating != null ? String(r.rating) : null,
+    year: r.year || '',
+    runtime: r.runtime || '',
+    genre: (r.genres || []).join(' · '),
+    overview: r.overview || '',
+    platforms: r.platforms || [],
   }
-  return shuffled.slice(0, 50)
+}
+
+function detectRegion() {
+  const locale = (typeof navigator !== 'undefined' && navigator.language) || 'en-US'
+  return (locale.split('-')[1] || 'US').toUpperCase()
+}
+
+async function loadCatalog(region) {
+  const { data, error } = await supabase
+    .from('series_catalog')
+    .select('*')
+    .eq('region', region)
+  if (error || !data || data.length === 0) return null
+  return data
+}
+
+// Region-accurate TV catalog from Supabase, populated nightly from TMDB.
+// Falls back to US, then the bundled static list, so it can never render empty.
+export async function fetchTopRatedSeries(roomId, platforms = [], genres = []) {
+  if (!supabase) return fetchStaticSeries(roomId, platforms, genres)
+  try {
+    const region = detectRegion()
+    let rows = await loadCatalog(CATALOG_REGIONS.includes(region) ? region : 'US')
+    if (!rows && region !== 'US') rows = await loadCatalog('US')
+    if (!rows) return fetchStaticSeries(roomId, platforms, genres)
+
+    const pool = filterPool(rows.map(rowToSeries), platforms, genres)
+    return shuffleSeeded(pool, roomId).slice(0, 50)
+  } catch (e) {
+    console.error('[seriesFetch] catalog read failed, using static list:', e)
+    return fetchStaticSeries(roomId, platforms, genres)
+  }
 }
