@@ -170,7 +170,7 @@ function discoverTvTopRated(token, { pages, minVotes }) {
   return discoverPages(token, '/discover/tv', {
     sort_by: 'vote_average.desc',
     'vote_count.gte': minVotes,
-    'first_air_date.lte': isoDaysAgo(180),
+    'first_air_date.lte': isoDaysAgo(365),
   }, pages)
 }
 
@@ -178,16 +178,18 @@ function discoverTvTopRated(token, { pages, minVotes }) {
 function discoverTvFresh(token, { pages }) {
   return discoverPages(token, '/discover/tv', {
     sort_by: 'popularity.desc',
-    'vote_count.gte': 150,
+    'vote_count.gte': 300,
     'first_air_date.gte': isoDaysAgo(730),
     'first_air_date.lte': isoDaysAgo(0),
   }, pages)
 }
 
+// Per-platform: sort by popularity (what people actually watch) with a real vote
+// floor, so we get a platform's known shows — not obscure high-rated oddities.
 function discoverTvByProvider(token, providerId, { pages, region = 'US' }) {
   return discoverPages(token, '/discover/tv', {
-    sort_by: 'vote_average.desc',
-    'vote_count.gte': 80,
+    sort_by: 'popularity.desc',
+    'vote_count.gte': 300,
     with_watch_providers: String(providerId),
     watch_monetization_types: 'flatrate',
     watch_region: region,
