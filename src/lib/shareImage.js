@@ -1,3 +1,5 @@
+import { getPlatformMeta } from './platforms'
+
 function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image()
@@ -6,6 +8,14 @@ function loadImage(src) {
     img.onerror = reject
     img.src = src
   })
+}
+
+// #RGB / #RRGGBB → rgba() string
+function withAlpha(hex, a) {
+  const h = (hex || '#ffffff').replace('#', '')
+  const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h
+  const n = parseInt(full, 16)
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`
 }
 
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
@@ -134,6 +144,29 @@ async function generateSingleMatchImage({ title, posterUrl, emoji, swipeCount })
   return canvas
 }
 
+// Draw a row of platform brand chips; returns the x reached.
+function drawPlatformChips(ctx, platforms, x, y, maxWidth) {
+  const metas = (platforms || []).map(getPlatformMeta).filter(Boolean).slice(0, 3)
+  if (metas.length === 0) return
+  const chipH = 46, padX = 18, gap = 12
+  ctx.font = `600 28px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  let cx = x
+  for (const m of metas) {
+    const tw = ctx.measureText(m.name).width
+    const chipW = tw + padX * 2
+    if (cx + chipW > x + maxWidth) break
+    ctx.fillStyle = withAlpha(m.color, 0.18)
+    drawRoundedRect(ctx, cx, y, chipW, chipH, chipH / 2)
+    ctx.fill()
+    ctx.fillStyle = m.color === '#ffffff' ? 'rgba(255,255,255,0.92)' : m.color
+    ctx.fillText(m.name, cx + padX, y + chipH / 2 + 1)
+    cx += chipW + gap
+  }
+  ctx.textBaseline = 'alphabetic'
+}
+
 // ── Multi-match share (movie/series results) ──────────────────────
 async function generateMatchesImage({ items, typeLabel }) {
   const W = 1080, H = 1920
@@ -141,111 +174,133 @@ async function generateMatchesImage({ items, typeLabel }) {
   canvas.width = W; canvas.height = H
   const ctx = canvas.getContext('2d')
 
-  // Background
-  const bg = ctx.createLinearGradient(0, 0, 0, H)
-  bg.addColorStop(0, '#0D0B1A')
-  bg.addColorStop(1, '#1E1535')
+  // Background — deep warm-tinted plum
+  const bg = ctx.createLinearGradient(0, 0, W, H)
+  bg.addColorStop(0, '#141019')
+  bg.addColorStop(1, '#241528')
   ctx.fillStyle = bg
   ctx.fillRect(0, 0, W, H)
 
-  // Orb top-right
-  const orb = ctx.createRadialGradient(W * 0.85, H * 0.05, 0, W * 0.85, H * 0.05, 600)
-  orb.addColorStop(0, 'rgba(247,79,94,0.22)')
-  orb.addColorStop(1, 'rgba(247,79,94,0)')
+  // Warm orb top-right
+  const orb = ctx.createRadialGradient(W * 0.9, H * 0.02, 0, W * 0.9, H * 0.02, 720)
+  orb.addColorStop(0, 'rgba(247,120,74,0.28)')
+  orb.addColorStop(1, 'rgba(247,120,74,0)')
   ctx.fillStyle = orb
   ctx.fillRect(0, 0, W, H)
 
-  // Second orb bottom-left
-  const orb2 = ctx.createRadialGradient(W * 0.15, H * 0.75, 0, W * 0.15, H * 0.75, 500)
-  orb2.addColorStop(0, 'rgba(108,92,231,0.18)')
-  orb2.addColorStop(1, 'rgba(108,92,231,0)')
+  // Cool orb bottom-left
+  const orb2 = ctx.createRadialGradient(W * 0.12, H * 0.82, 0, W * 0.12, H * 0.82, 620)
+  orb2.addColorStop(0, 'rgba(120,92,231,0.20)')
+  orb2.addColorStop(1, 'rgba(120,92,231,0)')
   ctx.fillStyle = orb2
   ctx.fillRect(0, 0, W, H)
 
-  // Header text
-  const headerY = 140
-  ctx.fillStyle = 'rgba(255,255,255,0.5)'
-  ctx.font = `500 42px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
+  // Header
+  const headerY = 150
+  ctx.fillStyle = 'rgba(255,255,255,0.55)'
+  ctx.font = `600 40px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
   ctx.textAlign = 'center'
   ctx.fillText('We both want to watch', W / 2, headerY)
 
   ctx.fillStyle = '#FFFFFF'
-  ctx.font = `900 76px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
-  ctx.fillText(`${items.length} ${typeLabel || 'matches'}`, W / 2, headerY + 96)
+  ctx.font = `900 88px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
+  ctx.fillText(`${items.length} ${typeLabel || 'matches'}`, W / 2, headerY + 104)
 
-  // Divider
   ctx.strokeStyle = 'rgba(255,255,255,0.1)'
   ctx.lineWidth = 2
   ctx.beginPath()
-  ctx.moveTo(W * 0.1, headerY + 130)
-  ctx.lineTo(W * 0.9, headerY + 130)
+  ctx.moveTo(W * 0.12, headerY + 150)
+  ctx.lineTo(W * 0.88, headerY + 150)
   ctx.stroke()
 
-  // Movie cards — up to 5
-  const displayItems = items.slice(0, 5)
-  const cardStartY = headerY + 160
-  const cardH = 160
-  const cardGap = 20
-  const cardPad = 60
-  const posterW = 88
-  const posterH = 124
+  // Cards — up to 4, poster + title + meta + platform chips
+  const displayItems = items.slice(0, 4)
+  const cardPad = 56
+  const cardW = W - cardPad * 2
+  const cardH = 216
+  const cardGap = 24
+  const cardStartY = headerY + 200
+  const posterW = 120, posterH = 172
+  const emojiMap = { series: '📺', activities: '🎯', food: '🍽️' }
+  const fallbackEmoji = emojiMap[typeLabel] || '🎬'
 
   for (let i = 0; i < displayItems.length; i++) {
     const item = displayItems[i]
     const cy = cardStartY + i * (cardH + cardGap)
 
-    // Card background
-    ctx.fillStyle = 'rgba(255,255,255,0.06)'
-    drawRoundedRect(ctx, cardPad, cy, W - cardPad * 2, cardH, 20)
+    // Card
+    ctx.fillStyle = 'rgba(255,255,255,0.055)'
+    drawRoundedRect(ctx, cardPad, cy, cardW, cardH, 26)
     ctx.fill()
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'
+    ctx.lineWidth = 1.5
+    drawRoundedRect(ctx, cardPad, cy, cardW, cardH, 26)
+    ctx.stroke()
 
-    // Poster
-    const px = cardPad + 24
+    // Poster (with fallback tile)
+    const px = cardPad + 22
     const py = cy + (cardH - posterH) / 2
+    let posterOk = false
     if (item.poster) {
       try {
         const img = await loadImage(item.poster)
         ctx.save()
-        drawRoundedRect(ctx, px, py, posterW, posterH, 10)
+        drawRoundedRect(ctx, px, py, posterW, posterH, 12)
         ctx.clip()
-        ctx.drawImage(img, px, py, posterW, posterH)
+        const ar = img.width / img.height, tar = posterW / posterH
+        let sw = img.width, sh = img.height, sx = 0, sy = 0
+        if (ar > tar) { sw = img.height * tar; sx = (img.width - sw) / 2 }
+        else { sh = img.width / tar; sy = (img.height - sh) / 2 }
+        ctx.drawImage(img, sx, sy, sw, sh, px, py, posterW, posterH)
         ctx.restore()
-      } catch { /* skip */ }
-    } else {
-      ctx.fillStyle = 'rgba(255,255,255,0.08)'
-      drawRoundedRect(ctx, px, py, posterW, posterH, 10)
+        posterOk = true
+      } catch { /* fall through to placeholder */ }
+    }
+    if (!posterOk) {
+      const pg = ctx.createLinearGradient(px, py, px + posterW, py + posterH)
+      pg.addColorStop(0, 'rgba(247,120,74,0.35)')
+      pg.addColorStop(1, 'rgba(120,92,231,0.35)')
+      ctx.fillStyle = pg
+      drawRoundedRect(ctx, px, py, posterW, posterH, 12)
       ctx.fill()
+      ctx.font = '64px serif'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(fallbackEmoji, px + posterW / 2, py + posterH / 2)
+      ctx.textBaseline = 'alphabetic'
     }
 
-    // Title
-    const tx = px + posterW + 28
-    const maxTW = W - cardPad * 2 - posterW - 80
+    // Text column
+    const tx = px + posterW + 32
+    const maxTW = cardPad + cardW - tx - 28
+
+    // Title (clamped to one line)
     ctx.fillStyle = '#FFFFFF'
-    ctx.font = `700 44px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
+    ctx.font = `700 46px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
     ctx.textAlign = 'left'
-
-    // Clamp title to one line
     let titleText = item.title || ''
-    while (ctx.measureText(titleText).width > maxTW && titleText.length > 3) {
-      titleText = titleText.slice(0, -1)
+    if (ctx.measureText(titleText).width > maxTW) {
+      while (ctx.measureText(titleText + '…').width > maxTW && titleText.length > 3) titleText = titleText.slice(0, -1)
+      titleText = titleText.trimEnd() + '…'
     }
-    if (titleText !== item.title) titleText = titleText.trimEnd() + '…'
-    ctx.fillText(titleText, tx, cy + cardH / 2 - 12)
+    ctx.fillText(titleText, tx, cy + 66)
 
-    // Year + rating
-    const meta = [item.year, item.rating ? `⭐ ${item.rating}` : null].filter(Boolean).join('  ·  ')
-    ctx.fillStyle = 'rgba(255,255,255,0.45)'
+    // Year · rating
+    const meta = [item.year, item.rating ? `★ ${item.rating}` : null].filter(Boolean).join('   ·   ')
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'
     ctx.font = `400 34px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
-    ctx.fillText(meta, tx, cy + cardH / 2 + 46)
+    ctx.fillText(meta, tx, cy + 116)
+
+    // Platform chips
+    drawPlatformChips(ctx, item.platforms, tx, cy + 138, maxTW)
   }
 
-  // If more than 5
-  if (items.length > 5) {
-    const moreY = cardStartY + 5 * (cardH + cardGap) + 30
-    ctx.fillStyle = 'rgba(255,255,255,0.35)'
-    ctx.font = `500 36px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
+  if (items.length > 4) {
+    const moreY = cardStartY + 4 * (cardH + cardGap) + 24
+    ctx.fillStyle = 'rgba(255,255,255,0.4)'
+    ctx.font = `600 36px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
     ctx.textAlign = 'center'
-    ctx.fillText(`+${items.length - 5} more`, W / 2, moreY)
+    ctx.fillText(`+ ${items.length - 4} more`, W / 2, moreY)
   }
 
   drawLogo(ctx, W, H)
