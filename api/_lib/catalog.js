@@ -78,6 +78,23 @@ function discoverFresh(token, { pages }) {
   }, pages)
 }
 
+// TMDB flatrate provider ids for our platforms. Pulling each platform's own top
+// titles guarantees thin catalogs (e.g. Apple TV+, ~58 titles) are well
+// represented rather than relying on them showing up in the global top lists.
+// Uses US as a reference region; providers are still resolved per-region later,
+// so availability stays accurate everywhere.
+const PLATFORM_FLATRATE_PROVIDERS = { netflix: 8, disney: 337, max: 1899, prime: 9, apple: 350, paramount: 531 }
+
+function discoverByProvider(token, providerId, { pages, region = 'US' }) {
+  return discoverPages(token, {
+    sort_by: 'vote_average.desc',
+    'vote_count.gte': 300,
+    with_watch_providers: String(providerId),
+    watch_monetization_types: 'flatrate',
+    watch_region: region,
+  }, pages)
+}
+
 function fmtRuntime(min) {
   if (!min) return ''
   const h = Math.floor(min / 60), m = min % 60
@@ -108,12 +125,15 @@ function detailToRows(id, detail, regions) {
 // popular releases. One /movie/{id} call per movie returns full detail AND
 // all-region watch providers (append_to_response); those calls run in parallel
 // batches so a larger catalog still finishes well within the function timeout.
-export async function buildCatalog({ token, regions, pages = 12, minVotes = 5000, freshPages = 3, concurrency = 12 }) {
-  const [classics, fresh] = await Promise.all([
+export async function buildCatalog({ token, regions, pages = 12, minVotes = 5000, freshPages = 3, providerPages = 2, concurrency = 16 }) {
+  const [classics, fresh, ...byProvider] = await Promise.all([
     discoverTopRated(token, { pages, minVotes }),
     discoverFresh(token, { pages: freshPages }),
+    ...Object.values(PLATFORM_FLATRATE_PROVIDERS).map(pid =>
+      discoverByProvider(token, pid, { pages: providerPages })
+    ),
   ])
-  const ids = [...new Set([...classics, ...fresh])]
+  const ids = [...new Set([...classics, ...fresh, ...byProvider.flat()])]
 
   const rows = []
   for (let i = 0; i < ids.length; i += concurrency) {
