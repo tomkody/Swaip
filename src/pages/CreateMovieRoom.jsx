@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createMovieRoom, getUserToken } from '../lib/room'
 import { PLATFORMS } from '../lib/platforms'
+import ModeToggle from '../components/ModeToggle'
 import './CreateMovieRoom.css'
 
 const GENRE_OPTIONS = [
@@ -82,14 +83,7 @@ export default function CreateMovieRoom() {
         <div className="movie-hero-icon">🎬</div>
         <h1>Movies</h1>
 
-        <div className="mode-toggle">
-          <button className={`mode-btn ${!solo ? 'active' : ''}`} onClick={() => setSolo(false)}>
-            👥 Together
-          </button>
-          <button className={`mode-btn ${solo ? 'active' : ''}`} onClick={() => setSolo(true)}>
-            👤 Solo
-          </button>
-        </div>
+        <ModeToggle solo={solo} onChange={setSolo} />
 
         <p className="subtitle">
           {solo

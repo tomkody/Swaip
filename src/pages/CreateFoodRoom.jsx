@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createFoodRoom, getUserToken } from '../lib/room'
 import { geocodeLocation } from '../lib/placesApi'
+import ModeToggle from '../components/ModeToggle'
 import './CreateActivityRoom.css'
 
 const RADIUS_OPTIONS = [
@@ -159,14 +160,7 @@ export default function CreateFoodRoom() {
         <div className="activity-hero-icon">🍽️</div>
         <h1>Food & Dining</h1>
 
-        <div className="mode-toggle">
-          <button className={`mode-btn ${!solo ? 'active' : ''}`} onClick={() => setSolo(false)}>
-            👥 Together
-          </button>
-          <button className={`mode-btn ${solo ? 'active' : ''}`} onClick={() => setSolo(true)}>
-            👤 Solo
-          </button>
-        </div>
+        <ModeToggle solo={solo} onChange={setSolo} />
 
         {!solo && (
           <div className="player-count-row">

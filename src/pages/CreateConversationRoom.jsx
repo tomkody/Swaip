@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TOPICS } from '../lib/topics'
 import { createConversationRoom, getUserToken } from '../lib/room'
+import ModeToggle from '../components/ModeToggle'
 import './CreateConversationRoom.css'
 
 export default function CreateConversationRoom() {
@@ -49,13 +50,8 @@ export default function CreateConversationRoom() {
 
       <h1>Conversations</h1>
 
-      <div className="mode-toggle" style={{ maxWidth: 360, margin: '0 auto 24px' }}>
-        <button className={`mode-btn ${!solo ? 'active' : ''}`} onClick={() => setSolo(false)}>
-          👥 Together
-        </button>
-        <button className={`mode-btn ${solo ? 'active' : ''}`} onClick={() => setSolo(true)}>
-          👤 Solo
-        </button>
+      <div style={{ maxWidth: 360, margin: '0 auto' }}>
+        <ModeToggle solo={solo} onChange={setSolo} />
       </div>
 
       <p className="subtitle">
