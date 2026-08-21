@@ -16,33 +16,28 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 18px;
+  width: 56px;
+  height: 56px;
+  border-radius: 15px;
   background: var(--accent-soft);
-  font-size: 34px;
-  margin: 0 auto 14px;
+  font-size: 29px;
+  margin: 0 auto 12px;
 }
 
 .create-activity h1 {
-  font-size: 28px;
+  font-size: 25px;
   font-weight: 800;
-  margin: 0 0 6px;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  margin: 0 0 5px;
+  color: var(--text);
   letter-spacing: -0.5px;
 }
 
 .create-activity .subtitle {
   color: var(--text-muted);
-  font-size: 14px;
-  line-height: 1.6;
-  margin: 0 0 28px;
-  max-width: 320px;
-  margin-left: auto;
-  margin-right: auto;
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 0 auto 22px;
+  max-width: 300px;
 }
 
 /* ── Form ─────────────────────────────────────────────────────────── */

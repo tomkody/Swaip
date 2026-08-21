@@ -7,20 +7,18 @@
 }
 
 .create-conv h1 {
-  font-size: 28px;
+  font-size: 25px;
   font-weight: 800;
-  margin: 0 0 4px;
-  background: var(--gradient-warm);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: -0.3px;
+  margin: 0 0 5px;
+  color: var(--text);
+  letter-spacing: -0.5px;
 }
 
 .create-conv .subtitle {
   color: var(--text-muted);
-  font-size: 15px;
-  margin: 0 0 24px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 0 0 22px;
   font-weight: 500;
 }
 
