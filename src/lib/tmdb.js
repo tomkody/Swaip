@@ -76,7 +76,7 @@ function rowToMovie(r) {
 }
 
 // Viewer's country (ISO-3166 alpha-2) from the browser locale, e.g. "cs-CZ" → "CZ".
-function detectRegion() {
+export function detectRegion() {
   const locale = (typeof navigator !== 'undefined' && navigator.language) || 'en-US'
   return (locale.split('-')[1] || 'US').toUpperCase()
 }
@@ -101,12 +101,13 @@ async function loadStreamable(region) {
   return streamable.length ? streamable : null
 }
 
-export async function fetchTopRatedMovies(roomId, platforms = [], genres = []) {
+export async function fetchTopRatedMovies(roomId, platforms = [], genres = [], region) {
   if (!supabase) return fetchStaticMovies(roomId, platforms, genres)
   try {
-    const region = detectRegion()
-    let streamable = await loadStreamable(CATALOG_REGIONS.includes(region) ? region : 'US')
-    if (!streamable && region !== 'US') streamable = await loadStreamable('US')
+    // Prefer the room's pinned region so both partners swipe the SAME deck.
+    const reg = (region || detectRegion())
+    let streamable = await loadStreamable(CATALOG_REGIONS.includes(reg) ? reg : 'US')
+    if (!streamable && reg !== 'US') streamable = await loadStreamable('US')
     if (!streamable) return fetchStaticMovies(roomId, platforms, genres)
 
     const pool = filterPool(streamable, platforms, genres)

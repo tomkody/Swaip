@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { v4 as uuidv4 } from 'uuid'
+import { detectRegion } from './tmdb'
 
 export function isRoomSolo(room) {
   if (!room?.topic_id) return false
@@ -70,9 +71,8 @@ export function getUserToken() {
 // Create a movie room
 export async function createMovieRoom(platforms = [], genres = [], { solo = false } = {}) {
   const roomId = uuidv4().slice(0, 8)
-  const filters = (platforms.length || genres.length || solo)
-    ? JSON.stringify({ platforms, genres, ...(solo && { solo: true }) })
-    : null
+  // Pin the creator's region so every partner swipes the SAME deck.
+  const filters = JSON.stringify({ platforms, genres, region: detectRegion(), ...(solo && { solo: true }) })
 
   if (!supabase) {
     const room = { id: roomId, type: 'movies', platforms: filters, created_at: new Date().toISOString(), status: 'waiting' }
@@ -128,9 +128,8 @@ export async function createConversationRoom(topicIds, topicNames, { solo = fals
 // Create a TV series room
 export async function createSeriesRoom(platforms = [], genres = [], { solo = false } = {}) {
   const roomId = uuidv4().slice(0, 8)
-  const filters = (platforms.length || genres.length || solo)
-    ? JSON.stringify({ platforms, genres, ...(solo && { solo: true }) })
-    : null
+  // Pin the creator's region so every partner swipes the SAME deck.
+  const filters = JSON.stringify({ platforms, genres, region: detectRegion(), ...(solo && { solo: true }) })
 
   if (!supabase) {
     const room = { id: roomId, type: 'series', platforms: filters, created_at: new Date().toISOString(), status: 'waiting' }

@@ -13,13 +13,13 @@ import RankingView from '../components/RankingView'
 import './Room.css'
 
 function parseRoomFilters(raw) {
-  if (!raw) return { platforms: [], genres: [] }
+  if (!raw) return { platforms: [], genres: [], region: undefined }
   try {
     const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed)) return { platforms: parsed, genres: [] } // legacy
-    return { platforms: parsed.platforms || [], genres: parsed.genres || [] }
+    if (Array.isArray(parsed)) return { platforms: parsed, genres: [], region: undefined } // legacy
+    return { platforms: parsed.platforms || [], genres: parsed.genres || [], region: parsed.region }
   } catch {
-    return { platforms: [], genres: [] }
+    return { platforms: [], genres: [], region: undefined }
   }
 }
 
@@ -67,11 +67,11 @@ export default function Room() {
           setPartnerJoined(true)
         }
 
-        const { platforms, genres } = parseRoomFilters(roomData.platforms ?? roomData.topic_id)
+        const { platforms, genres, region } = parseRoomFilters(roomData.platforms ?? roomData.topic_id)
         if (roomData.type === 'movies') {
-          setMovies(await fetchTopRatedMovies(roomData.id, platforms, genres))
+          setMovies(await fetchTopRatedMovies(roomData.id, platforms, genres, region))
         } else if (roomData.type === 'series') {
-          setMovies(await fetchTopRatedSeries(roomData.id, platforms, genres))
+          setMovies(await fetchTopRatedSeries(roomData.id, platforms, genres, region))
         }
       } catch (err) {
         setError('Failed to load room')

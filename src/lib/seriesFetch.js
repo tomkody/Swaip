@@ -97,12 +97,13 @@ async function loadStreamable(region) {
   return streamable.length ? streamable : null
 }
 
-export async function fetchTopRatedSeries(roomId, platforms = [], genres = []) {
+export async function fetchTopRatedSeries(roomId, platforms = [], genres = [], region) {
   if (!supabase) return fetchStaticSeries(roomId, platforms, genres)
   try {
-    const region = detectRegion()
-    let streamable = await loadStreamable(CATALOG_REGIONS.includes(region) ? region : 'US')
-    if (!streamable && region !== 'US') streamable = await loadStreamable('US')
+    // Prefer the room's pinned region so both partners swipe the SAME deck.
+    const reg = (region || detectRegion())
+    let streamable = await loadStreamable(CATALOG_REGIONS.includes(reg) ? reg : 'US')
+    if (!streamable && reg !== 'US') streamable = await loadStreamable('US')
     if (!streamable) return fetchStaticSeries(roomId, platforms, genres)
 
     const pool = filterPool(streamable, platforms, genres)
