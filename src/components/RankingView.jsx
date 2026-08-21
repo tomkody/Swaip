@@ -1,7 +1,24 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches, subscribeToSwipes } from '../lib/room'
+import { getPlatformMeta } from '../lib/platforms'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import './RankingView.css'
+
+// "Where to watch" brand chips for a movie/series result (nothing for places).
+function PlatformBadges({ platforms }) {
+  if (!platforms || platforms.length === 0) return null
+  const metas = platforms.map(getPlatformMeta).filter(Boolean)
+  if (metas.length === 0) return null
+  return (
+    <div className="rv-plats">
+      {metas.map(p => (
+        <span key={p.id} className="rv-plat" style={{ color: p.color, background: p.bg, borderColor: p.border }}>
+          {p.name}
+        </span>
+      ))}
+    </div>
+  )
+}
 
 export default function RankingView({ matches: initialMatches, liked = [], room, movies = [], onDone, isSolo = false, playerCount = 2, voteCounts = {} }) {
   const userToken = useRef(getUserToken())
@@ -144,6 +161,8 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
 
     return (
       <div className="rv-page">
+        <div className="rv-brand"><span className="rv-brand-name">Swaip</span><span className="rv-brand-tld">.app</span></div>
+
         {/* Hero */}
         <div className="rv-results-hero">
           <div className="rv-icon">{matches.length > 0 ? (isSolo ? '✨' : '🎉') : '😅'}</div>
@@ -183,6 +202,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   <div className="rv-result-info">
                     <strong>{m.title}</strong>
                     <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                    <PlatformBadges platforms={m.platforms} />
                     {m.isOpen != null && (
                       <span className={`rv-hours ${m.isOpen ? 'rv-hours--open' : 'rv-hours--closed'}`}>
                         {m.isOpen ? '● Open' : '● Closed'}
@@ -197,8 +217,8 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
           </div>
         )}
 
-        {/* Other matches */}
-        {rest.length > 0 && (
+        {/* Other matches — only when there are pinned top picks above */}
+        {hasMyPicks && rest.length > 0 && (
           <div className="rv-match-list">
             <p className="rv-label">{isSolo ? `All Picks (${matches.length})` : playerCount > 2 ? `Group Picks (${matches.length})` : `All Matches (${matches.length})`}</p>
             {rest.map(m => (
@@ -210,6 +230,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   <div className="rv-result-info">
                     <strong>{m.title}</strong>
                     <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                    <PlatformBadges platforms={m.platforms} />
                     {playerCount > 2 && voteCounts[m.id] && (
                       <span className="rv-vote-count">{voteCounts[m.id]}/{playerCount} voted</span>
                     )}
@@ -239,6 +260,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   <div className="rv-result-info">
                     <strong>{m.title}</strong>
                     <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                    <PlatformBadges platforms={m.platforms} />
                     {playerCount > 2 && voteCounts[m.id] && (
                       <span className="rv-vote-count">{voteCounts[m.id]}/{playerCount} voted</span>
                     )}
@@ -330,6 +352,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
               <div className="rv-match-info">
                 <strong>{m.title}</strong>
                 <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                    <PlatformBadges platforms={m.platforms} />
                 {m.isOpen != null && (
                   <span className={`rv-hours ${m.isOpen ? 'rv-hours--open' : 'rv-hours--closed'}`}>
                     {m.isOpen ? '● Open' : '● Closed'}
@@ -361,6 +384,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                 <div className="rv-match-info">
                   <strong>{m.title}</strong>
                   <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                    <PlatformBadges platforms={m.platforms} />
                 </div>
                 {isMatch && <span className="rv-selection-match-badge">✓ Match</span>}
               </div>

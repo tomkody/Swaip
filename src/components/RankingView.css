@@ -441,17 +441,50 @@
 .rv-result-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   overflow: hidden;
-  /* removed backdrop-filter */
+  box-shadow: var(--shadow-xs);
   transition: border-color 0.2s;
 }
 .rv-result-card-inner {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 13px;
+  padding: 12px 13px;
 }
+
+/* Where-to-watch chips on result rows */
+.rv-plats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 7px;
+}
+.rv-plat {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+/* swaip.app wordmark on the results screen */
+.rv-brand {
+  text-align: center;
+  padding: 20px 0 0;
+  font-family: -apple-system, 'Manrope', BlinkMacSystemFont, sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+.rv-brand-name {
+  background: var(--gradient-warm);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.rv-brand-tld { color: var(--text-muted); }
 .rv-result-both {
   border-color: rgba(74, 222, 128, 0.4);
   background: rgba(74, 222, 128, 0.04);
