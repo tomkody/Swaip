@@ -14,6 +14,13 @@ const PROVIDER_IDS = {
   531: 'paramount',
 }
 
+// Align TMDB genre names with the app's genre-chip vocabulary (CreateMovieRoom
+// GENRE_OPTIONS) so genre filtering and card labels match exactly.
+const GENRE_ALIASES = { 'Science Fiction': 'Sci-Fi', 'Music': 'Musical' }
+function normalizeGenre(name) {
+  return GENRE_ALIASES[name] || name
+}
+
 function providerToPlatform(p) {
   if (PROVIDER_IDS[p.provider_id]) return PROVIDER_IDS[p.provider_id]
   const n = (p.provider_name || '').toLowerCase()
@@ -36,15 +43,17 @@ async function tmdb(path, token, params = {}) {
   return res.json()
 }
 
-// Quality-filtered, released, well-voted movie ids (avoids vote-gamed upcoming titles).
+// Quality-filtered movie ids. Requires a high vote floor AND a release at least
+// ~6 months ago, so ratings have settled — this keeps out very-recent titles whose
+// inflated/volatile vote_average would otherwise leapfrog established classics.
 async function discoverIds(token, { pages, minVotes }) {
-  const today = new Date().toISOString().slice(0, 10)
+  const settledBefore = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
   const ids = []
   for (let page = 1; page <= pages; page++) {
     const d = await tmdb('/discover/movie', token, {
       sort_by: 'vote_average.desc',
       'vote_count.gte': minVotes,
-      'release_date.lte': today,
+      'primary_release_date.lte': settledBefore,
       include_adult: 'false',
       language: 'en-US',
       page,
@@ -63,7 +72,7 @@ function fmtRuntime(min) {
 
 // Build one row per (movie, region). One /movie/{id} call per movie returns
 // full detail AND all-region watch providers via append_to_response.
-export async function buildCatalog({ token, regions, pages = 3, minVotes = 3000 }) {
+export async function buildCatalog({ token, regions, pages = 3, minVotes = 5000 }) {
   const ids = await discoverIds(token, { pages, minVotes })
   const rows = []
 
@@ -81,7 +90,7 @@ export async function buildCatalog({ token, regions, pages = 3, minVotes = 3000 
       year: (detail.release_date || '').slice(0, 4),
       rating: detail.vote_average ? Number(detail.vote_average.toFixed(1)) : null,
       runtime: fmtRuntime(detail.runtime),
-      genres: (detail.genres || []).map(g => g.name),
+      genres: (detail.genres || []).map(g => normalizeGenre(g.name)),
       poster_url: detail.poster_path ? `https://image.tmdb.org/t/p/w500${detail.poster_path}` : null,
       overview: detail.overview || '',
     }

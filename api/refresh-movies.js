@@ -19,7 +19,7 @@ export default async function handler(req, res) {
 
   const regions = (process.env.REGIONS || 'CZ,US,GB,DE').split(',')
   try {
-    const rows = await buildCatalog({ token, regions, pages: 5, minVotes: 3000 })
+    const rows = await buildCatalog({ token, regions, pages: 5, minVotes: 5000 })
     const supabase = createClient(url, key, { auth: { persistSession: false } })
 
     const stamped = rows.map(r => ({ ...r, updated_at: new Date().toISOString() }))

@@ -15,7 +15,7 @@ if (!token) {
 
 const regions = (process.env.REGIONS || 'CZ,US,GB').split(',')
 const pages = Number(process.env.PAGES || 3)
-const minVotes = Number(process.env.MIN_VOTES || 3000)
+const minVotes = Number(process.env.MIN_VOTES || 5000)
 
 console.log(`Building catalog: regions=${regions.join(',')} pages=${pages} minVotes=${minVotes}`)
 const rows = await buildCatalog({ token, regions, pages, minVotes })
