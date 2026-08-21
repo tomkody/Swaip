@@ -182,25 +182,37 @@
 }
 
 .create-series .filter-btn {
-  padding: 9px 12px;
+  padding: 10px 13px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text);
   text-align: left;
-  transition: all 0.2s;
+  transition: all 0.15s;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   cursor: pointer;
 }
-.create-series .filter-btn:hover { border-color: var(--border-hover); color: var(--text); }
-.create-series .filter-btn.active { color: var(--text); font-weight: 700; }
+.create-series .filter-btn:hover { border-color: var(--border-hover); background: var(--bg-card-hover); }
+.create-series .filter-btn.active {
+  color: var(--accent-orange);
+  border-color: var(--accent-orange);
+  background: var(--accent-soft);
+  font-weight: 700;
+}
+
+.create-series .filter-emoji {
+  font-size: 15px;
+  line-height: 1;
+  flex-shrink: 0;
+}
 
 .create-series .filter-check {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
+  color: var(--accent-orange);
   flex-shrink: 0;
 }

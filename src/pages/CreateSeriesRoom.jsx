@@ -13,6 +13,14 @@ const GENRE_OPTIONS = [
   'War', 'Western',
 ]
 
+const GENRE_EMOJI = {
+  Action: '💥', Anime: '🎌', Animation: '🧸', Comedy: '😂',
+  Crime: '🚔', Documentary: '🎥', Drama: '🎭', Fantasy: '🐉',
+  History: '📜', Horror: '👻', Mystery: '🔍', Reality: '📺',
+  Romance: '❤️', 'Sci-Fi': '🚀', Sport: '⚽', Thriller: '😱',
+  War: '⚔️', Western: '🤠',
+}
+
 export default function CreateSeriesRoom() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
@@ -172,7 +180,9 @@ export default function CreateSeriesRoom() {
                       className={`filter-btn ${active ? 'active' : ''}`}
                       onClick={() => toggleGenre(g)}
                     >
-                      {active && <span className="filter-check">✓</span>}
+                      {active
+                        ? <span className="filter-check">✓</span>
+                        : <span className="filter-emoji">{GENRE_EMOJI[g]}</span>}
                       {g}
                     </button>
                   )
