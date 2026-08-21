@@ -50,3 +50,12 @@
 .wtw--center .wtw-badges {
   justify-content: center;
 }
+
+/* The swipe-card back is always dark (blurred poster), so its text is light
+   regardless of theme. Without this the label/link inherit --text (black in
+   light mode) and become invisible. The match modal is theme-aware and keeps
+   the inherited color. */
+.card-back-content .wtw-label,
+.card-back-content .wtw-find {
+  color: #fff;
+}

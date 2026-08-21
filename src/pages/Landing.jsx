@@ -58,15 +58,19 @@ export default function Landing() {
         <h2 className="landing-question">What do you want to decide?</h2>
 
         <div className="category-grid">
-          <button className="category-card" onClick={() => navigate('/create/movies')}>
+          <button className="category-card category-card--primary" onClick={() => navigate('/create/movies')}>
             <span className="category-emoji">🍿</span>
             <div className="category-text">
               <span className="category-name">Movies</span>
               <span className="category-desc">Pick a film solo or find one you both love. Grab popcorn and hit play.</span>
             </div>
+            <svg className="category-chevron" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="1 1 7 7 1 13" />
+            </svg>
           </button>
 
           <button className="category-card" onClick={() => navigate('/create/activities')}>
+            <span className="category-beta">Beta</span>
             <span className="category-emoji">🎯</span>
             <div className="category-text">
               <span className="category-name">Activities</span>
@@ -75,6 +79,7 @@ export default function Landing() {
           </button>
 
           <button className="category-card" onClick={() => navigate('/create/series')}>
+            <span className="category-beta">Beta</span>
             <span className="category-emoji">📺</span>
             <div className="category-text">
               <span className="category-name">TV Series</span>
@@ -83,6 +88,7 @@ export default function Landing() {
           </button>
 
           <button className="category-card" onClick={() => navigate('/create/conversations')}>
+            <span className="category-beta">Beta</span>
             <span className="category-emoji">💬</span>
             <div className="category-text">
               <span className="category-name">Conversations</span>
@@ -90,15 +96,13 @@ export default function Landing() {
             </div>
           </button>
 
-          <button className="category-card category-card--food" onClick={() => navigate('/create/food')}>
+          <button className="category-card" onClick={() => navigate('/create/food')}>
+            <span className="category-beta">Beta</span>
             <span className="category-emoji">🍽️</span>
             <div className="category-text">
               <span className="category-name">Food & Dining</span>
               <span className="category-desc">Pick a cuisine, then swipe through real restaurants near you.</span>
             </div>
-            <svg className="category-chevron" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="1 1 7 7 1 13" />
-            </svg>
           </button>
         </div>
 

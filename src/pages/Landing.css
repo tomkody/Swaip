@@ -120,14 +120,18 @@
 
 .card-glow { display: none; }
 
-/* Food card — full-width row */
-.category-card--food {
+/* Primary card (Movies) — full-width hero */
+.category-card--primary {
   grid-column: 1 / -1;
   flex-direction: row;
   align-items: center;
-  gap: 14px;
-  padding: 16px 18px;
+  gap: 16px;
+  padding: 20px;
+  background: var(--gradient-primary);
+  box-shadow: var(--shadow-md);
 }
+.category-card--primary .category-name { color: #fff; font-size: 19px; }
+.category-card--primary .category-desc { color: rgba(255,255,255,0.92); }
 
 .category-card:hover {
   box-shadow: var(--shadow-md);
@@ -155,13 +159,14 @@
   flex-shrink: 0;
 }
 
-/* Food emoji: slightly bigger icon */
-.category-card--food .category-emoji {
-  width: 54px;
-  height: 54px;
+/* Primary emoji: bigger, translucent-white tile on the gradient */
+.category-card--primary .category-emoji {
+  width: 56px;
+  height: 56px;
   border-radius: 14px;
-  font-size: 28px;
+  font-size: 30px;
   margin-bottom: 0;
+  background: rgba(255,255,255,0.22);
 }
 
 /* Text group */
@@ -188,14 +193,30 @@
   color: var(--text-muted);
 }
 
-/* Disclosure chevron on food card */
-.category-card--food .category-chevron {
+/* Disclosure chevron on the primary card */
+.category-card--primary .category-chevron {
   display: block;
-  color: var(--text-soft);
+  color: rgba(255,255,255,0.85);
   flex-shrink: 0;
   margin-left: 4px;
 }
 .category-chevron { display: none; }
+
+/* Beta badge on secondary options */
+.category-beta {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  line-height: 1.5;
+}
 
 /* ── How-it-works toggle ─────────────────────────────────────────── */
 .how-toggle {
