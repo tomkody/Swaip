@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import confetti from 'canvas-confetti'
 import { saveMatch } from '../lib/savedMatches'
+import WhereToWatch from './WhereToWatch'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import './MatchModal.css'
 
@@ -76,6 +77,7 @@ export default function MatchModal({ item, roomType, swipeCount = 0, onContinue,
               {item.year}{item.rating ? ` · ⭐ ${item.rating}` : ''}
             </p>
           )}
+          <WhereToWatch platforms={item.platforms} title={item.title} className="wtw--center" />
         </div>
 
         <div className="match-actions">

@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
+import WhereToWatch from './WhereToWatch'
 import './SwipeCard.css'
 
 const SWIPE_THRESHOLD = 100
@@ -256,6 +257,8 @@ export default function SwipeCard({ item, onSwipe, active }) {
                 </div>
 
                 {item.distance && <p className="card-back-distance">📍 {item.distance}</p>}
+
+                <WhereToWatch platforms={item.platforms} title={item.title} />
 
                 <p className="card-back-overview">
                   {item.overview || 'No description available.'}

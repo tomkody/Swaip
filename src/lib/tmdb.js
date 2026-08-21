@@ -2,7 +2,14 @@ import { MOVIES } from './movies'
 import { MOVIE_PLATFORMS } from './platforms'
 import { MOVIE_GENRES } from './movieGenres'
 
-const MOVIES_WITH_GENRES = MOVIES.map(m => ({ ...m, genre: MOVIE_GENRES[m.id] || '' }))
+// Attach genre labels and streaming platforms so the UI can show "Where to watch".
+// platforms is always an array (empty when we have no data yet) — this marks the
+// item as streamable, which is how SwipeCard/MatchModal decide to render the section.
+const MOVIES_WITH_GENRES = MOVIES.map(m => ({
+  ...m,
+  genre: MOVIE_GENRES[m.id] || '',
+  platforms: MOVIE_PLATFORMS[m.id] || [],
+}))
 
 // Mulberry32 — reliable 32-bit seeded PRNG using Math.imul
 function seededRandom(seed) {

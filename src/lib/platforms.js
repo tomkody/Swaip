@@ -7,6 +7,12 @@ export const PLATFORMS = [
   { id: 'paramount', name: 'Paramount+',   color: '#0064FF', bg: 'rgba(0,100,255,0.15)',  border: 'rgba(0,100,255,0.4)' },
 ]
 
+// Look up display metadata (name, colors) for a platform id.
+const PLATFORM_BY_ID = Object.fromEntries(PLATFORMS.map(p => [p.id, p]))
+export function getPlatformMeta(id) {
+  return PLATFORM_BY_ID[id] || null
+}
+
 // Movie ID → platform IDs  (approximate, varies by region)
 export const MOVIE_PLATFORMS = {
   // Netflix
