@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 VITE_*.local
 .vercel
+
+# Local TMDB refresh output
+scratch-catalog.json
