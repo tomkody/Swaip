@@ -47,6 +47,9 @@ export default function MatchModal({ item, roomType, swipeCount = 0, onContinue,
         posterUrl: item.poster || null,
         emoji: item.emoji || null,
         swipeCount,
+        platforms: item.platforms,
+        rating: item.rating,
+        year: item.year,
       })
       downloadCanvas(canvas, `swaip-${item.title.replace(/\s+/g, '-').toLowerCase()}.png`)
     } catch (err) {

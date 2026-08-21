@@ -76,7 +76,7 @@ function drawLogo(ctx, W, H) {
 }
 
 // ── Single-match share (food / single movie) ──────────────────────
-async function generateSingleMatchImage({ title, posterUrl, emoji, swipeCount }) {
+async function generateSingleMatchImage({ title, posterUrl, emoji, swipeCount, platforms, rating, year }) {
   const W = 1080, H = 1920
   const canvas = document.createElement('canvas')
   canvas.width = W; canvas.height = H
@@ -130,22 +130,42 @@ async function generateSingleMatchImage({ title, posterUrl, emoji, swipeCount })
 
   ctx.fillStyle = '#FFFFFF'
   ctx.font = `800 88px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
-  wrapText(ctx, title, W / 2, textY + subH + 40, W * 0.85, 106)
+  const titleY = textY + subH + 40
+  const titleH = wrapText(ctx, title, W / 2, titleY, W * 0.85, 106)
+  let cursorY = titleY + titleH / 2 + 44
+
+  // Year · rating
+  const meta = [year, rating ? `★ ${rating}` : null].filter(Boolean).join('   ·   ')
+  if (meta) {
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'
+    ctx.font = `400 40px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
+    ctx.textAlign = 'center'
+    ctx.fillText(meta, W / 2, cursorY)
+    cursorY += 40
+  }
+
+  // Platform chips (centered)
+  const metas = (platforms || []).map(getPlatformMeta).filter(Boolean)
+  if (metas.length > 0) {
+    drawPlatformChips(ctx, platforms, 0, cursorY + 14, W, W / 2)
+    cursorY += 74
+  }
 
   // Divider
   ctx.strokeStyle = 'rgba(255,255,255,0.12)'
   ctx.lineWidth = 2
   ctx.beginPath()
-  ctx.moveTo(W * 0.25, textY + subH + 170)
-  ctx.lineTo(W * 0.75, textY + subH + 170)
+  ctx.moveTo(W * 0.3, cursorY + 44)
+  ctx.lineTo(W * 0.7, cursorY + 44)
   ctx.stroke()
 
   drawLogo(ctx, W, H)
   return canvas
 }
 
-// Draw a row of platform brand chips; returns the x reached.
-function drawPlatformChips(ctx, platforms, x, y, maxWidth) {
+// Draw a row of platform brand chips. Left-aligned from x, or centered on
+// centerAt when provided.
+function drawPlatformChips(ctx, platforms, x, y, maxWidth, centerAt = null) {
   const metas = (platforms || []).map(getPlatformMeta).filter(Boolean).slice(0, 3)
   if (metas.length === 0) return
   const chipH = 46, padX = 18, gap = 12
@@ -153,10 +173,14 @@ function drawPlatformChips(ctx, platforms, x, y, maxWidth) {
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
   let cx = x
+  if (centerAt != null) {
+    let total = 0
+    metas.forEach((m, i) => { total += ctx.measureText(m.name).width + padX * 2 + (i > 0 ? gap : 0) })
+    cx = centerAt - total / 2
+  }
   for (const m of metas) {
-    const tw = ctx.measureText(m.name).width
-    const chipW = tw + padX * 2
-    if (cx + chipW > x + maxWidth) break
+    const chipW = ctx.measureText(m.name).width + padX * 2
+    if (centerAt == null && cx + chipW > x + maxWidth) break
     ctx.fillStyle = withAlpha(m.color, 0.18)
     drawRoundedRect(ctx, cx, y, chipW, chipH, chipH / 2)
     ctx.fill()
@@ -308,11 +332,18 @@ async function generateMatchesImage({ items, typeLabel }) {
 }
 
 // ── Public API ────────────────────────────────────────────────────
-export async function generateShareImage({ title, posterUrl, emoji, swipeCount, items, mode, typeLabel }) {
+export async function generateShareImage({ title, posterUrl, emoji, swipeCount, items, mode, typeLabel, platforms, rating, year }) {
   if (mode === 'matches' && items && items.length > 1) {
     return generateMatchesImage({ items, typeLabel })
   }
-  return generateSingleMatchImage({ title, posterUrl, emoji, swipeCount })
+  // Single match — pull details from items[0] when the caller passed a list.
+  const single = items && items.length === 1 ? items[0] : {}
+  return generateSingleMatchImage({
+    title, posterUrl, emoji, swipeCount,
+    platforms: platforms ?? single.platforms,
+    rating: rating ?? single.rating,
+    year: year ?? single.year,
+  })
 }
 
 export function downloadCanvas(canvas, filename = 'swaip-match.png') {
