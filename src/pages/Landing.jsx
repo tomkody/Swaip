@@ -62,11 +62,16 @@ export default function Landing() {
             <span className="category-emoji">🍿</span>
             <div className="category-text">
               <span className="category-name">Movies</span>
-              <span className="category-desc">Pick a film solo or find one you both love. Grab popcorn and hit play.</span>
+              <span className="category-desc">Find a film you'll both love</span>
             </div>
-            <svg className="category-chevron" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="1 1 7 7 1 13" />
-            </svg>
+          </button>
+
+          <button className="category-card category-card--primary" onClick={() => navigate('/create/series')}>
+            <span className="category-emoji">📺</span>
+            <div className="category-text">
+              <span className="category-name">TV Series</span>
+              <span className="category-desc">Find your next binge-watch</span>
+            </div>
           </button>
 
           <button className="category-card" onClick={() => navigate('/create/activities')}>
@@ -74,16 +79,7 @@ export default function Landing() {
             <span className="category-emoji">🎯</span>
             <div className="category-text">
               <span className="category-name">Activities</span>
-              <span className="category-desc">Couch or outdoors? Find your next adventure, solo or together.</span>
-            </div>
-          </button>
-
-          <button className="category-card" onClick={() => navigate('/create/series')}>
-            <span className="category-beta">Beta</span>
-            <span className="category-emoji">📺</span>
-            <div className="category-text">
-              <span className="category-name">TV Series</span>
-              <span className="category-desc">Your next binge-watch awaits. Pick alone or match with someone.</span>
+              <span className="category-desc">Find your next adventure nearby.</span>
             </div>
           </button>
 
@@ -92,11 +88,11 @@ export default function Landing() {
             <span className="category-emoji">💬</span>
             <div className="category-text">
               <span className="category-name">Conversations</span>
-              <span className="category-desc">Skip the small talk. Explore deep dives, fun debates, and fresh topics.</span>
+              <span className="category-desc">Deep dives, debates, fresh topics.</span>
             </div>
           </button>
 
-          <button className="category-card" onClick={() => navigate('/create/food')}>
+          <button className="category-card category-card--wide" onClick={() => navigate('/create/food')}>
             <span className="category-beta">Beta</span>
             <span className="category-emoji">🍽️</span>
             <div className="category-text">

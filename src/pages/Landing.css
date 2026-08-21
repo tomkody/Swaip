@@ -120,18 +120,24 @@
 
 .card-glow { display: none; }
 
-/* Primary card (Movies) — full-width hero */
+/* Primary cards (Movies + TV Series) — side-by-side gradient heroes */
 .category-card--primary {
-  grid-column: 1 / -1;
-  flex-direction: row;
-  align-items: center;
-  gap: 16px;
-  padding: 20px;
+  padding: 16px 15px 15px;
   background: var(--gradient-primary);
   box-shadow: var(--shadow-md);
 }
-.category-card--primary .category-name { color: #fff; font-size: 19px; }
-.category-card--primary .category-desc { color: rgba(255,255,255,0.92); }
+.category-card--primary .category-name { color: #fff; font-size: 17px; }
+.category-card--primary .category-desc { color: rgba(255,255,255,0.9); }
+
+/* Wide beta card (Food) — full-width row */
+.category-card--wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+}
+.category-card--wide .category-emoji { margin-bottom: 0; }
 
 .category-card:hover {
   box-shadow: var(--shadow-md);
@@ -159,14 +165,14 @@
   flex-shrink: 0;
 }
 
-/* Primary emoji: bigger, translucent-white tile on the gradient */
+/* Primary emoji: translucent-white tile on the gradient */
 .category-card--primary .category-emoji {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  font-size: 30px;
-  margin-bottom: 0;
-  background: rgba(255,255,255,0.22);
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  font-size: 26px;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.22);
 }
 
 /* Text group */
