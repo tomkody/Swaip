@@ -22,7 +22,8 @@ export default async function handler(req, res) {
     const rows = await buildCatalog({ token, regions, pages: 5, minVotes: 5000 })
     const supabase = createClient(url, key, { auth: { persistSession: false } })
 
-    const stamped = rows.map(r => ({ ...r, updated_at: new Date().toISOString() }))
+    const runStamp = new Date().toISOString()
+    const stamped = rows.map(r => ({ ...r, updated_at: runStamp }))
     const CHUNK = 500
     for (let i = 0; i < stamped.length; i += CHUNK) {
       const { error } = await supabase
@@ -30,6 +31,17 @@ export default async function handler(req, res) {
         .upsert(stamped.slice(i, i + CHUNK), { onConflict: 'tmdb_id,region' })
       if (error) throw error
     }
+
+    // Prune stale rows: titles that dropped out of the top list are not touched
+    // by this run, so they keep an older updated_at — delete them for the
+    // refreshed regions. Without this the catalog only ever grows.
+    const { error: pruneErr } = await supabase
+      .from('movie_catalog')
+      .delete()
+      .in('region', regions)
+      .lt('updated_at', runStamp)
+    if (pruneErr) throw pruneErr
+
     return res.status(200).json({ ok: true, rows: rows.length, regions })
   } catch (e) {
     return res.status(500).json({ error: String(e?.message || e) })

@@ -27,7 +27,8 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 if (url && serviceKey) {
   const { createClient } = await import('@supabase/supabase-js')
   const supabase = createClient(url, serviceKey, { auth: { persistSession: false } })
-  const stamped = rows.map(r => ({ ...r, updated_at: new Date().toISOString() }))
+  const runStamp = new Date().toISOString()
+  const stamped = rows.map(r => ({ ...r, updated_at: runStamp }))
   const CHUNK = 500
   for (let i = 0; i < stamped.length; i += CHUNK) {
     const { error } = await supabase
@@ -35,7 +36,11 @@ if (url && serviceKey) {
       .upsert(stamped.slice(i, i + CHUNK), { onConflict: 'tmdb_id,region' })
     if (error) { console.error('Supabase upsert failed:', error.message); process.exit(1) }
   }
-  console.log(`✓ Upserted ${rows.length} rows into movie_catalog.`)
+  // Prune stale rows for the refreshed regions (see api/refresh-movies.js).
+  const { error: pruneErr } = await supabase
+    .from('movie_catalog').delete().in('region', regions).lt('updated_at', runStamp)
+  if (pruneErr) { console.error('Supabase prune failed:', pruneErr.message); process.exit(1) }
+  console.log(`✓ Upserted ${rows.length} rows and pruned stale entries.`)
 } else {
   writeFileSync('scratch-catalog.json', JSON.stringify(rows, null, 2))
   console.log('No Supabase creds — wrote scratch-catalog.json instead.')
