@@ -13,6 +13,23 @@ export function getPlatformMeta(id) {
   return PLATFORM_BY_ID[id] || null
 }
 
+// Per-platform title search — the closest thing to a universal "watch" deep
+// link (opens the platform's search results for the title, which resolves to
+// the app on mobile via universal links). Falls back to a Google search.
+const PLATFORM_SEARCH = {
+  netflix:   t => `https://www.netflix.com/search?q=${t}`,
+  disney:    t => `https://www.disneyplus.com/search?q=${t}`,
+  max:       t => `https://play.max.com/search?q=${t}`,
+  prime:     t => `https://www.primevideo.com/search?phrase=${t}`,
+  apple:     t => `https://tv.apple.com/search?term=${t}`,
+  paramount: t => `https://www.paramountplus.com/search/?query=${t}`,
+}
+export function getWatchUrl(platformId, title) {
+  const t = encodeURIComponent(title || '')
+  const fn = PLATFORM_SEARCH[platformId]
+  return fn ? fn(t) : `https://www.google.com/search?q=${encodeURIComponent(`watch ${title || ''} online`)}`
+}
+
 // Movie ID → platform IDs  (approximate, varies by region)
 export const MOVIE_PLATFORMS = {
   // Netflix

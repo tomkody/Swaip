@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches, subscribeToSwipes, fetchRoomPicks, subscribeToRoomPicks } from '../lib/room'
-import { getPlatformMeta } from '../lib/platforms'
+import { getPlatformMeta, getWatchUrl } from '../lib/platforms'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import './RankingView.css'
 
@@ -312,6 +312,33 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   <PlatformBadges platforms={m.platforms} />
                 </div>
               </div>
+
+              {/* One-tap action — turn the decision into doing it */}
+              {(() => {
+                const isPlace = room.type === 'food' || room.type === 'activities'
+                if (isPlace) {
+                  const q = encodeURIComponent([m.title, m.address].filter(Boolean).join(' '))
+                  return (
+                    <a className="rv-reco-watch rv-reco-watch--neutral" href={`https://www.google.com/maps/search/?api=1&query=${q}`} target="_blank" rel="noopener noreferrer">
+                      📍 Get directions
+                    </a>
+                  )
+                }
+                const primary = m.platforms?.[0]
+                const meta = primary ? getPlatformMeta(primary) : null
+                const bg = meta ? (meta.color === '#ffffff' ? '#000000' : meta.color) : null
+                return (
+                  <a
+                    className={`rv-reco-watch ${meta ? '' : 'rv-reco-watch--neutral'}`}
+                    href={getWatchUrl(primary, m.title)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={bg ? { background: bg, color: '#fff' } : undefined}
+                  >
+                    {meta ? `▶ Watch on ${meta.name}` : '🔍 Find where to watch'}
+                  </a>
+                )
+              })()}
             </div>
           )
         })()}

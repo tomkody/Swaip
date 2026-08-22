@@ -732,6 +732,26 @@
 .rv-reco-meta { font-size: 0.9rem; opacity: 0.8; }
 .rv-reco-why { font-size: 0.88rem; font-weight: 600; opacity: 0.92; margin-top: 1px; }
 
+.rv-reco-watch {
+  display: block;
+  margin-top: 14px;
+  padding: 13px 18px;
+  border-radius: 14px;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.rv-reco-watch:active { transform: scale(0.98); }
+.rv-reco-watch--neutral {
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  box-shadow: none;
+}
+
 .rv-partner-block { margin-top: 22px; }
 
 .rv-top3-block .rv-result-card {
