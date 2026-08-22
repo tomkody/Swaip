@@ -6,7 +6,10 @@ function loadImage(src) {
     img.crossOrigin = 'anonymous'
     img.onload = () => resolve(img)
     img.onerror = reject
-    img.src = src
+    // Cache-bust so the canvas gets a fresh CORS-enabled response instead of the
+    // page's already-cached <img> copy (which lacks CORS headers and taints the
+    // canvas → posters silently fell back to the placeholder tile).
+    img.src = src + (src.includes('?') ? '&' : '?') + 'swaipimg=1'
   })
 }
 
@@ -76,7 +79,7 @@ function drawLogo(ctx, W, H) {
 }
 
 // ── Single-match share (food / single movie) ──────────────────────
-async function generateSingleMatchImage({ title, posterUrl, emoji, swipeCount, platforms, rating, year }) {
+async function generateSingleMatchImage({ title, posterUrl, emoji, swipeCount, platforms, rating, year, solo = false }) {
   const W = 1080, H = 1920
   const canvas = document.createElement('canvas')
   canvas.width = W; canvas.height = H
@@ -123,9 +126,13 @@ async function generateSingleMatchImage({ title, posterUrl, emoji, swipeCount, p
   ctx.fillStyle = 'rgba(255,255,255,0.6)'
   ctx.font = `500 46px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
   ctx.textAlign = 'center'
-  const sub = swipeCount != null
-    ? `It took us ${swipeCount} swipe${swipeCount !== 1 ? 's' : ''}, but we finally agreed on`
-    : `We both agreed on`
+  const sub = solo
+    ? (swipeCount != null
+        ? `Out of ${swipeCount} swipe${swipeCount !== 1 ? 's' : ''}, I picked`
+        : `I want to watch`)
+    : (swipeCount != null
+        ? `It took us ${swipeCount} swipe${swipeCount !== 1 ? 's' : ''}, but we finally agreed on`
+        : `We both agreed on`)
   const subH = wrapText(ctx, sub, W / 2, textY, W * 0.8, 62)
 
   ctx.fillStyle = '#FFFFFF'
@@ -192,7 +199,7 @@ function drawPlatformChips(ctx, platforms, x, y, maxWidth, centerAt = null) {
 }
 
 // ── Multi-match share (movie/series results) ──────────────────────
-async function generateMatchesImage({ items, typeLabel, recommendation }) {
+async function generateMatchesImage({ items, typeLabel, recommendation, solo = false }) {
   const W = 1080, H = 1920
   const canvas = document.createElement('canvas')
   canvas.width = W; canvas.height = H
@@ -224,7 +231,7 @@ async function generateMatchesImage({ items, typeLabel, recommendation }) {
   ctx.fillStyle = 'rgba(255,255,255,0.55)'
   ctx.font = `600 40px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
   ctx.textAlign = 'center'
-  ctx.fillText('We both want to watch', W / 2, headerY)
+  ctx.fillText(solo ? 'I want to watch' : 'We both want to watch', W / 2, headerY)
 
   ctx.fillStyle = '#FFFFFF'
   ctx.font = `900 88px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
@@ -347,14 +354,14 @@ async function generateMatchesImage({ items, typeLabel, recommendation }) {
 }
 
 // ── Public API ────────────────────────────────────────────────────
-export async function generateShareImage({ title, posterUrl, emoji, swipeCount, items, mode, typeLabel, platforms, rating, year, recommendation }) {
+export async function generateShareImage({ title, posterUrl, emoji, swipeCount, items, mode, typeLabel, platforms, rating, year, recommendation, solo = false }) {
   if (mode === 'matches' && items && items.length > 1) {
-    return generateMatchesImage({ items, typeLabel, recommendation })
+    return generateMatchesImage({ items, typeLabel, recommendation, solo })
   }
   // Single match — pull details from items[0] when the caller passed a list.
   const single = items && items.length === 1 ? items[0] : {}
   return generateSingleMatchImage({
-    title, posterUrl, emoji, swipeCount,
+    title, posterUrl, emoji, swipeCount, solo,
     platforms: platforms ?? single.platforms,
     rating: rating ?? single.rating,
     year: year ?? single.year,

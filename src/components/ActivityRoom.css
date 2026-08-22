@@ -575,14 +575,15 @@
 }
 
 .done-early-btn {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--text-muted);
-  background: none;
-  border: none;
-  padding: 8px 16px;
+  color: var(--text);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  padding: 11px 28px;
   border-radius: var(--radius-pill);
-  transition: color 0.2s;
+  box-shadow: var(--shadow-xs);
+  transition: border-color 0.2s, background 0.2s;
   cursor: pointer;
 }
-.done-early-btn:hover { color: var(--text); }
+.done-early-btn:hover { border-color: var(--border-hover); background: var(--bg-card-hover); }

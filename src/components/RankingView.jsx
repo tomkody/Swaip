@@ -220,6 +220,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
         swipeCount: matches.length,
         mode: 'matches',
         typeLabel,
+        solo: isSolo,
         recommendation: recommendation?.movie?.title || null,
       })
       // Try native share sheet first (mobile), fall back to download
@@ -275,19 +276,17 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
             ? isSolo ? `Your picks: ${countLabel(matches.length)}` : `You matched on ${countLabel(matches.length)}!`
             : isSolo ? `Nothing picked this time` : `No matches this time`
           }</h2>
-          <p className="rv-hero-sub">
-            {matches.length === 0
-              ? (isSolo ? 'Swipe right on more next time!' : playerCount > 2 ? 'No unanimous group picks — try again with fewer people or different picks!' : 'Try swiping more next time!')
-              : hasMyPicks
-                ? playerCount > 2
-                  ? `Here's what everyone agreed on:`
-                  : top3.length === 1 ? `This is my #1 pick:` : `These are my top ${top3.length}:`
-                : isSolo
-                  ? `Everything you liked:`
-                  : playerCount > 2
-                    ? `Everything your group of ${playerCount} all agreed on:`
-                    : `Here's everything you both want to watch:`}
-          </p>
+          {(() => {
+            // Skip the subtitle once we have ranked picks — the "My Top 3" label
+            // below already says it.
+            let sub = ''
+            if (matches.length === 0) {
+              sub = isSolo ? 'Swipe right on more next time!' : playerCount > 2 ? 'No unanimous group picks — try again with fewer people or different picks!' : 'Try swiping more next time!'
+            } else if (!hasMyPicks) {
+              sub = isSolo ? 'Everything you liked:' : playerCount > 2 ? `Everything your group of ${playerCount} all agreed on:` : `Here's everything you both want to watch:`
+            }
+            return sub ? <p className="rv-hero-sub">{sub}</p> : null
+          })()}
         </div>
 
         {/* Recommended pick — once both have locked in a Top 3 */}
