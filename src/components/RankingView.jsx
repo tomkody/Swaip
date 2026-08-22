@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches, subscribeToSwipes, fetchRoomPicks, subscribeToRoomPicks } from '../lib/room'
 import { getPlatformMeta, getWatchUrl } from '../lib/platforms'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
+import { track } from '../lib/analytics'
 import './RankingView.css'
 
 // "Where to watch" brand chips for a movie/series result (nothing for places).
@@ -178,6 +179,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
 
   async function handleSubmit() {
     setSubmitting(true)
+    track('rankings_locked', { type: room.type, picks: top3.length })
     // Always show results regardless of DB success
     setPhase('results')
     try {
@@ -210,6 +212,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
 
   async function handleShare() {
     if (sharing) return
+    track('results_shared', { type: room.type, matches: matches.length, solo: isSolo })
     setSharing(true)
     try {
       const typeLabel = room.type === 'series' ? 'shows' : room.type === 'activities' ? 'activities' : room.type === 'food' ? 'restaurants' : 'movies'
@@ -345,6 +348,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                         href={getWatchUrl(meta.id, m.title)}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() => track('watch_clicked', { type: room.type, platform: meta.id })}
                         style={{ background: meta.color === '#ffffff' ? '#000000' : meta.color, color: '#fff' }}
                       >
                         ▶ {multi ? meta.name : `Watch on ${meta.name}`}

@@ -11,6 +11,7 @@ import ActivityRoom from '../components/ActivityRoom'
 import FoodRoom from '../components/FoodRoom'
 import RankingView from '../components/RankingView'
 import InvitePanel from '../components/InvitePanel'
+import { track } from '../lib/analytics'
 import './Room.css'
 
 function parseRoomFilters(raw) {
@@ -120,6 +121,7 @@ export default function Room() {
         })
         // Only show match-modal overlay while still actively swiping
         if (!isDoneRef.current) {
+          track('match', { type: room.type })
           setMatchItem(matched)
         }
       }
@@ -141,6 +143,7 @@ export default function Room() {
         try {
           const isMatch = await recordSwipe(roomId, userToken.current, movie.id, direction)
           if (isMatch) {
+            track('match', { type: room.type })
             setMatchItem(movie)
             setMatches((prev) => [...prev, movie])
           }
@@ -151,7 +154,7 @@ export default function Room() {
 
       setCurrentIndex((i) => i + 1)
     },
-    [movies, currentIndex, roomId, isSolo]
+    [movies, currentIndex, roomId, isSolo, room?.type]
   )
 
   // Tell the room this user finished swiping (sentinel row, ignored as a pick).

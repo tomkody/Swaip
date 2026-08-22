@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import QRCode from 'qrcode'
+import { track } from '../lib/analytics'
 import './InvitePanel.css'
 
 // Per-type invite copy — the message that lands in the partner's DM/text.
@@ -26,6 +27,7 @@ export default function InvitePanel({ roomId, type = 'movies' }) {
   }, [showQr, qr, url])
 
   function handleShare() {
+    track('invite_shared', { type })
     if (navigator.share) {
       navigator.share({ title: 'Swaip', text: `${message} →`, url }).catch(() => {})
     } else {
@@ -34,6 +36,7 @@ export default function InvitePanel({ roomId, type = 'movies' }) {
   }
 
   function handleCopy() {
+    track('invite_copied', { type })
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)

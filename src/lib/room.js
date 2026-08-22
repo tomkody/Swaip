@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import { v4 as uuidv4 } from 'uuid'
 import { detectRegion } from './tmdb'
+import { track } from './analytics'
 
 // Sentinel item ids used to signal "I'm done" rather than a real pick.
 // (activities categories, food cuisines, movie/series decks)
@@ -81,6 +82,7 @@ export function getUserToken() {
 
 // Create a movie room
 export async function createMovieRoom(platforms = [], genres = [], { solo = false } = {}) {
+  track('room_created', { type: 'movies', solo })
   const roomId = uuidv4().slice(0, 8)
   // Pin the creator's region so every partner swipes the SAME deck.
   const filters = JSON.stringify({ platforms, genres, region: detectRegion(), ...(solo && { solo: true }) })
@@ -102,6 +104,7 @@ export async function createMovieRoom(platforms = [], genres = [], { solo = fals
 
 // Create a conversation room (topicIds is an array of topic IDs)
 export async function createConversationRoom(topicIds, topicNames, { solo = false } = {}) {
+  track('room_created', { type: 'conversations', solo })
   const roomId = uuidv4().slice(0, 8)
   const topicIdJson = solo
     ? JSON.stringify({ topicIds, solo: true })
@@ -138,6 +141,7 @@ export async function createConversationRoom(topicIds, topicNames, { solo = fals
 
 // Create a TV series room
 export async function createSeriesRoom(platforms = [], genres = [], { solo = false } = {}) {
+  track('room_created', { type: 'series', solo })
   const roomId = uuidv4().slice(0, 8)
   // Pin the creator's region so every partner swipes the SAME deck.
   const filters = JSON.stringify({ platforms, genres, region: detectRegion(), ...(solo && { solo: true }) })
@@ -198,6 +202,7 @@ export async function checkMutualSwipesByIds(roomId, userToken, itemIds, playerC
 
 // Create a food room
 export async function createFoodRoom({ lat, lng, locationName, radius, countryCode, solo = false, playerCount = 2 } = {}) {
+  track('room_created', { type: 'food', solo })
   const roomId = uuidv4().slice(0, 8)
   const pc = solo ? 1 : Math.max(2, Math.min(6, playerCount))
   const locationData = (lat != null && lng != null)
@@ -218,6 +223,7 @@ export async function createFoodRoom({ lat, lng, locationName, radius, countryCo
 
 // Create an activity room
 export async function createActivityRoom({ lat, lng, locationName, radius, solo = false, playerCount = 2 } = {}) {
+  track('room_created', { type: 'activities', solo })
   const roomId = uuidv4().slice(0, 8)
   const pc = solo ? 1 : Math.max(2, Math.min(6, playerCount))
 
