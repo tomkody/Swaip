@@ -77,39 +77,52 @@
   border-radius: var(--radius);
   overflow: hidden;
   margin-bottom: 20px;
+  padding: 18px 16px;
 }
 
 .match-poster {
-  width: 100%;
-  height: 170px;
-  object-fit: cover;
   display: block;
+  margin: 0 auto 14px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+/* Movies / series — the whole portrait poster, no crop */
+.match-poster--portrait {
+  width: 150px;
+  aspect-ratio: 2 / 3;
+  height: auto;
+}
+/* Food / activities — landscape place photo */
+.match-poster--wide {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
 }
 
 .match-poster-placeholder {
-  height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 44px;
+  font-size: 52px;
   background: var(--accent-soft);
 }
 
 .match-item-title {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 700;
-  margin: 12px 14px 2px;
+  margin: 0 0 3px;
   letter-spacing: -0.3px;
   color: var(--text);
-  text-align: left;
+  text-align: center;
 }
 
 .match-meta {
   font-size: 13px;
   color: var(--text-muted);
   font-weight: 400;
-  margin: 0 14px 12px;
-  text-align: left;
+  margin: 0 0 14px;
+  text-align: center;
 }
 
 .match-actions {

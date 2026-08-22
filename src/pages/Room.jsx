@@ -346,6 +346,7 @@ export default function Room() {
           item={matchItem}
           roomType={room.type}
           swipeCount={currentIndex}
+          matchCount={matches.length}
           onContinue={() => setMatchItem(null)}
           onDone={async () => {
             setMatchItem(null)
