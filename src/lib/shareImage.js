@@ -1,16 +1,30 @@
 import { getPlatformMeta } from './platforms'
 
-function loadImage(src) {
+function imgFromUrl(url, crossOrigin) {
   return new Promise((resolve, reject) => {
     const img = new Image()
-    img.crossOrigin = 'anonymous'
+    if (crossOrigin) img.crossOrigin = 'anonymous'
     img.onload = () => resolve(img)
     img.onerror = reject
-    // Cache-bust so the canvas gets a fresh CORS-enabled response instead of the
-    // page's already-cached <img> copy (which lacks CORS headers and taints the
-    // canvas → posters silently fell back to the placeholder tile).
-    img.src = src + (src.includes('?') ? '&' : '?') + 'swaipimg=1'
+    img.src = url
   })
+}
+
+// Load a poster for the canvas. iOS Safari won't reliably give a canvas a
+// CORS-clean <img> (crossOrigin loads get served the page's already-cached,
+// non-CORS copy → the canvas taints and export fails). Fetching the bytes and
+// loading them from a same-origin blob URL sidesteps that entirely; fall back
+// to a direct crossOrigin load if fetch is blocked.
+async function loadImage(src) {
+  try {
+    const res = await fetch(src, { mode: 'cors', cache: 'reload' })
+    if (res.ok) {
+      const url = URL.createObjectURL(await res.blob())
+      try { return await imgFromUrl(url, false) }
+      finally { URL.revokeObjectURL(url) }
+    }
+  } catch { /* fall through */ }
+  return imgFromUrl(src, true)
 }
 
 // #RGB / #RRGGBB → rgba() string

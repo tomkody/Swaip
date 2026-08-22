@@ -318,24 +318,39 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                 if (isPlace) {
                   const q = encodeURIComponent([m.title, m.address].filter(Boolean).join(' '))
                   return (
-                    <a className="rv-reco-watch rv-reco-watch--neutral" href={`https://www.google.com/maps/search/?api=1&query=${q}`} target="_blank" rel="noopener noreferrer">
-                      📍 Get directions
-                    </a>
+                    <div className="rv-reco-watch-row">
+                      <a className="rv-reco-watch rv-reco-watch--neutral" href={`https://www.google.com/maps/search/?api=1&query=${q}`} target="_blank" rel="noopener noreferrer">
+                        📍 Get directions
+                      </a>
+                    </div>
                   )
                 }
-                const primary = m.platforms?.[0]
-                const meta = primary ? getPlatformMeta(primary) : null
-                const bg = meta ? (meta.color === '#ffffff' ? '#000000' : meta.color) : null
+                const metas = (m.platforms || []).map(getPlatformMeta).filter(Boolean).slice(0, 3)
+                if (metas.length === 0) {
+                  return (
+                    <div className="rv-reco-watch-row">
+                      <a className="rv-reco-watch rv-reco-watch--neutral" href={getWatchUrl(undefined, m.title)} target="_blank" rel="noopener noreferrer">
+                        🔍 Find where to watch
+                      </a>
+                    </div>
+                  )
+                }
+                const multi = metas.length > 1
                 return (
-                  <a
-                    className={`rv-reco-watch ${meta ? '' : 'rv-reco-watch--neutral'}`}
-                    href={getWatchUrl(primary, m.title)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={bg ? { background: bg, color: '#fff' } : undefined}
-                  >
-                    {meta ? `▶ Watch on ${meta.name}` : '🔍 Find where to watch'}
-                  </a>
+                  <div className={`rv-reco-watch-row ${multi ? 'is-multi' : ''}`}>
+                    {metas.map(meta => (
+                      <a
+                        key={meta.id}
+                        className="rv-reco-watch"
+                        href={getWatchUrl(meta.id, m.title)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ background: meta.color === '#ffffff' ? '#000000' : meta.color, color: '#fff' }}
+                      >
+                        ▶ {multi ? meta.name : `Watch on ${meta.name}`}
+                      </a>
+                    ))}
+                  </div>
                 )
               })()}
             </div>
