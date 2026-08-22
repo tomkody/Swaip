@@ -206,6 +206,9 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
 
   const emoji = room.type === 'series' ? '📺' : room.type === 'activities' ? '🎯' : room.type === 'food' ? '🍽️' : '🎬'
   const typeLabel = room.type === 'series' ? 'shows' : room.type === 'activities' ? 'activities' : room.type === 'food' ? 'restaurants' : 'movies'
+  // "1 movie" not "1 movies"
+  const typeSingular = room.type === 'series' ? 'show' : room.type === 'activities' ? 'activity' : room.type === 'food' ? 'restaurant' : 'movie'
+  const countLabel = n => `${n} ${n === 1 ? typeSingular : typeLabel}`
 
   // ── RESULTS ──────────────────────────────────────────────────────
   if (phase === 'results') {
@@ -220,7 +223,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
         <div className="rv-results-hero">
           <div className="rv-icon">{matches.length > 0 ? (isSolo ? '✨' : '🎉') : '😅'}</div>
           <h2>{matches.length > 0
-            ? isSolo ? `Your picks: ${matches.length} ${typeLabel}` : `You matched on ${matches.length} ${typeLabel}!`
+            ? isSolo ? `Your picks: ${countLabel(matches.length)}` : `You matched on ${countLabel(matches.length)}!`
             : isSolo ? `Nothing picked this time` : `No matches this time`
           }</h2>
           <p className="rv-hero-sub">
