@@ -26,6 +26,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
   const [top3, setTop3] = useState([])
   const [phase, setPhase] = useState('rank') // 'rank' | 'results'
   const [partnerRanks, setPartnerRanks] = useState(null)
+  const [rankingsOff, setRankingsOff] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [sharing, setSharing] = useState(false)
   const dragFrom = useRef(null)
@@ -86,9 +87,15 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
   const checkPartner = useCallback(async () => {
     if (isSolo || rankingsDeadRef.current) return
     const { partnerRanking, partnerSubmitted, unavailable } = await getRankings(room.id, userToken.current)
-    if (unavailable) { rankingsDeadRef.current = true; return }
+    if (unavailable) { rankingsDeadRef.current = true; setRankingsOff(true); return }
     if (partnerSubmitted) setPartnerRanks(partnerRanking)
   }, [isSolo, room.id])
+
+  // One button refreshes both partner picks and their locked-in top 3
+  const refreshAll = useCallback(() => {
+    refreshPicks()
+    checkPartner()
+  }, [refreshPicks, checkPartner])
 
   useEffect(() => {
     if (isSolo) return
@@ -273,6 +280,70 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
           </div>
         )}
 
+        {/* Partner's / group's locked-in Top 3 — live, with manual refresh */}
+        {!isSolo && !rankingsOff && (() => {
+          const groupWord = playerCount > 2 ? 'The group' : 'Partner'
+          const rankItems = (partnerRanks || [])
+            .map(id => movies.find(m => m.id === id))
+            .filter(Boolean)
+          const mutual = new Set(picks?.mutualIds || [])
+          const submitted = partnerRanks != null
+
+          return (
+            <div className="rv-match-list rv-partner-block rv-top3-block">
+              <div className="rv-partner-head">
+                <div className="rv-partner-headtext">
+                  <p className="rv-label rv-label--tight">🏆 {groupWord}'s Top {rankItems.length > 0 ? rankItems.length : 3}</p>
+                  <p className="rv-partner-status">
+                    {submitted
+                      ? `Locked in${agoLabel ? ` · ${agoLabel}` : ''}`
+                      : `Waiting for ${playerCount > 2 ? 'the group' : 'your partner'} to lock in…`}
+                  </p>
+                </div>
+                <button
+                  className={`rv-refresh ${refreshing ? 'is-busy' : ''}`}
+                  onClick={refreshAll}
+                  disabled={refreshing}
+                  aria-label="Refresh partner top 3"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 12a9 9 0 1 1-2.64-6.36" /><polyline points="21 3 21 9 15 9" />
+                  </svg>
+                  {refreshing ? 'Refreshing' : 'Refresh'}
+                </button>
+              </div>
+
+              {rankItems.length === 0 ? (
+                <p className="rv-empty">
+                  {submitted
+                    ? `${playerCount > 2 ? 'The group' : 'They'} didn't rank anything.`
+                    : `Nothing yet — tap Refresh once ${playerCount > 2 ? 'they' : 'your partner'} finishes ranking.`}
+                </p>
+              ) : (
+                rankItems.map((m, i) => {
+                  const isMutual = mutual.has(m.id)
+                  return (
+                    <div key={m.id} className={`rv-result-card ${isMutual ? 'rv-partner-mutual' : ''}`}>
+                      <div className="rv-result-card-inner">
+                        <span className="rv-pick-num">#{i + 1}</span>
+                        {m.poster
+                          ? <img src={m.poster} alt={m.title} className="rv-result-poster" />
+                          : <div className="rv-result-poster rv-result-poster-empty">{emoji}</div>}
+                        <div className="rv-result-info">
+                          <strong>{m.title}</strong>
+                          <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                          <PlatformBadges platforms={m.platforms} />
+                        </div>
+                        {isMutual && <span className="rv-partner-tag rv-partner-tag--match">✓ Both</span>}
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          )
+        })()}
+
         {/* Other matches — only when there are pinned top picks above */}
         {hasMyPicks && rest.length > 0 && (
           <div className="rv-match-list">
@@ -362,7 +433,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                 </div>
                 <button
                   className={`rv-refresh ${refreshing ? 'is-busy' : ''}`}
-                  onClick={refreshPicks}
+                  onClick={refreshAll}
                   disabled={refreshing}
                   aria-label="Refresh partner picks"
                 >

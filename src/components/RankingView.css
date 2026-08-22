@@ -706,6 +706,10 @@
 /* ── "What your partner picked" panel ─────────────────────────────── */
 .rv-partner-block { margin-top: 22px; }
 
+.rv-top3-block .rv-result-card {
+  border-left: 3px solid rgba(255, 200, 60, 0.55);
+}
+
 .rv-partner-head {
   display: flex;
   align-items: flex-start;
