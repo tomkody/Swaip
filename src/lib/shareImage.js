@@ -76,7 +76,7 @@ function drawLogo(ctx, W, H) {
 }
 
 // ── Single-match share (food / single movie) ──────────────────────
-async function generateSingleMatchImage({ title, posterUrl, emoji, swipeCount, platforms, rating, year }) {
+async function generateSingleMatchImage({ title, posterUrl, emoji, swipeCount, platforms, rating, year, compat }) {
   const W = 1080, H = 1920
   const canvas = document.createElement('canvas')
   canvas.width = W; canvas.height = H
@@ -159,6 +159,30 @@ async function generateSingleMatchImage({ title, posterUrl, emoji, swipeCount, p
   ctx.lineTo(W * 0.7, cursorY + 44)
   ctx.stroke()
 
+  // Compatibility pill — just below the divider
+  if (compat != null) {
+    const tier = compat >= 90 ? '💞' : compat >= 75 ? '🔥' : compat >= 55 ? '✨' : compat >= 40 ? '🧲' : '😅'
+    const pillText = `${tier} ${compat}% compatible`
+    ctx.font = `700 40px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
+    const pw = ctx.measureText(pillText).width + 56
+    const ph = 68, pillY = cursorY + 88, px = W / 2 - pw / 2
+    const pg = ctx.createLinearGradient(px, pillY, px + pw, pillY)
+    pg.addColorStop(0, 'rgba(247,79,94,0.28)')
+    pg.addColorStop(1, 'rgba(247,120,74,0.28)')
+    ctx.fillStyle = pg
+    drawRoundedRect(ctx, px, pillY, pw, ph, ph / 2)
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(247,120,74,0.55)'
+    ctx.lineWidth = 2
+    drawRoundedRect(ctx, px, pillY, pw, ph, ph / 2)
+    ctx.stroke()
+    ctx.fillStyle = '#FFFFFF'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(pillText, W / 2, pillY + ph / 2 + 2)
+    ctx.textBaseline = 'alphabetic'
+  }
+
   drawLogo(ctx, W, H)
   return canvas
 }
@@ -192,7 +216,7 @@ function drawPlatformChips(ctx, platforms, x, y, maxWidth, centerAt = null) {
 }
 
 // ── Multi-match share (movie/series results) ──────────────────────
-async function generateMatchesImage({ items, typeLabel }) {
+async function generateMatchesImage({ items, typeLabel, compat, recommendation }) {
   const W = 1080, H = 1920
   const canvas = document.createElement('canvas')
   canvas.width = W; canvas.height = H
@@ -230,12 +254,52 @@ async function generateMatchesImage({ items, typeLabel }) {
   ctx.font = `900 88px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
   ctx.fillText(`${items.length} ${typeLabel || 'matches'}`, W / 2, headerY + 104)
 
+  let dividerY = headerY + 150
+
+  // Compatibility pill — the shareable headline number
+  if (compat != null) {
+    const tier = compat >= 90 ? '💞' : compat >= 75 ? '🔥' : compat >= 55 ? '✨' : compat >= 40 ? '🧲' : '😅'
+    const pillText = `${tier} ${compat}% compatible`
+    ctx.font = `700 40px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
+    const pw = ctx.measureText(pillText).width + 56
+    const ph = 68, pillY = headerY + 150, px = W / 2 - pw / 2
+    const pg = ctx.createLinearGradient(px, pillY, px + pw, pillY)
+    pg.addColorStop(0, 'rgba(247,79,94,0.28)')
+    pg.addColorStop(1, 'rgba(247,120,74,0.28)')
+    ctx.fillStyle = pg
+    drawRoundedRect(ctx, px, pillY, pw, ph, ph / 2)
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(247,120,74,0.55)'
+    ctx.lineWidth = 2
+    drawRoundedRect(ctx, px, pillY, pw, ph, ph / 2)
+    ctx.stroke()
+    ctx.fillStyle = '#FFFFFF'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(pillText, W / 2, pillY + ph / 2 + 2)
+    ctx.textBaseline = 'alphabetic'
+    dividerY = pillY + ph + 40
+  }
+
   ctx.strokeStyle = 'rgba(255,255,255,0.1)'
   ctx.lineWidth = 2
   ctx.beginPath()
-  ctx.moveTo(W * 0.12, headerY + 150)
-  ctx.lineTo(W * 0.88, headerY + 150)
+  ctx.moveTo(W * 0.12, dividerY)
+  ctx.lineTo(W * 0.88, dividerY)
   ctx.stroke()
+
+  // "Play this" recommendation caption
+  let contentTop = dividerY + 50
+  if (recommendation) {
+    ctx.fillStyle = 'rgba(247,120,74,0.95)'
+    ctx.font = `700 36px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
+    ctx.textAlign = 'center'
+    let rec = `▶ Tonight: ${recommendation}`
+    while (ctx.measureText(rec).width > W * 0.82 && rec.length > 12) rec = rec.slice(0, -1)
+    if (!rec.endsWith(recommendation) && !rec.endsWith('…')) rec = rec.trimEnd() + '…'
+    ctx.fillText(rec, W / 2, contentTop + 12)
+    contentTop += 62
+  }
 
   // Cards — up to 4, poster + title + meta + platform chips
   const displayItems = items.slice(0, 4)
@@ -243,7 +307,7 @@ async function generateMatchesImage({ items, typeLabel }) {
   const cardW = W - cardPad * 2
   const cardH = 216
   const cardGap = 24
-  const cardStartY = headerY + 200
+  const cardStartY = contentTop
   const posterW = 120, posterH = 172
   const emojiMap = { series: '📺', activities: '🎯', food: '🍽️' }
   const fallbackEmoji = emojiMap[typeLabel] || '🎬'
@@ -332,9 +396,9 @@ async function generateMatchesImage({ items, typeLabel }) {
 }
 
 // ── Public API ────────────────────────────────────────────────────
-export async function generateShareImage({ title, posterUrl, emoji, swipeCount, items, mode, typeLabel, platforms, rating, year }) {
+export async function generateShareImage({ title, posterUrl, emoji, swipeCount, items, mode, typeLabel, platforms, rating, year, compat, recommendation }) {
   if (mode === 'matches' && items && items.length > 1) {
-    return generateMatchesImage({ items, typeLabel })
+    return generateMatchesImage({ items, typeLabel, compat, recommendation })
   }
   // Single match — pull details from items[0] when the caller passed a list.
   const single = items && items.length === 1 ? items[0] : {}
@@ -343,6 +407,7 @@ export async function generateShareImage({ title, posterUrl, emoji, swipeCount, 
     platforms: platforms ?? single.platforms,
     rating: rating ?? single.rating,
     year: year ?? single.year,
+    compat,
   })
 }
 

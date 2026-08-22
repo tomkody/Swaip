@@ -704,6 +704,34 @@
 }
 
 /* ── "What your partner picked" panel ─────────────────────────────── */
+.rv-compat {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 4px 0 18px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+.rv-compat-ring {
+  --pct: 0%;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(closest-side, var(--bg-card) 70%, transparent 71% 100%),
+    conic-gradient(var(--accent-coral, #FF6B6B) var(--pct), var(--bg-surface) 0);
+}
+.rv-compat-num { font-size: 1.35rem; font-weight: 800; line-height: 1; }
+.rv-compat-num small { font-size: 0.7rem; font-weight: 700; opacity: 0.7; }
+.rv-compat-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rv-compat-text strong { font-size: 1.05rem; }
+.rv-compat-text span { font-size: 0.86rem; opacity: 0.78; }
+
 .rv-reco {
   margin: 6px 0 24px;
   padding: 14px;
@@ -716,7 +744,7 @@
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: var(--rv-accent, #e6b800);
+  color: var(--accent-coral, #FF6B6B);
 }
 .rv-reco-card { display: flex; gap: 14px; align-items: center; }
 .rv-reco-poster {
