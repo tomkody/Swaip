@@ -55,7 +55,7 @@ export default function InvitePanel({ roomId, type = 'movies' }) {
       </button>
 
       <button className="invite-qr-toggle" onClick={() => setShowQr(v => !v)}>
-        {showQr ? 'Hide QR code' : 'Together? Show QR code'}
+        {showQr ? 'Hide QR code' : 'Show QR code'}
       </button>
 
       {showQr && qr && (

@@ -234,15 +234,15 @@ export default function Room() {
     const pc = getRoomPlayerCount(room)
     return (
       <div className="room-center">
+        <div className="waiting-category">
+          {room.type === 'movies' ? '🎬 Movies' : room.type === 'series' ? '📺 TV Series' : room.type === 'activities' ? '🎯 Activities' : room.type === 'food' ? '🍽️ Food & Drinks' : `💬 ${room.topic_name}`}
+        </div>
         <div className="waiting">
           <div className="waiting-icon">⏳</div>
           <h2>{pc > 2 ? `Waiting for your group` : `Waiting for your partner`}</h2>
-          <p className="waiting-genre">
-            {room.type === 'movies' ? '🎬 Movies' : room.type === 'series' ? '📺 TV Series' : room.type === 'activities' ? '🎯 Activities' : room.type === 'food' ? '🍽️ Food & Drinks' : `💬 ${room.topic_name}`}
-          </p>
           <InvitePanel roomId={roomId} type={room.type} />
-          <button className="skip-wait" onClick={() => setPartnerJoined(true)}>
-            {room.type === 'movies' || room.type === 'series' || room.type === 'food' ? 'or start swiping solo' : 'or start solo'}
+          <button className="btn skip-wait" onClick={() => setPartnerJoined(true)}>
+            You can start swiping solo
           </button>
         </div>
       </div>

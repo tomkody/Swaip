@@ -104,6 +104,24 @@
   padding: 24px 20px;
   text-align: center;
   gap: 16px;
+  position: relative;
+}
+
+/* Category chip pinned to the top — what this session is swiping through */
+.waiting-category {
+  position: absolute;
+  top: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  box-shadow: var(--shadow-xs);
 }
 
 .loader {
@@ -254,25 +272,23 @@
   letter-spacing: -0.3px;
 }
 
-.waiting-genre {
-  font-size: 16px;
-  color: var(--text-muted);
-  margin: 0 0 28px;
-  font-weight: 500;
-}
-
-/* Quiet tertiary — a text link well separated from the invite actions */
+/* Secondary action — visible, but lighter than the primary "Send invite" */
 .skip-wait {
-  margin-top: 26px;
-  background: none;
-  border: none;
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  opacity: 0.75;
+  margin-top: 30px;
+  padding: 12px 24px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: border-color 0.15s, background 0.15s;
 }
-.skip-wait:hover { opacity: 1; }
+.skip-wait:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
 
 /* Done state */
 .done {
