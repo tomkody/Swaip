@@ -257,58 +257,22 @@
 .waiting-genre {
   font-size: 16px;
   color: var(--text-muted);
-  margin: 0 0 20px;
+  margin: 0 0 28px;
   font-weight: 500;
 }
 
-.waiting-text {
-  font-size: 14px;
-  color: var(--text-muted);
-  margin: 0 0 12px;
-}
-
-.share-link {
-  display: flex;
-  align-items: center;
-  background: var(--bg-card);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 4px;
-  margin-bottom: 20px;
-  gap: 4px;
-  box-shadow: var(--shadow-xs);
-}
-
-.link-text {
-  flex: 1;
-  padding: 8px 12px;
-  font-size: 12px;
-  color: var(--text-muted);
-  word-break: break-all;
-  text-align: left;
-  background: none;
-  font-family: 'Inter', sans-serif;
-}
-
-.copy-btn {
-  padding: 8px 16px;
-  background: var(--gradient-primary);
-  color: #1E222B;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
-  transition: all 0.25s;
-  box-shadow: 0 2px 12px rgba(255, 107, 107, 0.22);
-}
-
-.copy-btn:hover {
-  box-shadow: 0 4px 20px rgba(255, 107, 107, 0.32);
-}
-
+/* Quiet tertiary — a text link well separated from the invite actions */
 .skip-wait {
-  width: 100%;
+  margin-top: 26px;
+  background: none;
+  border: none;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  opacity: 0.75;
+  cursor: pointer;
+  transition: opacity 0.15s;
 }
+.skip-wait:hover { opacity: 1; }
 
 /* Done state */
 .done {

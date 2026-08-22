@@ -241,8 +241,8 @@ export default function Room() {
             {room.type === 'movies' ? '🎬 Movies' : room.type === 'series' ? '📺 TV Series' : room.type === 'activities' ? '🎯 Activities' : room.type === 'food' ? '🍽️ Food & Drinks' : `💬 ${room.topic_name}`}
           </p>
           <InvitePanel roomId={roomId} type={room.type} />
-          <button className="btn btn-secondary skip-wait" onClick={() => setPartnerJoined(true)}>
-            {room.type === 'movies' || room.type === 'series' || room.type === 'food' ? 'Start swiping solo' : 'Start solo'}
+          <button className="skip-wait" onClick={() => setPartnerJoined(true)}>
+            {room.type === 'movies' || room.type === 'series' || room.type === 'food' ? 'or start swiping solo' : 'or start solo'}
           </button>
         </div>
       </div>
