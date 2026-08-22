@@ -158,7 +158,7 @@ export default function CreateFoodRoom() {
 
       <div className="create-activity-content">
         <div className="activity-hero-icon">🍽️</div>
-        <h1>Food & Dining</h1>
+        <h1>Food & Drinks</h1>
 
         <ModeToggle solo={solo} onChange={setSolo} />
 

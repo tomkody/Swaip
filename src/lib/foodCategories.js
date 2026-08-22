@@ -15,6 +15,7 @@ export const FOOD_CATEGORIES = [
   { id: 'cafe',          numId: 2010, label: 'Café & Bakery',   emoji: '☕', desc: 'Coffee, croissants, brunch, cake',            types: ['cafe', 'bakery', 'brunch_restaurant'],                       gradient: 'linear-gradient(135deg, #6F4E37, #C9956C)' },
   { id: 'vegan',         numId: 2011, label: 'Vegan & Veggie',  emoji: '🌱', desc: 'Plant-based, fresh bowls, salads',           types: ['vegan_restaurant', 'vegetarian_restaurant'],                 gradient: 'linear-gradient(135deg, #27AE60, #82E0AA)' },
   { id: 'spanish',       numId: 2012, label: 'Spanish',         emoji: '🥘', desc: 'Tapas, paella, jamón, churros, sangría',     types: ['spanish_restaurant'],                                        gradient: 'linear-gradient(135deg, #C0392B, #F39C12)' },
+  { id: 'drinks',        numId: 2014, label: 'Bars & Drinks',   emoji: '🍺', desc: 'Pubs, cocktail bars, wine bars, breweries',  types: ['bar', 'pub', 'wine_bar'],                                    gradient: 'linear-gradient(135deg, #2C3E50, #4CA1AF)' },
 ]
 
 // numId reserved for the dynamic "Local Cuisine" category

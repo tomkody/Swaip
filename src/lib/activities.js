@@ -1,9 +1,7 @@
 // numId is a stable integer used for the swipes table (item_id integer column).
 // Category numIds are 1000–1011 to avoid collisions with movie/food item IDs.
 export const ACTIVITY_CATEGORIES = [
-  { id: 'food',          numId: 1000, label: 'Food & Restaurants', emoji: '🍕', desc: 'Restaurants, takeaway, dining',       types: ['restaurant'],                      gradient: 'linear-gradient(135deg, #FF6B35, #F7C59F)' },
-  { id: 'cafe',          numId: 1001, label: 'Café & Coffee',       emoji: '☕', desc: 'Coffee shops and cafés',              types: ['cafe'],                             gradient: 'linear-gradient(135deg, #6F4E37, #C9956C)' },
-  { id: 'bars',          numId: 1002, label: 'Bars & Nightlife',    emoji: '🍺', desc: 'Bars, pubs and night clubs',          types: ['bar'],                              gradient: 'linear-gradient(135deg, #2C3E50, #4CA1AF)' },
+  { id: 'bars',          numId: 1002, label: 'Pub',                 emoji: '🍺', desc: 'Pubs, bars and night clubs',          types: ['bar'],                              gradient: 'linear-gradient(135deg, #2C3E50, #4CA1AF)' },
   { id: 'sightseeing',   numId: 1003, label: 'Sightseeing',         emoji: '🏛️', desc: 'Landmarks, monuments, attractions',  types: ['tourist_attraction'],               gradient: 'linear-gradient(135deg, #834d9b, #d04ed6)' },
   { id: 'museums',       numId: 1004, label: 'Museums & Culture',   emoji: '🎨', desc: 'Museums, galleries, exhibitions',    types: ['museum', 'art_gallery'],            gradient: 'linear-gradient(135deg, #1a1a2e, #e94560)' },
   { id: 'nature',        numId: 1005, label: 'Parks & Nature',      emoji: '🌿', desc: 'Parks, gardens, outdoor spaces',     types: ['park'],                             gradient: 'linear-gradient(135deg, #11998e, #38ef7d)' },

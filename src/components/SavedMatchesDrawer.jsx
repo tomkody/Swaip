@@ -5,7 +5,7 @@ import './SavedMatchesDrawer.css'
 const CATEGORY_LABELS = {
   movies:       { label: 'Movies',        emoji: '🎬' },
   series:       { label: 'TV Series',     emoji: '📺' },
-  food:         { label: 'Food & Dining', emoji: '🍽️' },
+  food:         { label: 'Food & Drinks', emoji: '🍽️' },
   conversations:{ label: 'Conversations', emoji: '💬' },
   activities:   { label: 'Activities',   emoji: '🎯' },
 }

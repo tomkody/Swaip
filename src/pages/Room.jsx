@@ -210,7 +210,7 @@ export default function Room() {
       series:        { emoji: '📺', label: 'TV Series',     desc: 'Swipe right on shows you want to binge. When you both like the same one — it\'s a match!' },
       conversations: { emoji: '💬', label: 'Conversations', desc: 'Pick the topics you\'d love to talk about. You\'ll only see topics you both chose.' },
       activities:    { emoji: '🎯', label: 'Activities',    desc: 'Pick activities you\'re up for. You\'ll see which ones you both want to do.' },
-      food:          { emoji: '🍽️', label: 'Food & Dining', desc: 'Swipe on cuisines first, then on real restaurants nearby. Time to eat!' },
+      food:          { emoji: '🍽️', label: 'Food & Drinks', desc: 'Swipe on cuisines first, then on real restaurants nearby. Time to eat!' },
     }
     const info = typeInfo[room.type] || typeInfo.movies
 
@@ -252,7 +252,7 @@ export default function Room() {
           <div className="waiting-icon">⏳</div>
           <h2>{pc > 2 ? `Waiting for your group` : `Waiting for your partner`}</h2>
           <p className="waiting-genre">
-            {room.type === 'movies' ? '🎬 Movies' : room.type === 'series' ? '📺 TV Series' : room.type === 'activities' ? '🎯 Activities' : room.type === 'food' ? '🍽️ Food & Dining' : `💬 ${room.topic_name}`}
+            {room.type === 'movies' ? '🎬 Movies' : room.type === 'series' ? '📺 TV Series' : room.type === 'activities' ? '🎯 Activities' : room.type === 'food' ? '🍽️ Food & Drinks' : `💬 ${room.topic_name}`}
           </p>
           <p className="waiting-text">Share this link to get started:</p>
           <div className="share-link">

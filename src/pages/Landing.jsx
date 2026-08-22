@@ -96,8 +96,8 @@ export default function Landing() {
             <span className="category-beta">Beta</span>
             <span className="category-emoji">🍽️</span>
             <div className="category-text">
-              <span className="category-name">Food & Dining</span>
-              <span className="category-desc">Pick a cuisine, then swipe through real restaurants near you.</span>
+              <span className="category-name">Food & Drinks</span>
+              <span className="category-desc">Pick a cuisine or a bar, then swipe through real spots near you.</span>
             </div>
           </button>
         </div>
