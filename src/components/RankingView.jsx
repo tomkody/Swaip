@@ -267,11 +267,9 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
             {matches.length === 0
               ? (isSolo ? 'Swipe right on more next time!' : playerCount > 2 ? 'No unanimous group picks — try again with fewer people or different picks!' : 'Try swiping more next time!')
               : hasMyPicks
-                ? isSolo
-                  ? `Out of ${movies.length} ${typeLabel} — ${top3.length === 1 ? 'this is my #1 pick' : `these are my top ${top3.length}`}:`
-                  : playerCount > 2
-                    ? `Group of ${playerCount} swiped ${movies.length} ${typeLabel} — here's what everyone agreed on:`
-                    : `We swiped through ${movies.length} ${typeLabel} and ${top3.length === 1 ? 'this is my #1 pick' : `these are my top ${top3.length}`}:`
+                ? playerCount > 2
+                  ? `Here's what everyone agreed on:`
+                  : top3.length === 1 ? `This is my #1 pick:` : `These are my top ${top3.length}:`
                 : isSolo
                   ? `Everything you liked:`
                   : playerCount > 2

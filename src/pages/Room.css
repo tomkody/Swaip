@@ -107,13 +107,11 @@
   position: relative;
 }
 
-/* Category chip pinned to the top — what this session is swiping through */
+/* Category chip — what this session is swiping through, sitting just above
+   the waiting block so it reads with the main content. */
 .waiting-category {
-  position: absolute;
-  top: 28px;
-  left: 50%;
-  transform: translateX(-50%);
   padding: 8px 16px;
+  margin-bottom: 8px;
   border-radius: 999px;
   background: var(--bg-card);
   border: 1px solid var(--border);
