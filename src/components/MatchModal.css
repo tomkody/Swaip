@@ -22,10 +22,6 @@
   to   { transform: translateY(0);    opacity: 1; }
 }
 
-@keyframes matchPulse {
-  0%, 100% { transform: scale(1); }
-  50%       { transform: scale(1.14); }
-}
 
 .match-modal {
   background: var(--bg-card);
