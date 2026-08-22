@@ -281,3 +281,58 @@ h1, h2, h3, h4 {
 
 /* ── Mode toggle — true iOS UISegmentedControl ───────────────────────────── */
 /* Together/Solo selection moved to the ModeToggle component (ModeToggle.css). */
+
+/* ── Celebration badge — refined replacement for decorative emoji ─────────── */
+.celebrate-badge {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+  background: var(--gradient-primary);
+  box-shadow: 0 8px 24px rgba(255, 107, 107, 0.32);
+  animation: celebratePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.celebrate-badge svg { width: 40px; height: 40px; display: block; }
+.celebrate-badge--heart svg { animation: heartbeat 1.6s ease-in-out 0.5s infinite; }
+.celebrate-badge--muted {
+  background: var(--bg-surface);
+  box-shadow: none;
+  border: 1.5px solid var(--border);
+}
+.celebrate-badge--muted svg { color: var(--text-muted); }
+
+@keyframes celebratePop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  60%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes heartbeat {
+  0%, 100%  { transform: scale(1); }
+  15%       { transform: scale(1.14); }
+  30%       { transform: scale(1); }
+}
+
+/* ── Skeleton shimmer ────────────────────────────────────────────────────── */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-surface);
+  border-radius: 8px;
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+  animation: shimmer 1.3s ease-in-out infinite;
+}
+
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .celebrate-badge, .celebrate-badge--heart svg { animation: none; }
+  .skeleton::after { animation: none; }
+}

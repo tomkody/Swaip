@@ -257,7 +257,7 @@
 }
 
 /* Icon */
-.rv-icon { font-size: 52px; margin-bottom: 12px; }
+.rv-icon { margin-bottom: 16px; }
 
 /* Waiting — new two-column layout */
 .rv-wait-page {

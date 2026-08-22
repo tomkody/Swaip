@@ -50,11 +50,8 @@
   margin: 0 auto 18px;
 }
 
-.match-emoji {
-  font-size: 44px;
-  display: block;
-  margin-bottom: 6px;
-  animation: matchPulse 1.4s ease infinite;
+.match-badge {
+  margin-bottom: 10px;
 }
 
 .match-title {

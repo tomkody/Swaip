@@ -171,9 +171,14 @@ export default function Room() {
 
   if (loading) {
     return (
-      <div className="room-center">
-        <div className="loader" />
-        <p>Loading room...</p>
+      <div className="room-skeleton">
+        <div className="skeleton skel-card" />
+        <div className="skeleton skel-line skel-line--title" />
+        <div className="skeleton skel-line skel-line--meta" />
+        <div className="skel-chips">
+          <div className="skeleton skel-chip" />
+          <div className="skeleton skel-chip" />
+        </div>
       </div>
     )
   }
@@ -238,7 +243,7 @@ export default function Room() {
           {room.type === 'movies' ? '🎬 Movies' : room.type === 'series' ? '📺 TV Series' : room.type === 'activities' ? '🎯 Activities' : room.type === 'food' ? '🍽️ Food & Drinks' : `💬 ${room.topic_name}`}
         </div>
         <div className="waiting">
-          <div className="waiting-icon">⏳</div>
+          <div className="waiting-pulse" aria-hidden="true"><span></span><span></span><span></span></div>
           <h2>{pc > 2 ? `Waiting for your group` : `Waiting for your partner`}</h2>
           <InvitePanel roomId={roomId} type={room.type} />
           <button className="btn skip-wait" onClick={() => setPartnerJoined(true)}>
