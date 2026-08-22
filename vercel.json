@@ -1,5 +1,16 @@
 {
   "rewrites": [
+    {
+      "source": "/room/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|Slackbot|Slack-ImgProxy|Discordbot|LinkedInBot|TelegramBot|Pinterest|redditbot|SkypeUriPreview|vkShare|Iframely|Embedly|Applebot|bingbot|Googlebot).*"
+        }
+      ],
+      "destination": "/api/og?id=:id"
+    },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "crons": [
