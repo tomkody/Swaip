@@ -222,6 +222,34 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
     const hasMyPicks = top3.length > 0
     const rest = matches.filter(m => !top3.some(t => t.id === m.id))
 
+    // ── Recommendation: which pick to play, once both have locked in a Top 3 ──
+    // Weight each ranking slot (#1=3, #2=2, #3=1). A title in BOTH top 3s wins
+    // over one in only a single list; among those, the higher combined weight
+    // wins (so #1+#2 beats #2+#3). Ties break toward the better single slot.
+    const bothRanked = !isSolo && hasMyPicks && Array.isArray(partnerRanks) && partnerRanks.length > 0
+    const slotWeight = pos => (pos > 0 ? 4 - pos : 0) // pos is 1-based; 0 = not ranked
+    let recommendation = null
+    if (bothRanked) {
+      const myPos = id => top3.findIndex(m => m.id === id) + 1
+      const theirPos = id => partnerRanks.indexOf(id) + 1
+      const ids = Array.from(new Set([...top3.map(m => m.id), ...partnerRanks]))
+      const scored = ids.map(id => {
+        const mp = myPos(id), tp = theirPos(id)
+        const inBoth = mp > 0 && tp > 0
+        return {
+          movie: movies.find(m => m.id === id),
+          mp, tp, inBoth,
+          score: slotWeight(mp) + slotWeight(tp),
+          bestSlot: Math.min(mp || 99, tp || 99),
+        }
+      }).filter(s => s.movie)
+      scored.sort((a, b) =>
+        (b.inBoth - a.inBoth) || (b.score - a.score) || (a.bestSlot - b.bestSlot)
+      )
+      const top = scored[0]
+      if (top) recommendation = top
+    }
+
     return (
       <div className="rv-page">
         <div className="rv-brand"><span className="rv-brand-name">Swaip</span><span className="rv-brand-tld">.app</span></div>
@@ -249,6 +277,32 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                     : `Here's everything you both want to watch:`}
           </p>
         </div>
+
+        {/* Recommended pick — once both have locked in a Top 3 */}
+        {recommendation && (() => {
+          const m = recommendation.movie
+          const why = recommendation.inBoth
+            ? `You ranked it #${recommendation.mp} · your partner ranked it #${recommendation.tp}`
+            : recommendation.mp > 0
+              ? `Your #${recommendation.mp} pick — no title landed in both top 3s`
+              : `Your partner's #${recommendation.tp} pick — no title landed in both top 3s`
+          return (
+            <div className="rv-reco">
+              <p className="rv-reco-eyebrow">{recommendation.inBoth ? '✨ You both ranked this — play it' : '💡 Closest call'}</p>
+              <div className="rv-reco-card">
+                {m.poster
+                  ? <img src={m.poster} alt={m.title} className="rv-reco-poster" />
+                  : <div className="rv-reco-poster rv-result-poster-empty">{emoji}</div>}
+                <div className="rv-reco-info">
+                  <strong>{m.title}</strong>
+                  <span className="rv-reco-meta">{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                  <span className="rv-reco-why">{why}</span>
+                  <PlatformBadges platforms={m.platforms} />
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* My Top Picks — shown prominently */}
         {hasMyPicks && (
