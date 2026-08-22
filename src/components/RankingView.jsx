@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches, subscribeToSwipes, fetchRoomPicks, subscribeToRoomPicks, fetchCompatibility } from '../lib/room'
+import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches, subscribeToSwipes, fetchRoomPicks, subscribeToRoomPicks } from '../lib/room'
 import { getPlatformMeta } from '../lib/platforms'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import './RankingView.css'
@@ -33,7 +33,6 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
 
   // ── Partner picks (live comparison without leaving the app) ──────────────
   const [picks, setPicks] = useState(null)
-  const [compat, setCompat] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
   const [refreshedAt, setRefreshedAt] = useState(null)
   const [tick, setTick] = useState(0)          // re-renders the "updated Xm ago" label
@@ -42,13 +41,11 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
     if (isSolo) return
     setRefreshing(true)
     try {
-      const [p, ids, c] = await Promise.all([
+      const [p, ids] = await Promise.all([
         fetchRoomPicks(room.id, userToken.current),
         fetchRoomMatches(room.id, userToken.current, playerCount),
-        fetchCompatibility(room.id, userToken.current),
       ])
       if (p) setPicks(p)
-      if (c) setCompat(c)
       if (ids && ids.length > 0 && movies.length > 0) {
         const fresh = movies.filter(m => ids.includes(m.id))
         if (fresh.length > 0) setMatches(fresh)
@@ -120,7 +117,12 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
         bestSlot: Math.min(mp || 99, tp || 99),
       }
     }).filter(s => s.movie)
-    scored.sort((a, b) => (b.inBoth - a.inBoth) || (b.score - a.score) || (a.bestSlot - b.bestSlot))
+    // Final tie-break by id so BOTH partners resolve an exact tie to the same
+    // title (the scoring is symmetric, but without this the winner fell back to
+    // array order, which differs per person → each side saw a different pick).
+    scored.sort((a, b) =>
+      (b.inBoth - a.inBoth) || (b.score - a.score) || (a.bestSlot - b.bestSlot) || (a.movie.id - b.movie.id)
+    )
     return scored[0] || null
   }, [isSolo, top3, partnerRanks, movies])
 
@@ -218,7 +220,6 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
         swipeCount: matches.length,
         mode: 'matches',
         typeLabel,
-        compat: !isSolo && compat?.available ? compat.score : null,
         recommendation: recommendation?.movie?.title || null,
       })
       // Try native share sheet first (mobile), fall back to download
@@ -278,27 +279,6 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                     : `Here's everything you both want to watch:`}
           </p>
         </div>
-
-        {/* Compatibility score — how aligned your tastes are */}
-        {!isSolo && compat?.available && (() => {
-          const s = compat.score
-          const tier = s >= 90 ? { label: 'Perfectly in sync', emoji: '💞' }
-            : s >= 75 ? { label: 'Great taste match', emoji: '🔥' }
-            : s >= 55 ? { label: 'Solid match', emoji: '✨' }
-            : s >= 40 ? { label: 'Opposites attract', emoji: '🧲' }
-            : { label: 'Chaotic duo', emoji: '😅' }
-          return (
-            <div className="rv-compat">
-              <div className="rv-compat-ring" style={{ '--pct': `${s}%` }}>
-                <span className="rv-compat-num">{s}<small>%</small></span>
-              </div>
-              <div className="rv-compat-text">
-                <strong>{tier.emoji} {tier.label}</strong>
-                <span>You agreed on {compat.score}% of the {compat.common} {typeLabel} you both swiped.</span>
-              </div>
-            </div>
-          )
-        })()}
 
         {/* Recommended pick — once both have locked in a Top 3 */}
         {recommendation && (() => {

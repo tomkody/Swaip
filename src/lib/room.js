@@ -670,49 +670,6 @@ export async function fetchRoomPicks(roomId, userToken) {
   }
 }
 
-// Compatibility score: of the items BOTH players swiped on, how often did they
-// agree (both liked, or both passed)? A real "how aligned are your tastes"
-// number for the results screen and share card. Returns { available, score,
-// common, bothLiked }. Needs a minimum of shared swipes to mean anything.
-export async function fetchCompatibility(roomId, userToken) {
-  let rows = []
-  if (!supabase) {
-    rows = JSON.parse(localStorage.getItem(`swaip_swipes_${roomId}`) || '[]')
-  } else {
-    const { data, error } = await supabase
-      .from('swipes')
-      .select('user_token, item_id, direction')
-      .eq('room_id', roomId)
-    if (error || !data) return { available: false }
-    rows = data
-  }
-
-  // Last swipe wins per (user, item)
-  const byUser = {}
-  for (const r of rows) {
-    const id = Number(r.item_id)
-    if (DONE_SENTINELS.has(id)) continue
-    if (!byUser[r.user_token]) byUser[r.user_token] = {}
-    byUser[r.user_token][id] = r.direction
-  }
-
-  const me = byUser[userToken]
-  const otherToken = Object.keys(byUser).find(t => t !== userToken)
-  if (!me || !otherToken) return { available: false }
-  const other = byUser[otherToken]
-
-  let common = 0, agree = 0, bothLiked = 0
-  for (const id in me) {
-    if (id in other) {
-      common++
-      if (me[id] === other[id]) agree++
-      if (me[id] === 'right' && other[id] === 'right') bothLiked++
-    }
-  }
-  if (common < 5) return { available: false, common }
-  return { available: true, score: Math.round((agree / common) * 100), common, bothLiked }
-}
-
 // Subscribe to EVERY swipe by anyone else in the room (not just matches), so the
 // results screen can live-update what the partner has picked.
 export function subscribeToRoomPicks(roomId, userToken, onPartnerSwipe) {
