@@ -10,6 +10,7 @@ import ConversationRoom from '../components/ConversationRoom'
 import ActivityRoom from '../components/ActivityRoom'
 import FoodRoom from '../components/FoodRoom'
 import RankingView from '../components/RankingView'
+import InvitePanel from '../components/InvitePanel'
 import './Room.css'
 
 function parseRoomFilters(raw) {
@@ -46,7 +47,6 @@ export default function Room() {
   const [partnerJoined, setPartnerJoined] = useState(!isCreator || (location.state?.isSolo || false))
   const [partnerJustJoined, setPartnerJustJoined] = useState(false)
   const [hasJoined, setHasJoined] = useState(isCreator)
-  const [copied, setCopied] = useState(false)
   const userToken = useRef(getUserToken())
 
   useEffect(() => {
@@ -169,20 +169,6 @@ export default function Room() {
     if (!isSolo && movies.length > 0 && currentIndex >= movies.length) signalDone()
   }, [isSolo, movies.length, currentIndex, signalDone])
 
-  function handleShare() {
-    const url = `${window.location.origin}/room/${roomId}`
-    if (navigator.share) {
-      navigator.share({ title: 'Swaip', url })
-        .catch(() => {}) // user cancelled — ignore
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(url).then(() => {
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
-      })
-    }
-  }
-
   if (loading) {
     return (
       <div className="room-center">
@@ -254,23 +240,7 @@ export default function Room() {
           <p className="waiting-genre">
             {room.type === 'movies' ? '🎬 Movies' : room.type === 'series' ? '📺 TV Series' : room.type === 'activities' ? '🎯 Activities' : room.type === 'food' ? '🍽️ Food & Drinks' : `💬 ${room.topic_name}`}
           </p>
-          <p className="waiting-text">Share this link to get started:</p>
-          <div className="share-link">
-            <code className="link-text">{window.location.origin}/room/{roomId}</code>
-            <button className="copy-btn" onClick={handleShare}>
-              {copied ? (
-                'Copied!'
-              ) : (
-                <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 5 }}>
-                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                  </svg>
-                  Share
-                </>
-              )}
-            </button>
-          </div>
+          <InvitePanel roomId={roomId} type={room.type} />
           <button className="btn btn-secondary skip-wait" onClick={() => setPartnerJoined(true)}>
             {room.type === 'movies' || room.type === 'series' || room.type === 'food' ? 'Start swiping solo' : 'Start solo'}
           </button>
