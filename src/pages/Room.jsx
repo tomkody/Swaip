@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
-import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, markRoomActive, fetchRoomMatches, isRoomSolo, getRoomPlayerCount } from '../lib/room'
+import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, markRoomActive, fetchRoomMatches, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID } from '../lib/room'
 import { PLATFORMS } from '../lib/platforms'
 import { fetchTopRatedMovies } from '../lib/tmdb'
 import { fetchTopRatedSeries } from '../lib/seriesFetch'
@@ -153,6 +153,21 @@ export default function Room() {
     },
     [movies, currentIndex, roomId, isSolo]
   )
+
+  // Tell the room this user finished swiping (sentinel row, ignored as a pick).
+  // Lets the partner's results screen show "finished" vs "still swiping".
+  const doneSignalledRef = useRef(false)
+  const signalDone = useCallback(async () => {
+    if (isSolo || doneSignalledRef.current) return
+    doneSignalledRef.current = true
+    try { await recordSwipe(roomId, userToken.current, DONE_ITEM_ID, 'right') }
+    catch (err) { console.error('Failed to signal done:', err) }
+  }, [isSolo, roomId])
+
+  // Deck exhausted counts as finished too.
+  useEffect(() => {
+    if (!isSolo && movies.length > 0 && currentIndex >= movies.length) signalDone()
+  }, [isSolo, movies.length, currentIndex, signalDone])
 
   function handleShare() {
     const url = `${window.location.origin}/room/${roomId}`
@@ -337,6 +352,7 @@ export default function Room() {
         <button className="done-early-btn" onClick={async () => {
           if (isSolo) { setIsDone(true); return }
           setFetchingDone(true)
+          await signalDone()
           const ids = await fetchRoomMatches(roomId, userToken.current)
           if (ids !== null) {
             setDoneMatches(movies.filter(m => ids.includes(m.id)))

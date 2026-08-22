@@ -2,6 +2,17 @@ import { supabase } from './supabase'
 import { v4 as uuidv4 } from 'uuid'
 import { detectRegion } from './tmdb'
 
+// Sentinel item ids used to signal "I'm done" rather than a real pick.
+// (activities categories, food cuisines, movie/series decks)
+export const DONE_ITEM_ID = 9999999
+const DONE_SENTINELS = new Set([1999, 2999, DONE_ITEM_ID])
+
+// Supabase reuses a channel by name, and callbacks can't be added after
+// subscribe() — so two components subscribing to the same room would throw.
+// Every subscription gets its own channel name.
+let channelSeq = 0
+const uniqueChannel = (prefix, roomId) => `${prefix}-${roomId}-${++channelSeq}`
+
 export function isRoomSolo(room) {
   if (!room?.topic_id) return false
   try {
@@ -269,7 +280,7 @@ export function subscribeToRoomChanges(roomId, onUpdate) {
   if (!supabase) return () => {}
 
   const channel = supabase
-    .channel(`room-data-${roomId}`)
+    .channel(uniqueChannel('room-data', roomId))
     .on(
       'postgres_changes',
       { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
@@ -298,6 +309,7 @@ export async function fetchRoomMatches(roomId, userToken, playerCount = 2) {
   const myLikes = new Set()
   for (const row of data) {
     const id = Number(row.item_id)
+    if (DONE_SENTINELS.has(id)) continue   // "I'm done" marker, not a pick
     if (!likersByItem[id]) likersByItem[id] = new Set()
     likersByItem[id].add(row.user_token)
     if (row.user_token === userToken) myLikes.add(id)
@@ -327,7 +339,7 @@ export function subscribeToRoomActive(roomId, onActive) {
   if (!supabase) return () => {}
 
   const channel = supabase
-    .channel(`room-active-${roomId}`)
+    .channel(uniqueChannel('room-active', roomId))
     .on(
       'postgres_changes',
       { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
@@ -461,7 +473,7 @@ export function subscribeToSwipes(roomId, userToken, onMatch, playerCount = 2) {
   if (!supabase) return () => {}
 
   const channel = supabase
-    .channel(`room-${roomId}`)
+    .channel(uniqueChannel('room', roomId))
     .on(
       'postgres_changes',
       {
@@ -502,7 +514,7 @@ export function subscribeToConversationSelections(roomId, userToken, onPartnerSu
   if (!supabase) return () => {}
 
   const channel = supabase
-    .channel(`conv-${roomId}`)
+    .channel(uniqueChannel('conv', roomId))
     .on(
       'postgres_changes',
       {
@@ -522,6 +534,10 @@ export function subscribeToConversationSelections(roomId, userToken, onPartnerSu
   return () => supabase.removeChannel(channel)
 }
 
+// True once we learn the rankings table isn't available in this database, so
+// callers can stop polling instead of repeating 404s every 15s.
+export let rankingsUnavailable = false
+
 // Submit top-3 rankings
 export async function submitRankings(roomId, userToken, itemIds) {
   if (!supabase) {
@@ -532,11 +548,15 @@ export async function submitRankings(roomId, userToken, itemIds) {
     return
   }
   // Delete old rankings for this user first, then insert new ones
+  if (rankingsUnavailable) return
   await supabase.from('rankings').delete().eq('room_id', roomId).eq('user_token', userToken)
   if (itemIds.length === 0) return
   const rows = itemIds.map((id, i) => ({ room_id: roomId, user_token: userToken, item_id: id, rank: i + 1 }))
   const { error } = await supabase.from('rankings').insert(rows)
-  if (error) throw error
+  if (error) {
+    if (error.code === 'PGRST205') { rankingsUnavailable = true; return }
+    throw error
+  }
 }
 
 // Get rankings for this room
@@ -549,8 +569,13 @@ export async function getRankings(roomId, userToken) {
     const partnerRanking = otherUser ? data[otherUser] : null
     return { myRanking, partnerRanking, partnerSubmitted: !!partnerRanking }
   }
+  if (rankingsUnavailable) return { myRanking: null, partnerRanking: null, partnerSubmitted: false, unavailable: true }
   const { data, error } = await supabase.from('rankings').select().eq('room_id', roomId).order('rank')
-  if (error) return { myRanking: null, partnerRanking: null, partnerSubmitted: false }
+  if (error) {
+    // PGRST205 = table missing from the schema cache
+    if (error.code === 'PGRST205') rankingsUnavailable = true
+    return { myRanking: null, partnerRanking: null, partnerSubmitted: false, unavailable: rankingsUnavailable }
+  }
   const byUser = {}
   for (const row of data) {
     if (!byUser[row.user_token]) byUser[row.user_token] = []
@@ -566,7 +591,7 @@ export async function getRankings(roomId, userToken) {
 export function subscribeToRankings(roomId, userToken, onPartnerSubmitted) {
   if (!supabase) return () => {}
   const channel = supabase
-    .channel(`rankings-${roomId}`)
+    .channel(uniqueChannel('rankings', roomId))
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rankings', filter: `room_id=eq.${roomId}` },
       (payload) => { if (payload.new.user_token !== userToken && payload.new.rank === 1) onPartnerSubmitted() }
     )
@@ -579,7 +604,7 @@ export function subscribeToRoom(roomId, onJoin) {
   if (!supabase) return () => {}
 
   const channel = supabase
-    .channel(`presence-${roomId}`)
+    .channel(uniqueChannel('presence', roomId))
     .on('presence', { event: 'join' }, () => {
       onJoin()
     })
@@ -589,5 +614,75 @@ export function subscribeToRoom(roomId, onJoin) {
       }
     })
 
+  return () => supabase.removeChannel(channel)
+}
+
+// ── Partner picks ─────────────────────────────────────────────────────────────
+// Everything the results screen needs to compare choices, in one round-trip:
+//   myIds      — items THIS user liked
+//   partnerIds — items at least one OTHER user liked
+//   mutualIds  — liked by this user AND at least one other
+//   countsById — distinct likers per item (for "3/4 picked this")
+//   participants — distinct users who have swiped at all
+// Ignores the done-sentinel rows so they never show up as picks.
+export async function fetchRoomPicks(roomId, userToken) {
+  let rows = []
+  if (!supabase) {
+    rows = JSON.parse(localStorage.getItem(`swaip_swipes_${roomId}`) || '[]')
+      .filter(s => s.direction === 'right')
+  } else {
+    const { data, error } = await supabase
+      .from('swipes')
+      .select('user_token, item_id')
+      .eq('room_id', roomId)
+      .eq('direction', 'right')
+    if (error || !data) return null
+    rows = data
+  }
+
+  const countsById = {}
+  const likersByItem = {}
+  const myLikes = new Set()
+  const otherLikes = new Set()
+  const participants = new Set()
+  const doneUsers = new Set()
+
+  for (const r of rows) {
+    const id = Number(r.item_id)
+    if (DONE_SENTINELS.has(id)) { participants.add(r.user_token); doneUsers.add(r.user_token); continue }
+    participants.add(r.user_token)
+    if (!likersByItem[id]) likersByItem[id] = new Set()
+    likersByItem[id].add(r.user_token)
+    if (r.user_token === userToken) myLikes.add(id)
+    else otherLikes.add(id)
+  }
+  for (const [id, set] of Object.entries(likersByItem)) countsById[id] = set.size
+
+  return {
+    participants: participants.size,
+    // how many OTHER players have signalled they finished swiping
+    othersDone: [...doneUsers].filter(t => t !== userToken).length,
+    iAmDone: doneUsers.has(userToken),
+    myIds: [...myLikes],
+    partnerIds: [...otherLikes],
+    mutualIds: [...myLikes].filter(id => otherLikes.has(id)),
+    countsById,
+  }
+}
+
+// Subscribe to EVERY swipe by anyone else in the room (not just matches), so the
+// results screen can live-update what the partner has picked.
+export function subscribeToRoomPicks(roomId, userToken, onPartnerSwipe) {
+  if (!supabase) return () => {}
+  const channel = supabase
+    .channel(uniqueChannel('picks', roomId))
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'swipes', filter: `room_id=eq.${roomId}` },
+      (payload) => {
+        if (payload.new.user_token !== userToken) onPartnerSwipe(payload.new)
+      }
+    )
+    .subscribe()
   return () => supabase.removeChannel(channel)
 }

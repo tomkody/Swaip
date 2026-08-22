@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches, subscribeToSwipes } from '../lib/room'
+import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches, subscribeToSwipes, fetchRoomPicks, subscribeToRoomPicks } from '../lib/room'
 import { getPlatformMeta } from '../lib/platforms'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import './RankingView.css'
@@ -30,10 +30,63 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
   const [sharing, setSharing] = useState(false)
   const dragFrom = useRef(null)
 
-  // Partner ranking subscription — together mode only
-  const checkPartner = useCallback(async () => {
+  // ── Partner picks (live comparison without leaving the app) ──────────────
+  const [picks, setPicks] = useState(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshedAt, setRefreshedAt] = useState(null)
+  const [tick, setTick] = useState(0)          // re-renders the "updated Xm ago" label
+
+  const refreshPicks = useCallback(async () => {
     if (isSolo) return
-    const { partnerRanking, partnerSubmitted } = await getRankings(room.id, userToken.current)
+    setRefreshing(true)
+    try {
+      const [p, ids] = await Promise.all([
+        fetchRoomPicks(room.id, userToken.current),
+        fetchRoomMatches(room.id, userToken.current, playerCount),
+      ])
+      if (p) setPicks(p)
+      if (ids && ids.length > 0 && movies.length > 0) {
+        const fresh = movies.filter(m => ids.includes(m.id))
+        if (fresh.length > 0) setMatches(fresh)
+      }
+      setRefreshedAt(Date.now())
+    } catch (e) {
+      console.error('Failed to refresh partner picks:', e)
+    } finally {
+      setRefreshing(false)
+    }
+  }, [isSolo, room.id, playerCount, movies])
+
+  // Load once, then live-update whenever anyone else swipes.
+  useEffect(() => {
+    if (isSolo) return
+    refreshPicks()
+    const unsub = subscribeToRoomPicks(room.id, userToken.current, () => refreshPicks())
+    return unsub
+  }, [isSolo, room.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep the "updated Xm ago" label honest.
+  useEffect(() => {
+    if (isSolo) return
+    const t = setInterval(() => setTick(n => n + 1), 30000)
+    return () => clearInterval(t)
+  }, [isSolo])
+
+  const agoLabel = (() => {
+    void tick
+    if (!refreshedAt) return ''
+    const secs = Math.round((Date.now() - refreshedAt) / 1000)
+    if (secs < 45) return 'Updated just now'
+    const mins = Math.round(secs / 60)
+    return `Updated ${mins}m ago`
+  })()
+
+  // Partner ranking subscription — together mode only
+  const rankingsDeadRef = useRef(false)
+  const checkPartner = useCallback(async () => {
+    if (isSolo || rankingsDeadRef.current) return
+    const { partnerRanking, partnerSubmitted, unavailable } = await getRankings(room.id, userToken.current)
+    if (unavailable) { rankingsDeadRef.current = true; return }
     if (partnerSubmitted) setPartnerRanks(partnerRanking)
   }, [isSolo, room.id])
 
@@ -277,6 +330,80 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
             ))}
           </div>
         )}
+
+        {/* What the partner / group picked — live, with manual refresh */}
+        {!isSolo && (() => {
+          const mutual = new Set(picks?.mutualIds || [])
+          const partnerItems = (picks?.partnerIds || [])
+            .map(id => movies.find(m => m.id === id))
+            .filter(Boolean)
+            .sort((a, b) => (mutual.has(b.id) ? 1 : 0) - (mutual.has(a.id) ? 1 : 0))
+          const groupWord = playerCount > 2 ? 'the group' : 'your partner'
+          const othersDone = picks?.othersDone || 0
+          const status = picks == null
+            ? 'Loading…'
+            : othersDone > 0
+              ? (playerCount > 2
+                  ? `${othersDone} of ${playerCount - 1} finished swiping`
+                  : 'Finished swiping')
+              : partnerItems.length > 0 ? 'Still swiping…' : 'Nothing picked yet'
+
+          return (
+            <div className="rv-match-list rv-partner-block">
+              <div className="rv-partner-head">
+                <div className="rv-partner-headtext">
+                  <p className="rv-label rv-label--tight">What {groupWord} picked</p>
+                  <p className="rv-partner-status">
+                    {status}{agoLabel ? ` · ${agoLabel}` : ''}
+                  </p>
+                </div>
+                <button
+                  className={`rv-refresh ${refreshing ? 'is-busy' : ''}`}
+                  onClick={refreshPicks}
+                  disabled={refreshing}
+                  aria-label="Refresh partner picks"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 12a9 9 0 1 1-2.64-6.36" /><polyline points="21 3 21 9 15 9" />
+                  </svg>
+                  {refreshing ? 'Refreshing' : 'Refresh'}
+                </button>
+              </div>
+
+              {partnerItems.length === 0 ? (
+                <p className="rv-empty">
+                  {othersDone > 0
+                    ? `${playerCount > 2 ? 'Nobody' : 'They'} picked anything this time.`
+                    : `Nothing yet — you'll see picks here as ${groupWord} swipes.`}
+                </p>
+              ) : (
+                partnerItems.map(m => {
+                  const isMutual = mutual.has(m.id)
+                  const count = picks?.countsById?.[m.id]
+                  return (
+                    <div key={m.id} className={`rv-result-card ${isMutual ? 'rv-partner-mutual' : ''}`}>
+                      <div className="rv-result-card-inner">
+                        {m.poster
+                          ? <img src={m.poster} alt={m.title} className="rv-result-poster" />
+                          : <div className="rv-result-poster rv-result-poster-empty">{emoji}</div>}
+                        <div className="rv-result-info">
+                          <strong>{m.title}</strong>
+                          <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                          <PlatformBadges platforms={m.platforms} />
+                        </div>
+                        {isMutual
+                          ? <span className="rv-partner-tag rv-partner-tag--match">✓ Both</span>
+                          : playerCount > 2 && count
+                            ? <span className="rv-partner-tag">{count}/{playerCount}</span>
+                            : <span className="rv-partner-tag">Theirs</span>}
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          )
+        })()}
 
         {/* Action buttons */}
         <div className="rv-results-actions">

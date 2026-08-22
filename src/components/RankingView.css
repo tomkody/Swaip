@@ -702,3 +702,70 @@
   flex-shrink: 0;
   white-space: nowrap;
 }
+
+/* ── "What your partner picked" panel ─────────────────────────────── */
+.rv-partner-block { margin-top: 22px; }
+
+.rv-partner-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.rv-partner-headtext { min-width: 0; }
+
+.rv-label--tight { margin: 0 0 2px; }
+
+.rv-partner-status {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.rv-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 8px 13px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, opacity 0.15s;
+}
+.rv-refresh:hover:not(:disabled) {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+.rv-refresh:disabled { opacity: 0.6; cursor: default; }
+.rv-refresh.is-busy svg { animation: rvSpin 0.9s linear infinite; }
+
+@keyframes rvSpin { to { transform: rotate(360deg); } }
+
+/* A pick the partner made that you also liked */
+.rv-partner-mutual {
+  border-color: rgba(74, 222, 128, 0.45);
+  background: rgba(74, 222, 128, 0.05);
+}
+
+.rv-partner-tag {
+  flex-shrink: 0;
+  align-self: center;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.rv-partner-tag--match {
+  background: rgba(74, 222, 128, 0.15);
+  color: #22c55e;
+}
