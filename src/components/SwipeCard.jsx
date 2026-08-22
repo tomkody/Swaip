@@ -185,7 +185,10 @@ export default function SwipeCard({ item, onSwipe, active }) {
           {/* FRONT */}
           <div className="card-face card-front">
             {item.poster ? (
-              <img src={item.poster} alt={item.title} className="card-poster" draggable={false} />
+              <div className="card-poster-area">
+                <div className="card-poster-bg" style={{ backgroundImage: `url(${item.poster})` }} />
+                <img src={item.poster} alt={item.title} className="card-poster" draggable={false} />
+              </div>
             ) : (
               <div className="card-poster card-poster-placeholder">
                 <span className="placeholder-icon">{item.emoji || '🎬'}</span>

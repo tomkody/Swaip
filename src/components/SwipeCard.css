@@ -107,6 +107,30 @@
   pointer-events: none;
 }
 
+/* Poster shown in full (no crop) over a blurred fill of the same image */
+.card-poster-area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.card-poster-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(26px) saturate(1.15);
+  transform: scale(1.25);
+}
+.card-poster-area .card-poster {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .card-poster-placeholder {
   display: flex;
   align-items: center;
