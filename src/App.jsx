@@ -6,6 +6,8 @@ import CreateConversationRoom from './pages/CreateConversationRoom'
 import CreateActivityRoom from './pages/CreateActivityRoom'
 import CreateFoodRoom from './pages/CreateFoodRoom'
 import Room from './pages/Room'
+import Privacy from './pages/Privacy'
+import Terms from './pages/Terms'
 import TripHome from './pages/trip/TripHome'
 import PlanningWizard from './pages/trip/PlanningWizard'
 import TripDashboard from './pages/trip/TripDashboard'
@@ -28,6 +30,8 @@ export default function App() {
         <Route path="/create/activities" element={<CreateActivityRoom />} />
         <Route path="/create/food" element={<CreateFoodRoom />} />
         <Route path="/room/:roomId" element={<Room />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
         {/* Trip Planner */}
         <Route path="/trip" element={<TripHome />} />
         <Route path="/trip/plan" element={<PlanningWizard />} />

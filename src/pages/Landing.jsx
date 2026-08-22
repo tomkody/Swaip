@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import SavedMatchesDrawer from '../components/SavedMatchesDrawer'
 import HamburgerMenu from '../components/HamburgerMenu'
+import Footer from '../components/Footer'
 import './Landing.css'
 
 
@@ -132,6 +133,8 @@ export default function Landing() {
             </div>
           </div>
         )}
+
+        <Footer />
       </div>
 
       <SavedMatchesDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
