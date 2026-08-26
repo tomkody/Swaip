@@ -106,7 +106,9 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 132px;
   padding: 18px 16px 16px;
   background: var(--bg-card);
   border: none;
@@ -116,6 +118,11 @@
   width: 100%;
   overflow: hidden;
   box-shadow: var(--shadow);
+}
+/* Wide card is a horizontal row — no tall min-height / vertical spread */
+.category-card--wide {
+  min-height: 0;
+  justify-content: flex-start;
 }
 
 .card-glow { display: none; }
@@ -174,6 +181,11 @@
   margin-bottom: 10px;
   background: rgba(255, 255, 255, 0.22);
 }
+
+/* Per-category coloured icon tiles — gives each beta card its own identity */
+.category-emoji--activities { background: rgba(16, 185, 129, 0.16); }
+.category-emoji--food       { background: rgba(249, 115, 22, 0.16); }
+.category-emoji--convo      { background: rgba(139, 92, 246, 0.16); }
 
 /* Text group */
 .category-text {

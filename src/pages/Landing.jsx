@@ -77,28 +77,28 @@ export default function Landing() {
 
           <button className="category-card" onClick={() => navigate('/create/activities')}>
             <span className="category-beta">Beta</span>
-            <span className="category-emoji">🎯</span>
+            <span className="category-emoji category-emoji--activities">🎯</span>
             <div className="category-text">
               <span className="category-name">Activities</span>
-              <span className="category-desc">Find your next adventure nearby.</span>
+              <span className="category-desc">Discover fun things to do nearby</span>
             </div>
           </button>
 
           <button className="category-card" onClick={() => navigate('/create/food')}>
             <span className="category-beta">Beta</span>
-            <span className="category-emoji">🍽️</span>
+            <span className="category-emoji category-emoji--food">🍽️</span>
             <div className="category-text">
               <span className="category-name">Food & Drinks</span>
-              <span className="category-desc">Pick a cuisine or a bar, then swipe through real spots near you.</span>
+              <span className="category-desc">Find where to eat or grab a drink</span>
             </div>
           </button>
 
           <button className="category-card category-card--wide" onClick={() => navigate('/create/conversations')}>
             <span className="category-beta">Beta</span>
-            <span className="category-emoji">💬</span>
+            <span className="category-emoji category-emoji--convo">💬</span>
             <div className="category-text">
               <span className="category-name">Conversations</span>
-              <span className="category-desc">Deep dives, debates, fresh topics.</span>
+              <span className="category-desc">Questions that spark a real talk</span>
             </div>
           </button>
         </div>
