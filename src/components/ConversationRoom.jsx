@@ -8,6 +8,7 @@ import {
   subscribeToConversationSelections,
 } from '../lib/room'
 import SwipeCard from './SwipeCard'
+import HomeLogo from './HomeLogo'
 import './ConversationRoom.css'
 
 const CARDS_PER_SESSION = 15
@@ -153,6 +154,7 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
 
     return (
       <div className="conv-results-page">
+        <div className="conv-results-topbar"><HomeLogo /></div>
         <div className="conv-results">
           {matchedCards.length > 0 ? (
             <>
@@ -246,9 +248,12 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
 
   return (
     <div className="conv-swipe-page">
+      <div className="conv-swipe-topbar">
+        <HomeLogo />
+        <span className="conv-swipe-progress">{currentIndex + 1} / {cards.length}</span>
+      </div>
       <div className="conv-swipe-header">
         <p className="conv-swipe-label">{isSolo ? 'Swipe right on topics you want to explore' : 'Swipe right on topics you want to talk about'}</p>
-        <span className="conv-swipe-progress">{currentIndex + 1} / {cards.length}</span>
       </div>
 
       <div className="conv-swipe-area">

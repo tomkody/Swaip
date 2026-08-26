@@ -396,3 +396,18 @@
   margin-bottom: 8px;
   opacity: 0.8;
 }
+
+/* Top bar with clickable Swaip logo → home (swipe + results screens) */
+.conv-swipe-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 10px;
+}
+.conv-results-topbar {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 16px;
+}

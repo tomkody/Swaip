@@ -471,13 +471,17 @@
 
 /* swaip.app wordmark on the results screen */
 .rv-brand {
+  display: block;
   text-align: center;
   padding: 20px 0 0;
   font-family: -apple-system, 'Manrope', BlinkMacSystemFont, sans-serif;
   font-size: 18px;
   font-weight: 800;
   letter-spacing: -0.4px;
+  text-decoration: none;
+  cursor: pointer;
 }
+.rv-brand:hover { opacity: 0.75; }
 .rv-brand-name {
   background: var(--gradient-warm);
   -webkit-background-clip: text;

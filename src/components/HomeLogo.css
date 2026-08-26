@@ -1,0 +1,15 @@
+.home-logo {
+  display: inline-block;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  text-decoration: none;
+  background: var(--gradient-warm);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+.home-logo:hover { opacity: 0.75; }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches, subscribeToSwipes, fetchRoomPicks, subscribeToRoomPicks } from '../lib/room'
 import { getPlatformMeta, getWatchUrl } from '../lib/platforms'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
@@ -258,7 +259,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
 
     return (
       <div className="rv-page">
-        <div className="rv-brand"><span className="rv-brand-name">Swaip</span><span className="rv-brand-tld">.app</span></div>
+        <Link to="/" className="rv-brand" aria-label="Back to home"><span className="rv-brand-name">Swaip</span><span className="rv-brand-tld">.app</span></Link>
 
         {/* Hero */}
         <div className="rv-results-hero">

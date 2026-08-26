@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import confetti from 'canvas-confetti'
+import HomeLogo from './HomeLogo'
 import { FOOD_CATEGORIES, buildLocalCuisineCategory } from '../lib/foodCategories'
 import { fetchNearbyPlaces, getBrandKey } from '../lib/placesApi'
 import {
@@ -807,6 +808,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
     return (
       <div className="act-room">
         <div className="act-header">
+          <HomeLogo />
           <span className="act-phase-label">🍽️ What are you in the mood for?</span>
           <span className="act-progress">{currentIndex + 1} / {FOOD_CATS.length}</span>
         </div>
@@ -851,6 +853,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
   return (
     <div className="act-room">
       <div className="act-header">
+        <HomeLogo />
         <span className="act-phase-label">
           {matchedCategories.map(c => c.emoji).join(' ')}{' '}
           {location?.locationName ? `near ${location.locationName}` : 'Restaurants'}

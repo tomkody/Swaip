@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import confetti from 'canvas-confetti'
+import HomeLogo from './HomeLogo'
 import { ACTIVITY_CATEGORIES as _ACTIVITY_CATEGORIES } from '../lib/activities'
 import { getRoomPlayerCount, getParticipantCount, fetchVoteCounts } from '../lib/room'
 
@@ -805,6 +806,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     return (
       <div className="act-room">
         <div className="act-header">
+          <HomeLogo />
           <span className="act-phase-label">🎯 What do you want to do?</span>
           <span className="act-progress">{currentIndex + 1} / {ACTIVITY_CATEGORIES.length}</span>
         </div>
@@ -849,6 +851,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   return (
     <div className="act-room">
       <div className="act-header">
+        <HomeLogo />
         <span className="act-phase-label">
           {matchedCategories.map(c => c.emoji).join(' ')}{' '}
           {location?.locationName ? `near ${location.locationName}` : 'Places'}
