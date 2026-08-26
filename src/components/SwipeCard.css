@@ -64,18 +64,15 @@
   box-shadow: 0 0 24px rgba(255, 92, 106, 0.2);
 }
 
-/* ── 3D Flip container ───────────────────────────────────────────── */
+/* ── Flip container (cross-fade, not 3D) ─────────────────────────────
+   iOS Safari can't scroll content inside a rotateY/preserve-3d element,
+   which broke the scrollable details view. So the two faces cross-fade as
+   plain stacked layers instead of a 3D rotation. */
 .card-flip-inner {
   position: relative;
   width: 100%;
   height: 100%;
-  transform-style: preserve-3d;
-  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: var(--radius);
-}
-
-.card-flip-inner.is-flipped {
-  transform: rotateY(180deg);
 }
 
 /* ── Shared face styles ──────────────────────────────────────────── */
@@ -83,19 +80,24 @@
   position: absolute;
   inset: 0;
   border-radius: var(--radius);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
   overflow: hidden;
   background: var(--bg-card);
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
+  transition: opacity 0.26s ease, transform 0.26s ease;
 }
 
 /* ── FRONT face ──────────────────────────────────────────────────── */
 .card-front {
   z-index: 2;
+  opacity: 1;
+}
+.card-flip-inner.is-flipped .card-front {
+  opacity: 0;
+  transform: scale(0.97);
+  pointer-events: none;
 }
 
 .card-poster {
@@ -241,8 +243,17 @@
 
 /* ── BACK face ───────────────────────────────────────────────────── */
 .card-back {
-  transform: rotateY(180deg);
+  z-index: 1;
+  opacity: 0;
+  transform: scale(0.97);
+  pointer-events: none;
   background: #0d0b1a;
+}
+.card-flip-inner.is-flipped .card-back {
+  z-index: 3;
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
 }
 
 .card-back-inner {
