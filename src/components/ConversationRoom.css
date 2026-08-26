@@ -411,3 +411,18 @@
   justify-content: center;
   padding: 8px 0 16px;
 }
+
+.conv-results-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+}
+.conv-share-btn {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  font-weight: 600;
+}
+.conv-share-btn:hover { border-color: var(--border-hover); }

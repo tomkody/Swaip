@@ -367,8 +367,103 @@ async function generateMatchesImage({ items, typeLabel, recommendation, solo = f
   return canvas
 }
 
+// ── Conversation share (matched topics + a sample deep-talk question) ──
+// items: [{ emoji, name, question }]
+async function generateConversationImage({ items, solo = false }) {
+  const W = 1080, H = 1920
+  const canvas = document.createElement('canvas')
+  canvas.width = W; canvas.height = H
+  const ctx = canvas.getContext('2d')
+
+  // Background — deep plum, same family as the matches card
+  const bg = ctx.createLinearGradient(0, 0, W, H)
+  bg.addColorStop(0, '#141019')
+  bg.addColorStop(1, '#241528')
+  ctx.fillStyle = bg
+  ctx.fillRect(0, 0, W, H)
+  const orb = ctx.createRadialGradient(W * 0.9, H * 0.02, 0, W * 0.9, H * 0.02, 720)
+  orb.addColorStop(0, 'rgba(247,79,158,0.26)'); orb.addColorStop(1, 'rgba(247,79,158,0)')
+  ctx.fillStyle = orb; ctx.fillRect(0, 0, W, H)
+  const orb2 = ctx.createRadialGradient(W * 0.12, H * 0.85, 0, W * 0.12, H * 0.85, 640)
+  orb2.addColorStop(0, 'rgba(120,92,231,0.22)'); orb2.addColorStop(1, 'rgba(120,92,231,0)')
+  ctx.fillStyle = orb2; ctx.fillRect(0, 0, W, H)
+
+  // Header
+  const headerY = 150
+  ctx.fillStyle = 'rgba(255,255,255,0.55)'
+  ctx.font = `600 40px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
+  ctx.textAlign = 'center'
+  ctx.fillText(solo ? 'I want to talk about' : 'We both want to talk about', W / 2, headerY)
+  ctx.fillStyle = '#FFFFFF'
+  ctx.font = `900 88px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
+  ctx.fillText(`${items.length} topic${items.length !== 1 ? 's' : ''}`, W / 2, headerY + 104)
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 2
+  ctx.beginPath(); ctx.moveTo(W * 0.12, headerY + 150); ctx.lineTo(W * 0.88, headerY + 150); ctx.stroke()
+
+  // Cards — up to 4 topics, each with a sample question
+  const shown = items.slice(0, 4)
+  const cardPad = 56
+  const cardW = W - cardPad * 2
+  const cardGap = 26
+  let cy = headerY + 210
+  ctx.textAlign = 'left'
+  for (const it of shown) {
+    // Measure question height first (so the card fits)
+    ctx.font = `400 38px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
+    const qLines = []
+    { // wrap into up to 3 lines
+      const words = (it.question || '').split(' ')
+      let line = ''
+      for (const w of words) {
+        const test = line ? line + ' ' + w : w
+        if (ctx.measureText(test).width > cardW - 56 && line) { qLines.push(line); line = w }
+        else line = test
+      }
+      if (line) qLines.push(line)
+    }
+    const qShown = qLines.slice(0, 3)
+    if (qLines.length > 3) qShown[2] = qShown[2].replace(/\s+\S*$/, '') + '…'
+    const cardH = 96 + qShown.length * 48
+
+    ctx.fillStyle = 'rgba(255,255,255,0.055)'
+    drawRoundedRect(ctx, cardPad, cy, cardW, cardH, 26); ctx.fill()
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1.5
+    drawRoundedRect(ctx, cardPad, cy, cardW, cardH, 26); ctx.stroke()
+
+    // Emoji + topic name
+    ctx.textAlign = 'left'
+    ctx.font = `44px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", serif`
+    ctx.fillText(it.emoji || '💬', cardPad + 28, cy + 62)
+    ctx.fillStyle = '#FFFFFF'
+    ctx.font = `700 44px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
+    ctx.fillText(it.name || '', cardPad + 92, cy + 60)
+
+    // Question lines
+    ctx.fillStyle = 'rgba(255,255,255,0.62)'
+    ctx.font = `400 38px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
+    let qy = cy + 118
+    for (const l of qShown) { ctx.fillText(l, cardPad + 28, qy); qy += 48 }
+
+    cy += cardH + cardGap
+  }
+
+  if (items.length > 4) {
+    ctx.fillStyle = 'rgba(255,255,255,0.4)'
+    ctx.font = `600 36px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
+    ctx.textAlign = 'center'
+    ctx.fillText(`+ ${items.length - 4} more`, W / 2, cy + 24)
+  }
+
+  drawLogo(ctx, W, H)
+  return canvas
+}
+
 // ── Public API ────────────────────────────────────────────────────
 export async function generateShareImage({ title, posterUrl, emoji, swipeCount, items, mode, typeLabel, platforms, rating, year, recommendation, solo = false }) {
+  if (mode === 'conversation' && items) {
+    return generateConversationImage({ items, solo })
+  }
   if (mode === 'matches' && items && items.length > 1) {
     return generateMatchesImage({ items, typeLabel, recommendation, solo })
   }

@@ -9,6 +9,8 @@ import {
 } from '../lib/room'
 import SwipeCard from './SwipeCard'
 import HomeLogo from './HomeLogo'
+import { generateShareImage, downloadCanvas } from '../lib/shareImage'
+import { track } from '../lib/analytics'
 import './ConversationRoom.css'
 
 const CARDS_PER_SESSION = 15
@@ -66,8 +68,30 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
   const [partnerSubmitted, setPartnerSubmitted] = useState(false)
   const [matches, setMatches] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [sharing, setSharing] = useState(false)
   const userToken = useRef(getUserToken())
   const hasConfettied = useRef(false)
+
+  async function handleShare() {
+    if (sharing || !matches) return
+    setSharing(true)
+    track('results_shared', { type: 'conversations', matches: matches.length, solo: isSolo })
+    try {
+      const items = cards
+        .filter(c => matches.includes(c.id))
+        .map(c => ({ emoji: c.emoji, name: c.title, question: c._questions?.[0] || '' }))
+      const canvas = await generateShareImage({ mode: 'conversation', items, solo: isSolo })
+      if (navigator.share && navigator.canShare) {
+        try {
+          const blob = await new Promise(r => canvas.toBlob(r, 'image/png'))
+          const file = new File([blob], 'swaip-topics.png', { type: 'image/png' })
+          if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Swaip Topics' }); return }
+        } catch (e) { if (e.name === 'AbortError') return }
+      }
+      downloadCanvas(canvas, 'swaip-topics.png')
+    } catch (e) { console.error('Share error:', e) }
+    finally { setSharing(false) }
+  }
 
   // Subscribe to partner's selections (together mode only)
   useEffect(() => {
@@ -197,9 +221,16 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
             </>
           )}
 
-          <button className="btn btn-primary results-btn" onClick={onDone}>
-            New Room
-          </button>
+          <div className="conv-results-actions">
+            {matchedCards.length > 0 && (
+              <button className="btn conv-share-btn" onClick={handleShare} disabled={sharing}>
+                {sharing ? '⏳ Generating…' : '📸 Share'}
+              </button>
+            )}
+            <button className="btn btn-primary results-btn" onClick={onDone}>
+              New Room
+            </button>
+          </div>
         </div>
       </div>
     )
