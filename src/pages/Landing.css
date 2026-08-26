@@ -187,13 +187,6 @@
 .category-emoji--food       { background: rgba(249, 115, 22, 0.16); }
 .category-emoji--convo      { background: rgba(139, 92, 246, 0.16); }
 
-/* Richer hero gradient — soft highlight adds depth */
-.category-card--primary {
-  background:
-    radial-gradient(130% 130% at 100% 0%, rgba(255, 255, 255, 0.28), transparent 52%),
-    var(--gradient-primary);
-}
-
 /* Cards ease in with a gentle stagger on load */
 @keyframes catCardIn {
   from { opacity: 0; transform: translateY(12px); }
