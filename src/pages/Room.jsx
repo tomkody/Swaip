@@ -48,6 +48,8 @@ export default function Room() {
   const [partnerJoined, setPartnerJoined] = useState(!isCreator || (location.state?.isSolo || false))
   const [partnerJustJoined, setPartnerJustJoined] = useState(false)
   const [hasJoined, setHasJoined] = useState(isCreator)
+  const [invited, setInvited] = useState(false)       // shared / copied / showed QR at least once
+  const [remindSolo, setRemindSolo] = useState(false) // one-time nudge before going solo
   const userToken = useRef(getUserToken())
 
   useEffect(() => {
@@ -248,9 +250,19 @@ export default function Room() {
         <div className="waiting">
           <div className="waiting-pulse" aria-hidden="true"><span></span><span></span><span></span></div>
           <h2>{pc > 2 ? `Waiting for your group` : `Waiting for your partner`}</h2>
-          <InvitePanel roomId={roomId} type={room.type} />
-          <button className="btn skip-wait" onClick={() => setPartnerJoined(true)}>
-            You can start swiping solo
+          <InvitePanel roomId={roomId} type={room.type} onInteract={() => setInvited(true)} />
+          {remindSolo && !invited && (
+            <p className="skip-wait-reminder">Don't forget to send a link to your partner 🙂</p>
+          )}
+          <button
+            className="btn skip-wait"
+            onClick={() => {
+              // First tap without ever sharing → gently remind, don't start yet.
+              if (!invited && !remindSolo) { setRemindSolo(true); return }
+              setPartnerJoined(true)
+            }}
+          >
+            {remindSolo && !invited ? 'Start solo anyway' : 'You can start swiping solo'}
           </button>
         </div>
       </div>

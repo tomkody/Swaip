@@ -342,6 +342,17 @@
   background: var(--bg-card-hover);
 }
 
+.skip-wait-reminder {
+  margin: 24px auto -14px;
+  max-width: 300px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  animation: fadeInSoft 0.25s ease;
+}
+@keyframes fadeInSoft { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
 /* Done state */
 .done {
   max-width: 360px;

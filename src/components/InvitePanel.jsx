@@ -13,7 +13,7 @@ const INVITE_MESSAGES = {
   conversations: '💬 Let\'s find something good to talk about',
 }
 
-export default function InvitePanel({ roomId, type = 'movies' }) {
+export default function InvitePanel({ roomId, type = 'movies', onInteract }) {
   const url = `${window.location.origin}/room/${roomId}`
   const message = INVITE_MESSAGES[type] || 'Swipe with me on Swaip'
   const [qr, setQr] = useState(null)
@@ -28,6 +28,7 @@ export default function InvitePanel({ roomId, type = 'movies' }) {
 
   function handleShare() {
     track('invite_shared', { type })
+    onInteract?.()
     if (navigator.share) {
       navigator.share({ title: 'Swaip', text: `${message} →`, url }).catch(() => {})
     } else {
@@ -37,6 +38,7 @@ export default function InvitePanel({ roomId, type = 'movies' }) {
 
   function handleCopy() {
     track('invite_copied', { type })
+    onInteract?.()
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
@@ -57,7 +59,7 @@ export default function InvitePanel({ roomId, type = 'movies' }) {
         {copied ? '✓ Link copied' : 'Copy link instead'}
       </button>
 
-      <button className="invite-qr-toggle" onClick={() => setShowQr(v => !v)}>
+      <button className="invite-qr-toggle" onClick={() => { setShowQr(v => !v); onInteract?.() }}>
         {showQr ? 'Hide QR code' : 'Show QR code'}
       </button>
 
