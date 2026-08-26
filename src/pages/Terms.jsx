@@ -22,10 +22,10 @@ export default function Terms() {
 
       <h2>Content and third-party data</h2>
       <p>
-        Film and TV details come from The Movie Database (TMDB), and place information comes from
-        Google Maps / Places. Swaip is not endorsed by or affiliated with these providers, and we
-        don't control or guarantee the accuracy of their data. Streaming availability and "where
-        to watch" links are provided for convenience and may change.
+        Film, TV, and place information is provided by third-party data sources. Swaip is not
+        endorsed by or affiliated with those sources, and we don't control or guarantee the
+        accuracy of their data. Streaming availability and "where to watch" links are provided
+        for convenience and may change.
       </p>
 
       <h2>No warranty</h2>

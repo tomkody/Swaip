@@ -38,15 +38,14 @@ export default function Privacy() {
       </p>
 
       <h2>Service providers</h2>
-      <p>We rely on a few processors that handle data on our behalf:</p>
-      <ul>
-        <li><strong>Supabase</strong> — stores room and swipe data.</li>
-        <li><strong>Vercel</strong> — hosts the app and serves requests.</li>
-        <li><strong>The Movie Database (TMDB)</strong> — provides film and TV information.</li>
-        <li><strong>Google Maps / Places</strong> — provides nearby places for Food and Activities.</li>
-        <li><strong>Plausible</strong> — cookieless, privacy-friendly analytics (when enabled).</li>
-        <li><strong>Sentry</strong> — error diagnostics (when enabled).</li>
-      </ul>
+      <p>
+        To run Swaip we rely on a small number of trusted third-party providers that process data
+        on our behalf under contract. These fall into categories such as cloud hosting and
+        database services, a maps and places service (used only for Food and Activities), a
+        privacy-friendly analytics service, and an error-diagnostics service. We share only what's
+        needed for the service to work, and we never sell your data. A more detailed list of the
+        processors we use is available on request.
+      </p>
 
       <h2>Cookies</h2>
       <p>
