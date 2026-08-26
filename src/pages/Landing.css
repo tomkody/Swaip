@@ -69,13 +69,13 @@
 }
 
 .tagline {
-  font-family: -apple-system, 'Manrope', BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-  font-size: 21px;
-  font-weight: 800;
-  letter-spacing: -0.4px;
-  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--text-muted);
   margin: 0;
-  line-height: 1.2;
+  line-height: 1.5;
 }
 
 /* ── Section headline ────────────────────────────────────────────── */
@@ -187,33 +187,12 @@
 .category-emoji--food       { background: rgba(249, 115, 22, 0.16); }
 .category-emoji--convo      { background: rgba(139, 92, 246, 0.16); }
 
-/* Subtle per-category card tint (a hint of colour, not flat white) */
-.category-card--activities { background: linear-gradient(140deg, rgba(16, 185, 129, 0.10), var(--bg-card) 62%); }
-.category-card--food       { background: linear-gradient(140deg, rgba(249, 115, 22, 0.10), var(--bg-card) 62%); }
-.category-card--convo      { background: linear-gradient(140deg, rgba(139, 92, 246, 0.10), var(--bg-card) 62%); }
-
 /* Richer hero gradient — soft highlight adds depth */
 .category-card--primary {
   background:
     radial-gradient(130% 130% at 100% 0%, rgba(255, 255, 255, 0.28), transparent 52%),
     var(--gradient-primary);
 }
-
-/* "→" affordance on the beta cards, nudges on hover */
-.category-card:not(.category-card--primary)::after {
-  content: '→';
-  position: absolute;
-  bottom: 13px;
-  right: 15px;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-muted);
-  opacity: 0.45;
-  transition: transform 0.2s ease, opacity 0.2s ease;
-}
-.category-card--wide::after { bottom: 50%; transform: translateY(50%); }
-.category-card:not(.category-card--primary):hover::after { opacity: 0.85; transform: translateX(3px); }
-.category-card--wide:hover::after { transform: translate(3px, 50%); }
 
 /* Cards ease in with a gentle stagger on load */
 @keyframes catCardIn {
