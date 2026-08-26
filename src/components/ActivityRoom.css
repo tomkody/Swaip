@@ -592,3 +592,5 @@
   cursor: pointer;
 }
 .done-early-btn:hover { border-color: var(--border-hover); background: var(--bg-card-hover); }
+
+.act-match-badge { margin: 0 auto 12px; }
