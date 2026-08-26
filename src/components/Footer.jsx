@@ -10,6 +10,10 @@ export default function Footer() {
         <Link to="/terms">Terms</Link>
       </nav>
       <p className="site-footer-copy">© {new Date().getFullYear()} Swaip</p>
+      {/* Required attributions for the data APIs (kept minimal + muted). */}
+      <p className="site-footer-attrib">
+        This product uses the TMDB API but is not endorsed or certified by TMDB. Place data powered by Google.
+      </p>
     </footer>
   )
 }
