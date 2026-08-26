@@ -84,21 +84,21 @@ export default function Landing() {
             </div>
           </button>
 
-          <button className="category-card" onClick={() => navigate('/create/conversations')}>
-            <span className="category-beta">Beta</span>
-            <span className="category-emoji">💬</span>
-            <div className="category-text">
-              <span className="category-name">Conversations</span>
-              <span className="category-desc">Deep dives, debates, fresh topics.</span>
-            </div>
-          </button>
-
-          <button className="category-card category-card--wide" onClick={() => navigate('/create/food')}>
+          <button className="category-card" onClick={() => navigate('/create/food')}>
             <span className="category-beta">Beta</span>
             <span className="category-emoji">🍽️</span>
             <div className="category-text">
               <span className="category-name">Food & Drinks</span>
               <span className="category-desc">Pick a cuisine or a bar, then swipe through real spots near you.</span>
+            </div>
+          </button>
+
+          <button className="category-card category-card--wide" onClick={() => navigate('/create/conversations')}>
+            <span className="category-beta">Beta</span>
+            <span className="category-emoji">💬</span>
+            <div className="category-text">
+              <span className="category-name">Conversations</span>
+              <span className="category-desc">Deep dives, debates, fresh topics.</span>
             </div>
           </button>
         </div>
