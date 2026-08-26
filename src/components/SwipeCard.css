@@ -160,6 +160,7 @@
 
 .card-rating  { color: var(--accent); font-weight: 600; }
 .card-runtime { color: var(--text-muted); }
+.card-distance { color: var(--text-muted); font-weight: 600; }
 
 .card-title {
   font-size: 20px;

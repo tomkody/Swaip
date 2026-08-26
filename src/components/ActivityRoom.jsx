@@ -340,6 +340,24 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     setTransitioning(true)
     setFetchingPlaces(true)
 
+    // Race guard: if both partners finish categories at the same instant they can
+    // both reach here. If the other already wrote places, reuse them instead of
+    // making a second (divergent, paid) Google call.
+    try {
+      const existing = await getRoom(room.id)
+      const data = existing ? parseRoomActivityData(existing) : null
+      if (data && data.places.length > 0) {
+        setPlaces(data.places)
+        setMatchedCategories(data.matchedCategories.length ? data.matchedCategories : matchedCats)
+        setFetchingPlaces(false)
+        setPhase('places')
+        setCurrentIndex(0)
+        setTransitioning(false)
+        setWaitingForPartner(false)
+        return
+      }
+    } catch { /* fall through and fetch */ }
+
     let allPlaces = []
     let fetchError = null
     if (location?.lat != null && matchedCats.length > 0) {
@@ -832,7 +850,8 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     <div className="act-room">
       <div className="act-header">
         <span className="act-phase-label">
-          {matchedCategories.map(c => c.emoji).join(' ')} Places
+          {matchedCategories.map(c => c.emoji).join(' ')}{' '}
+          {location?.locationName ? `near ${location.locationName}` : 'Places'}
         </span>
         <div className="act-header-right">
           {isSolo

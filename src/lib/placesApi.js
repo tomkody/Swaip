@@ -63,6 +63,54 @@ export function getBrandKey(title) {
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 const BASE = 'https://places.googleapis.com/v1'
 
+// Language for Places results — matches the user's browser so descriptions and
+// types come back in one consistent language instead of the place's local one
+// (e.g. Czech text for a Prague search in an English UI).
+function placesLang() {
+  return (typeof navigator !== 'undefined' && navigator.language ? navigator.language : 'en').split('-')[0]
+}
+
+// Turn coordinates into a short place name + country code for display. Tries
+// Google Geocoding (needs the Geocoding API enabled on the key), then falls back
+// to OpenStreetMap Nominatim, then to a safe default. Never blocks room creation.
+// Returns { name, countryCode }.
+export async function reverseGeocode(lat, lng) {
+  const lang = placesLang()
+  // 1) Google Geocoding
+  if (API_KEY) {
+    try {
+      const r = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=${lang}&key=${API_KEY}`)
+      const d = await r.json()
+      if (d.status === 'OK' && d.results?.length) {
+        const comps = d.results[0].address_components || []
+        const find = (...types) => comps.find(c => types.some(t => c.types.includes(t)))?.long_name
+        const country = comps.find(c => c.types.includes('country'))?.short_name || null
+        const name = find('neighborhood') || find('sublocality', 'sublocality_level_1') ||
+          find('locality') || find('postal_town') || find('administrative_area_level_2')
+        if (name) return { name, countryCode: country ? country.toUpperCase() : null }
+      }
+    } catch { /* fall through to Nominatim */ }
+  }
+  // 2) Nominatim fallback
+  try {
+    const ctrl = new AbortController()
+    const t = setTimeout(() => ctrl.abort(), 6000)
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+      { headers: { 'Accept-Language': lang }, signal: ctrl.signal }
+    )
+    clearTimeout(t)
+    const d = await r.json()
+    const a = d.address || {}
+    return {
+      name: a.neighbourhood || a.suburb || a.city_district || a.city || a.town || a.village || 'My Location',
+      countryCode: (a.country_code || '').toUpperCase() || null,
+    }
+  } catch {
+    return { name: 'My Location', countryCode: null }
+  }
+}
+
 // Mulberry32 — same seeded PRNG as tmdb.js
 function seededRandom(seed) {
   let h = 0x9E3779B9
@@ -220,7 +268,7 @@ export async function geocodeLocation(query) {
       'X-Goog-Api-Key': API_KEY,
       'X-Goog-FieldMask': 'places.id,places.displayName,places.location',
     },
-    body: JSON.stringify({ textQuery: query }),
+    body: JSON.stringify({ textQuery: query, languageCode: placesLang() }),
   })
 
   if (!res.ok) {
@@ -267,6 +315,7 @@ export async function fetchNearbyPlaces(lat, lng, radius, types, roomId) {
     body: JSON.stringify({
       includedTypes: types,
       maxResultCount: 20,
+      languageCode: placesLang(),
       locationRestriction: {
         circle: {
           center: { latitude: lat, longitude: lng },

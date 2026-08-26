@@ -199,6 +199,7 @@ export default function SwipeCard({ item, onSwipe, active }) {
                 {item.year && <span className="card-year">{item.year}</span>}
                 {item.rating && <span className="card-rating">★ {item.rating}</span>}
                 {item.runtime && <span className="card-runtime">{item.runtime}</span>}
+                {item.distance && <span className="card-distance">📍 {item.distance}</span>}
               </div>
               {item.genre && <p className="card-genre">{item.genre}</p>}
               {item.isOpen != null && (

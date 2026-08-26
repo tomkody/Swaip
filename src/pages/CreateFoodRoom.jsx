@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createFoodRoom, getUserToken } from '../lib/room'
-import { geocodeLocation } from '../lib/placesApi'
+import { geocodeLocation, reverseGeocode } from '../lib/placesApi'
 import ModeToggle from '../components/ModeToggle'
 import './CreateActivityRoom.css'
 
@@ -59,23 +59,10 @@ export default function CreateFoodRoom() {
     // After GPS succeeds: reverse-geocode for human label + country code
     function applyCoords(latitude, longitude) {
       setPinnedCoords({ lat: latitude, lng: longitude })
-      const ctrl = new AbortController()
-      const t = setTimeout(() => ctrl.abort(), 6000)
-      fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
-        { headers: { 'Accept-Language': 'en' }, signal: ctrl.signal }
-      )
-        .then(r => r.json())
-        .then(d => {
-          setLocationText(
-            d.address?.neighbourhood || d.address?.suburb ||
-            d.address?.city_district || d.address?.city ||
-            d.address?.town || d.address?.village || 'My Location'
-          )
-          setPinnedCountryCode((d.address?.country_code || '').toUpperCase() || null)
-        })
+      reverseGeocode(latitude, longitude)
+        .then(({ name, countryCode }) => { setLocationText(name); setPinnedCountryCode(countryCode) })
         .catch(() => { setLocationText('My Location'); setPinnedCountryCode(null) })
-        .finally(() => { clearTimeout(t); setGeoLoading(false) })
+        .finally(() => setGeoLoading(false))
     }
 
     if (!navigator.geolocation) {

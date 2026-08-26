@@ -29,6 +29,11 @@
   font-size: 14px;
   font-weight: 700;
   color: var(--text);
+  min-width: 0;
+  max-width: 60vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .act-header-right {
