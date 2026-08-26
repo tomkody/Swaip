@@ -53,7 +53,7 @@ export default function Landing() {
               onSavedMatches={() => setDrawerOpen(true)}
             />
           </div>
-          <h1 className="tagline">Swipe your way to a perfect plan.</h1>
+          <h1 className="tagline">Stop debating.<br />Start deciding.</h1>
         </header>
 
         <h2 className="landing-question">What do you want to decide?</h2>
@@ -75,7 +75,7 @@ export default function Landing() {
             </div>
           </button>
 
-          <button className="category-card" onClick={() => navigate('/create/activities')}>
+          <button className="category-card category-card--activities" onClick={() => navigate('/create/activities')}>
             <span className="category-beta">Beta</span>
             <span className="category-emoji category-emoji--activities">🎯</span>
             <div className="category-text">
@@ -84,7 +84,7 @@ export default function Landing() {
             </div>
           </button>
 
-          <button className="category-card" onClick={() => navigate('/create/food')}>
+          <button className="category-card category-card--food" onClick={() => navigate('/create/food')}>
             <span className="category-beta">Beta</span>
             <span className="category-emoji category-emoji--food">🍽️</span>
             <div className="category-text">
@@ -93,7 +93,7 @@ export default function Landing() {
             </div>
           </button>
 
-          <button className="category-card category-card--wide" onClick={() => navigate('/create/conversations')}>
+          <button className="category-card category-card--wide category-card--convo" onClick={() => navigate('/create/conversations')}>
             <span className="category-beta">Beta</span>
             <span className="category-emoji category-emoji--convo">💬</span>
             <div className="category-text">
