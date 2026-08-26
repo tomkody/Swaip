@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import confetti from 'canvas-confetti'
 import HomeLogo from './HomeLogo'
+import CategoryGrid from './CategoryGrid'
 import { saveMatch } from '../lib/savedMatches'
 import { FOOD_CATEGORIES, buildLocalCuisineCategory } from '../lib/foodCategories'
 import { fetchNearbyPlaces, getBrandKey } from '../lib/placesApi'
@@ -62,134 +63,6 @@ function parseRoomFoodData(room) {
   return { phase, matchedCategories, places, playerCount }
 }
 
-// ─── Category Card ────────────────────────────────────────────────────────────
-
-function CategoryCard({ category, onSwipe, active }) {
-  const cardRef = useRef(null)
-  const startPos = useRef({ x: 0, y: 0 })
-  const isDraggingRef = useRef(false)
-  const hasMoved = useRef(false)
-  const isLeavingRef = useRef(false)
-  const currentOffset = useRef({ x: 0, y: 0 })
-
-  const [localOffset, setLocalOffset] = useState({ x: 0, y: 0 })
-  const [localDragging, setLocalDragging] = useState(false)
-  const [localLeaving, setLocalLeaving] = useState(null)
-
-  function handleStart(e) {
-    if (!active) return
-    const point = e.touches ? e.touches[0] : e
-    startPos.current = { x: point.clientX, y: point.clientY }
-    hasMoved.current = false
-    currentOffset.current = { x: 0, y: 0 }
-    isDraggingRef.current = true
-    setLocalDragging(true)
-  }
-
-  function handleMove(e) {
-    if (!isDraggingRef.current) return
-    const point = e.touches ? e.touches[0] : e
-    const dx = point.clientX - startPos.current.x
-    const dy = point.clientY - startPos.current.y
-    const dist = Math.sqrt(dx * dx + dy * dy)
-    currentOffset.current = { x: dx, y: dy }
-    if (dist > 30) {
-      hasMoved.current = true
-      setLocalOffset({ x: dx, y: dy })
-    }
-  }
-
-  function handleEnd() {
-    if (!isDraggingRef.current) return
-    isDraggingRef.current = false
-    setLocalDragging(false)
-    const ox = currentOffset.current.x
-    if (Math.abs(ox) > 100) {
-      isLeavingRef.current = true
-      const direction = ox > 0 ? 'right' : 'left'
-      setLocalLeaving(direction)
-      setTimeout(() => onSwipe(direction), 300)
-    } else {
-      setLocalOffset({ x: 0, y: 0 })
-      currentOffset.current = { x: 0, y: 0 }
-    }
-  }
-
-  function swipeVia(direction) {
-    if (!active) return
-    isLeavingRef.current = true
-    setLocalLeaving(direction)
-    setTimeout(() => onSwipe(direction), 300)
-  }
-
-  const ROTATION_FACTOR = 0.15
-  const rotation = localOffset.x * ROTATION_FACTOR
-  const cardStyle = localLeaving
-    ? {
-        transform: `translateX(${localLeaving === 'right' ? 600 : -600}px) rotate(${localLeaving === 'right' ? 30 : -30}deg)`,
-        opacity: 0,
-        transition: 'transform 0.3s ease, opacity 0.3s ease',
-      }
-    : {
-        transform: `translateX(${localOffset.x}px) translateY(${localOffset.y * 0.3}px) rotate(${rotation}deg)`,
-        transition: localDragging ? 'none' : 'transform 0.3s ease',
-      }
-
-  const yesOpacity = Math.max(0, Math.min(1, localOffset.x / 100))
-  const nopeOpacity = Math.max(0, Math.min(1, -localOffset.x / 100))
-
-  return (
-    <div className="swipe-card-wrapper">
-      <div
-        ref={cardRef}
-        className={`cat-card ${active ? 'active' : ''}`}
-        style={{ ...cardStyle, background: category.gradient }}
-        onMouseDown={handleStart}
-        onMouseMove={handleMove}
-        onMouseUp={handleEnd}
-        onMouseLeave={() => isDraggingRef.current && handleEnd()}
-        onTouchStart={handleStart}
-        onTouchMove={handleMove}
-        onTouchEnd={handleEnd}
-      >
-        <div className="swipe-stamp stamp-yes" style={{ opacity: yesOpacity }}>
-          <span>❤️</span> YES
-        </div>
-        <div className="swipe-stamp stamp-nope" style={{ opacity: nopeOpacity }}>
-          NOPE <span>✕</span>
-        </div>
-
-        <div className="cat-card-inner">
-          <div className="cat-emoji">{category.emoji}</div>
-          <h2 className="cat-label">{category.label}</h2>
-          <p className="cat-desc">{category.desc}</p>
-        </div>
-      </div>
-
-      {active && (
-        <div className="swipe-buttons">
-          <button className="swipe-btn nope-btn" onClick={() => swipeVia('left')} aria-label="Nope">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-          <button className="swipe-btn like-btn" onClick={() => swipeVia('right')} aria-label="Like">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
-          </button>
-        </div>
-      )}
-
-      {active && (
-        <div className="swipe-hint">
-          <span>← Nope</span>
-          <span>Like →</span>
-        </div>
-      )}
-    </div>
-  )
-}
 
 // ─── Main FoodRoom component ──────────────────────────────────────────────────
 
@@ -211,6 +84,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
   const playerCount = isSolo ? 1 : (initialData.playerCount || getRoomPlayerCount(room))
 
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [selectedCats, setSelectedCats] = useState(new Set())
   const [matches, setMatches] = useState([])
   const [likedPlaces, setLikedPlaces] = useState([])
   const [matchItem, setMatchItem] = useState(null)
@@ -448,25 +322,27 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
     }
   }, [isSolo, room.id, playerCount, FOOD_CATS, fetchAndTransitionToPlaces])  
 
-  // ── handleCategorySwipe ────────────────────────────────────────────────────
-  const handleCategorySwipe = useCallback(async (direction) => {
-    const cat = FOOD_CATS[currentIndex]
-    if (!cat) return
-    const newIndex = currentIndex + 1
-    setCurrentIndex(newIndex)
+  // ── Category multi-select (grid) ───────────────────────────────────────────
+  const toggleCategory = useCallback((numId) => {
+    setSelectedCats(prev => {
+      const next = new Set(prev)
+      next.has(numId) ? next.delete(numId) : next.add(numId)
+      return next
+    })
+  }, [])
 
-    if (direction === 'right') {
-      likedCatIdsRef.current.add(cat.numId)
-      if (!isSolo) {
-        const promise = recordSwipe(room.id, userToken.current, cat.numId, direction).catch(console.error)
-        pendingSwipesRef.current.push(promise)
+  const handleCategoriesConfirm = useCallback(async () => {
+    if (selectedCats.size === 0) return
+    likedCatIdsRef.current = new Set(selectedCats)
+    if (!isSolo) {
+      for (const numId of selectedCats) {
+        pendingSwipesRef.current.push(
+          recordSwipe(room.id, userToken.current, numId, 'right').catch(console.error)
+        )
       }
     }
-
-    if (newIndex >= FOOD_CATS.length) {
-      handleCategoriesDone()
-    }
-  }, [isSolo, currentIndex, room.id, FOOD_CATS, handleCategoriesDone])  
+    await handleCategoriesDone()
+  }, [selectedCats, isSolo, room.id, handleCategoriesDone])
 
   // ── Subscribe to room changes (detect partner fetched places) ────────────
   useEffect(() => {
@@ -812,45 +688,41 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
 
   // ── Category swipe UI ─────────────────────────────────────────────────────
   if (phase === 'categories') {
-    const current = FOOD_CATS[currentIndex]
     return (
       <div className="act-room">
         <div className="act-header">
           <HomeLogo />
           <span className="act-phase-label">🍽️ What are you in the mood for?</span>
-          <span className="act-progress">{currentIndex + 1} / {FOOD_CATS.length}</span>
+          <span className="act-progress">{selectedCats.size} selected</span>
         </div>
 
-        <div className="act-cards">
-          <CategoryCard
-            key={current.id}
-            category={current}
-            onSwipe={handleCategorySwipe}
-            active
+        <div className="act-grid-scroll">
+          <p className="act-grid-hint">
+            {isSolo
+              ? 'Pick every cuisine you fancy — one or more.'
+              : playerCount > 2
+                ? `Pick what you fancy — you'll eat what all ${playerCount} agree on.`
+                : 'Pick every cuisine you fancy — you\'ll eat what you both agree on.'}
+          </p>
+          <CategoryGrid
+            categories={FOOD_CATS}
+            selected={selectedCats}
+            onToggle={toggleCategory}
           />
         </div>
 
         <div className="act-footer">
-          {currentIndex > 0 && (
-            <button
-              className="done-early-btn"
-              onClick={handleCategoriesDone}
-              disabled={fetchingPlaces}
-            >
-              {fetchingPlaces
-                ? 'Finding restaurants…'
-                : likedCatIdsRef.current.size > 0
-                  ? `I'm done · ${likedCatIdsRef.current.size} cuisine${likedCatIdsRef.current.size !== 1 ? 's' : ''} picked`
-                  : `I'm done`}
-            </button>
-          )}
-          <p className="act-footer-hint">
-            {isSolo
-              ? 'Swipe right on cuisines you enjoy'
-              : playerCount > 2
-                ? `Swipe right on what you enjoy — matches need all ${playerCount} to agree`
-                : 'Swipe right on all cuisines you\'d both enjoy'}
-          </p>
+          <button
+            className="btn btn-primary act-confirm-btn"
+            onClick={handleCategoriesConfirm}
+            disabled={selectedCats.size === 0 || fetchingPlaces}
+          >
+            {fetchingPlaces
+              ? 'Finding restaurants…'
+              : selectedCats.size === 0
+                ? 'Pick at least one'
+                : `Find restaurants · ${selectedCats.size} selected`}
+          </button>
         </div>
       </div>
     )
