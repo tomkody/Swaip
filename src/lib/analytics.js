@@ -1,35 +1,23 @@
-// Privacy-friendly, vendor-agnostic analytics.
+// Privacy-friendly analytics via Vercel Web Analytics (free, cookieless).
 //
-// No-op until VITE_PLAUSIBLE_DOMAIN is set, so nothing tracks in dev or before
-// you opt in. Plausible is cookieless and GDPR-friendly (no consent banner
-// required). To enable: set VITE_PLAUSIBLE_DOMAIN=swaip.app in your Vercel env.
-//
-// Swap providers by changing only this file — the rest of the app calls
-// track(event, props) and never knows the vendor.
+// Nothing to configure in env: just enable "Web Analytics" in the Vercel
+// project dashboard. It only collects on the deployed site — in dev this is a
+// no-op. The rest of the app calls track(event, props) and never knows the
+// vendor, so swapping providers means editing only this file.
+
+import { inject, track as vercelTrack } from '@vercel/analytics'
 
 export function initAnalytics() {
-  const domain = import.meta.env.VITE_PLAUSIBLE_DOMAIN
-  if (!domain || typeof document === 'undefined') return
-  if (document.querySelector('script[data-swaip-analytics]')) return
-
-  // Queue shim so track() calls before the script loads aren't lost.
-  window.plausible = window.plausible || function () {
-    (window.plausible.q = window.plausible.q || []).push(arguments)
-  }
-
-  const s = document.createElement('script')
-  s.defer = true
-  s.dataset.swaipAnalytics = 'true'
-  s.setAttribute('data-domain', domain)
-  s.src = 'https://plausible.io/js/script.js'
-  document.head.appendChild(s)
+  if (!import.meta.env.PROD) return // no analytics in dev
+  try {
+    inject()
+  } catch { /* never let analytics break boot */ }
 }
 
 // Track a funnel event. Never throws — analytics must not break the app.
+// Vercel event properties must be flat string/number/boolean values.
 export function track(event, props) {
   try {
-    if (typeof window !== 'undefined' && typeof window.plausible === 'function') {
-      window.plausible(event, props ? { props } : undefined)
-    }
+    vercelTrack(event, props || undefined)
   } catch { /* swallow */ }
 }
