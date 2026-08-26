@@ -140,7 +140,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     if (!finishedSwiping || isSolo) return
     const interval = setInterval(async () => {
       try {
-        const ids = await fetchRoomMatches(room.id, userToken.current)
+        const ids = await fetchRoomMatches(room.id, userToken.current, playerCount)
         if (!ids) return
         const canonical = places.filter(p => ids.includes(p.numId))
         if (canonical.length > 0) {
@@ -155,7 +155,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       } catch { /* non-fatal */ }
     }, 3000)
     return () => clearInterval(interval)
-  }, [finishedSwiping, isSolo, room.id, places])  
+  }, [finishedSwiping, isSolo, room.id, places, playerCount])
 
   // ── Track participant count (for N-player waiting UI) ────────────────────
   useEffect(() => {
