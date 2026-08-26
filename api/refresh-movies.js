@@ -40,7 +40,7 @@ export default async function handler(req, res) {
   try {
     // Build both catalogs in parallel to stay well within the time budget.
     const [movieRows, tvRows] = await Promise.all([
-      buildCatalog({ token, regions, pages: 12, minVotes: 5000, freshPages: 3, concurrency: 12 }),
+      buildCatalog({ token, regions, pages: 16, minVotes: 3500, freshPages: 3, providerPages: 3, concurrency: 20, providerRegions: regions }),
       buildTvCatalog({ token, regions, pages: 10, minVotes: 1500, freshPages: 3, concurrency: 12 }),
     ])
 

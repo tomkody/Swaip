@@ -14,11 +14,11 @@ if (!token) {
 }
 
 const regions = (process.env.REGIONS || 'CZ,US,GB').split(',')
-const pages = Number(process.env.PAGES || 3)
-const minVotes = Number(process.env.MIN_VOTES || 5000)
+const pages = Number(process.env.PAGES || 16)
+const minVotes = Number(process.env.MIN_VOTES || 3500)
 
 console.log(`Building catalog: regions=${regions.join(',')} pages=${pages} minVotes=${minVotes}`)
-const rows = await buildCatalog({ token, regions, pages, minVotes })
+const rows = await buildCatalog({ token, regions, pages, minVotes, providerPages: 3, concurrency: 20, providerRegions: regions })
 console.log(`Built ${rows.length} rows.`)
 
 const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL

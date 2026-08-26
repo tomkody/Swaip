@@ -125,15 +125,31 @@ function detailToRows(id, detail, regions) {
 // popular releases. One /movie/{id} call per movie returns full detail AND
 // all-region watch providers (append_to_response); those calls run in parallel
 // batches so a larger catalog still finishes well within the function timeout.
-export async function buildCatalog({ token, regions, pages = 12, minVotes = 5000, freshPages = 3, providerPages = 2, concurrency = 16 }) {
-  const [classics, fresh, ...byProvider] = await Promise.all([
+export async function buildCatalog({ token, regions, pages = 12, minVotes = 5000, freshPages = 3, providerPages = 2, concurrency = 16, providerRegions }) {
+  // Discover platform titles per region so thin regional catalogs (e.g. CZ
+  // Prime/Apple) get stocked with titles actually streamable there — not just
+  // whatever the US top list happens to also carry.
+  const provRegions = providerRegions && providerRegions.length ? providerRegions : ['US']
+  const [classics, fresh] = await Promise.all([
     discoverTopRated(token, { pages, minVotes }),
     discoverFresh(token, { pages: freshPages }),
-    ...Object.values(PLATFORM_FLATRATE_PROVIDERS).map(pid =>
-      discoverByProvider(token, pid, { pages: providerPages })
-    ),
   ])
-  const ids = [...new Set([...classics, ...fresh, ...byProvider.flat()])]
+
+  // Provider discovery is region × platform, which can be many calls — run them
+  // in throttled batches instead of one big Promise.all so we don't burst TMDB.
+  const provTasks = provRegions.flatMap(region =>
+    Object.values(PLATFORM_FLATRATE_PROVIDERS).map(pid => ({ pid, region }))
+  )
+  const providerIds = []
+  for (let i = 0; i < provTasks.length; i += concurrency) {
+    const batch = provTasks.slice(i, i + concurrency)
+    const results = await Promise.all(
+      batch.map(t => discoverByProvider(token, t.pid, { pages: providerPages, region: t.region }).catch(() => []))
+    )
+    for (const r of results) providerIds.push(...r)
+  }
+
+  const ids = [...new Set([...classics, ...fresh, ...providerIds])]
 
   const rows = []
   for (let i = 0; i < ids.length; i += concurrency) {
