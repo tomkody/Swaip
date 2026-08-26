@@ -431,7 +431,11 @@ export async function submitConversationSelections(roomId, userToken, subtopicId
     subtopic_id: id,
   }))
 
-  const { error } = await supabase.from('conversation_selections').insert(rows)
+  // Idempotent: a double submit (e.g. finishing fast) must not 409 on the
+  // (room_id, user_token, subtopic_id) unique constraint and strand the results.
+  const { error } = await supabase
+    .from('conversation_selections')
+    .upsert(rows, { onConflict: 'room_id,user_token,subtopic_id', ignoreDuplicates: true })
   if (error) throw error
 }
 
