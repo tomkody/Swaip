@@ -92,9 +92,11 @@ export default function SwipeCard({ item, onSwipe, active }) {
     currentOffset.current = { x: dx, y: dy }
 
     if (dist > DRAG_MIN_MOVE) {
-      // Confirmed drag — now show visual movement
+      // Confirmed drag
       hasMoved.current = true
-      if (flipped) setFlipped(false)
+      // On the flipped (details) side, a drag is a scroll — let the content
+      // scroll natively; never swipe or flip back mid-scroll.
+      if (flipped) return
       setOffset({ x: dx, y: dy })
     }
     // Below threshold: card stays perfectly still (no wibble)
@@ -104,6 +106,9 @@ export default function SwipeCard({ item, onSwipe, active }) {
     if (!isDraggingRef.current) return
     isDraggingRef.current = false
     setDragging(false)
+
+    // Flipped side: drags were scrolls — no swipe.
+    if (flipped) { currentOffset.current = { x: 0, y: 0 }; return }
 
     const ox = currentOffset.current.x
 

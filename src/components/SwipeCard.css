@@ -273,7 +273,11 @@
   gap: 14px;
   padding: 28px 22px 20px;
   height: 100%;
-  justify-content: center;
+  justify-content: flex-start;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;      /* allow native vertical scroll on the details side */
+  overscroll-behavior: contain;
 }
 
 .card-back-title {
@@ -374,10 +378,6 @@
   line-height: 1.6;
   color: rgba(255,255,255,0.72);
   margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 6;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .card-back-hint {
