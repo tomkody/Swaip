@@ -155,7 +155,10 @@ export default function CreateFoodRoom() {
               className="player-count-select"
               onClick={() => setShowPlayerPicker(p => !p)}
             >
-              <span>👥 {playerCount} people</span>
+              <span>
+                👥 {playerCount} people
+                {playerCount > 2 && <span className="beta-pill">Beta</span>}
+              </span>
               <svg
                 width="14" height="14" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
@@ -172,7 +175,10 @@ export default function CreateFoodRoom() {
                     className={`player-count-option ${playerCount === n ? 'active' : ''}`}
                     onClick={() => { setPlayerCount(n); setShowPlayerPicker(false) }}
                   >
-                    <span>{n} people</span>
+                    <span>
+                      {n} people
+                      {n > 2 && <span className="beta-pill">Beta</span>}
+                    </span>
                     {playerCount === n && (
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                         <polyline points="20 6 9 17 4 12" />
