@@ -18,7 +18,10 @@ export default function CategoryGrid({ categories, selected, onToggle }) {
             onClick={() => onToggle(cat.numId)}
             aria-pressed={isSel}
           >
-            <span className="catgrid-emoji" style={{ background: cat.gradient }}>{cat.emoji}</span>
+            <span
+              className="catgrid-emoji"
+              style={{ background: `linear-gradient(rgba(128,128,138,0.4), rgba(128,128,138,0.4)), ${cat.gradient}` }}
+            >{cat.emoji}</span>
             <span className="catgrid-text">
               <span className="catgrid-label">{cat.label}</span>
               {cat.desc && <span className="catgrid-desc">{cat.desc}</span>}
