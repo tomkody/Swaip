@@ -72,23 +72,34 @@ function drawRoundedRect(ctx, x, y, w, h, r) {
   ctx.closePath()
 }
 
-function drawLogo(ctx, W, H) {
+// Cached Swaip icon (transparent-bg PNG) for the watermark
+let _iconPromise = null
+function loadIcon() {
+  if (!_iconPromise) _iconPromise = loadImage('/swaip-icon-transparent.png').catch(() => null)
+  return _iconPromise
+}
+
+async function drawLogo(ctx, W, H) {
   const logoY = H - 200
   const lS = 88
   const lX = W / 2 - lS / 2
   const r = 22
+
+  // White rounded tile so the dark half of the icon stays visible on the
+  // dark share background — mirrors the real Swaip app icon.
   drawRoundedRect(ctx, lX, logoY, lS, lS, r)
-  const logoGrad = ctx.createLinearGradient(lX, logoY, lX + lS, logoY + lS)
-  logoGrad.addColorStop(0, '#F74F5E')
-  logoGrad.addColorStop(1, '#F5B83A')
-  ctx.fillStyle = logoGrad
-  ctx.fill()
   ctx.fillStyle = '#FFFFFF'
-  ctx.font = `800 50px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
-  ctx.textAlign = 'center'
-  ctx.fillText('S', W / 2, logoY + 62)
+  ctx.fill()
+
+  const icon = await loadIcon()
+  if (icon) {
+    const pad = 12
+    ctx.drawImage(icon, lX + pad, logoY + pad, lS - pad * 2, lS - pad * 2)
+  }
+
   ctx.fillStyle = 'rgba(255,255,255,0.5)'
   ctx.font = `500 36px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
+  ctx.textAlign = 'center'
   ctx.fillText('swaip.app', W / 2, logoY + lS + 52)
 }
 
@@ -180,7 +191,7 @@ async function generateSingleMatchImage({ title, posterUrl, emoji, swipeCount, p
   ctx.lineTo(W * 0.7, cursorY + 44)
   ctx.stroke()
 
-  drawLogo(ctx, W, H)
+  await drawLogo(ctx, W, H)
   return canvas
 }
 
@@ -363,7 +374,7 @@ async function generateMatchesImage({ items, typeLabel, recommendation, solo = f
     ctx.fillText(`+ ${items.length - 4} more`, W / 2, moreY)
   }
 
-  drawLogo(ctx, W, H)
+  await drawLogo(ctx, W, H)
   return canvas
 }
 
@@ -455,7 +466,7 @@ async function generateConversationImage({ items, solo = false }) {
     ctx.fillText(`+ ${items.length - 4} more`, W / 2, cy + 24)
   }
 
-  drawLogo(ctx, W, H)
+  await drawLogo(ctx, W, H)
   return canvas
 }
 
