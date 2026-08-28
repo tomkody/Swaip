@@ -102,14 +102,10 @@ export default function Landing() {
             </div>
           </button>
 
-          <button className="category-card category-card--wide" onClick={() => navigate('/create/colorgame')}>
-            <span className="category-beta">Beta</span>
-            <span className="category-emoji category-emoji--game">🎨</span>
-            <div className="category-text">
-              <span className="category-name">Color Duel</span>
-              <span className="category-desc">Guess iconic movie colours from memory</span>
-            </div>
-          </button>
+          {/* Color Duel is parked: the game works but only 3 puzzles pass quality
+              (an element can only be isolated when its colour is unique on the
+              poster). Still playable at /create/colorgame — re-add this card once
+              there are enough rounds to be worth surfacing. */}
         </div>
 
         <button className="how-toggle" onClick={() => setShowHow(!showHow)}>
