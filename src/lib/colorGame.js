@@ -2,17 +2,21 @@
 // Puzzles use the same official TMDB posters (and attribution) the rest of the
 // app already displays; target colours were sampled from the posters themselves.
 
+// Every target is a SPECIFIC element with one constant, iconic colour
+// (a character's skin, a costume, a logo) — never a broad multi-shade area
+// like a sky or clouds, so there is always exactly one right answer to aim at.
 export const COLOR_PUZZLES = [
-  { id: 'simpsons',    media: 'series', title: 'The Simpsons',             label: "Homer's skin",             poster: 'https://image.tmdb.org/t/p/w500/uWpG7GqfKGQqX4YMAo3nv5OrglV.jpg', hex: '#E8CF43' },
-  { id: 'killbill',    media: 'movie',  title: 'Kill Bill: Vol. 1',        label: "the Bride's suit",         poster: 'https://image.tmdb.org/t/p/w500/v7TaX8kXMXs5yFFGR41guUDNcnB.jpg', hex: '#F9DE20' },
-  { id: 'matrix',      media: 'movie',  title: 'The Matrix',               label: 'the digital-rain green',   poster: 'https://image.tmdb.org/t/p/w500/dXNAPwY7VrqMAo51EKhhCJfaGb5.jpg', hex: '#4DA46A' },
-  { id: 'lalaland',    media: 'movie',  title: 'La La Land',               label: 'the night sky',            poster: 'https://image.tmdb.org/t/p/w500/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg', hex: '#4718B2' },
-  { id: 'grandbud',    media: 'movie',  title: 'The Grand Budapest Hotel', label: 'the hotel facade',         poster: 'https://image.tmdb.org/t/p/w500/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg', hex: '#DF9AB2' },
-  { id: 'breakingbad', media: 'series', title: 'Breaking Bad',             label: "Walt's hazmat suit",       poster: 'https://image.tmdb.org/t/p/w500/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg', hex: '#B4AC28' },
-  { id: 'stranger',    media: 'series', title: 'Stranger Things',          label: 'the red glow',             poster: 'https://image.tmdb.org/t/p/w500/uOOtwVbSr4QDjAGIifLDwpb2Pdl.jpg', hex: '#CE2C2F' },
-  { id: 'shining',     media: 'movie',  title: 'The Shining',              label: 'the iconic poster yellow', poster: 'https://image.tmdb.org/t/p/w500/uAR0AWqhQL1hQa69UDEbb2rE5Wx.jpg', hex: '#F9DB02' },
-  { id: 'dune2',       media: 'movie',  title: 'Dune: Part Two',           label: 'the sands of Arrakis',     poster: 'https://image.tmdb.org/t/p/w500/6izwz7rsy95ARzTR3poZ8H6c5pp.jpg', hex: '#F39F30' },
-  { id: 'moneyheist',  media: 'series', title: 'Money Heist',              label: 'the crew jumpsuits',       poster: 'https://image.tmdb.org/t/p/w500/reEMJA1uzscCbkpeRJeTT2bjqUp.jpg', hex: '#A0433E' },
+  { id: 'simpsons',    media: 'series', title: 'The Simpsons',             label: "Homer's skin",              poster: 'https://image.tmdb.org/t/p/w500/uWpG7GqfKGQqX4YMAo3nv5OrglV.jpg', hex: '#E8CF43' },
+  { id: 'killbill',    media: 'movie',  title: 'Kill Bill: Vol. 1',        label: "the Bride's suit",          poster: 'https://image.tmdb.org/t/p/w500/v7TaX8kXMXs5yFFGR41guUDNcnB.jpg', hex: '#F9DE20' },
+  { id: 'shrek',       media: 'movie',  title: 'Shrek',                    label: "Shrek's skin",              poster: 'https://image.tmdb.org/t/p/w500/iB64vpL3dIObOtMZgX3RqdVdQDc.jpg', hex: '#B8B13C' },
+  { id: 'nemo',        media: 'movie',  title: 'Finding Nemo',             label: 'Nemo',                      poster: 'https://image.tmdb.org/t/p/w500/eHuGQ10FUzK1mdOY69wF5pGgEf5.jpg', hex: '#D25B32' },
+  { id: 'monsters',    media: 'movie',  title: 'Monsters, Inc.',           label: "Sulley's fur",              poster: 'https://image.tmdb.org/t/p/w500/wFSpyMsp7H0ttERbxY7Trlv8xry.jpg', hex: '#3391A7' },
+  { id: 'lalaland',    media: 'movie',  title: 'La La Land',               label: "Mia's dress",               poster: 'https://image.tmdb.org/t/p/w500/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg', hex: '#C5A118' },
+  { id: 'grandbud',    media: 'movie',  title: 'The Grand Budapest Hotel', label: 'the hotel facade',          poster: 'https://image.tmdb.org/t/p/w500/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg', hex: '#DF9AB2' },
+  { id: 'breakingbad', media: 'series', title: 'Breaking Bad',             label: "Walt's hazmat suit",        poster: 'https://image.tmdb.org/t/p/w500/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg', hex: '#B4AC28' },
+  { id: 'stranger',    media: 'series', title: 'Stranger Things',          label: 'the STRANGER THINGS logo',  poster: 'https://image.tmdb.org/t/p/w500/uOOtwVbSr4QDjAGIifLDwpb2Pdl.jpg', hex: '#CB2E31' },
+  { id: 'shining',     media: 'movie',  title: 'The Shining',              label: 'the iconic poster yellow',  poster: 'https://image.tmdb.org/t/p/w500/uAR0AWqhQL1hQa69UDEbb2rE5Wx.jpg', hex: '#F9DB02' },
+  { id: 'moneyheist',  media: 'series', title: 'Money Heist',              label: 'the crew jumpsuits',        poster: 'https://image.tmdb.org/t/p/w500/reEMJA1uzscCbkpeRJeTT2bjqUp.jpg', hex: '#A0433E' },
 ]
 
 export const ROUNDS_PER_GAME = 5
