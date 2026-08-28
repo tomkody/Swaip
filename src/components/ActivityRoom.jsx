@@ -235,19 +235,23 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   useEffect(() => {
     if (isSolo) return
     let active = true
+    let handled = false
     const markDone = async () => {
-      if (!active) return
+      if (!active || handled) return
+      handled = true
       setPartnerDone(true)
       const n = await fetchPartnerSwipeCount(room.id, userToken.current, 2000000)
       if (active) setPartnerStop(n)
     }
-    fetchRoomPicks(room.id, userToken.current)
-      .then(p => { if (active && p && p.othersDone > 0) markDone() })
+    const check = () => fetchRoomPicks(room.id, userToken.current)
+      .then(p => { if (p && p.othersDone > 0) markDone() })
       .catch(() => {})
+    check()
     const unsub = subscribeToRoomPicks(room.id, userToken.current, (swipe) => {
       if (Number(swipe.item_id) === DONE_ITEM_ID) markDone()
     })
-    return () => { active = false; unsub() }
+    const poll = setInterval(() => { if (!handled) check() }, 5000)
+    return () => { active = false; clearInterval(poll); unsub() }
   }, [isSolo, room.id])
 
   // ── fetchAndTransitionToPlaces ────────────────────────────────────────────

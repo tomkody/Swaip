@@ -148,19 +148,24 @@ export default function Room() {
   useEffect(() => {
     if (isSolo || (room?.type !== 'movies' && room?.type !== 'series')) return
     let active = true
+    let handled = false
     const markDone = async () => {
-      if (!active) return
+      if (!active || handled) return
+      handled = true
       setPartnerDone(true)
       const n = await fetchPartnerSwipeCount(roomId, userToken.current)
       if (active) setPartnerStop(n)
     }
-    fetchRoomPicks(roomId, userToken.current)
-      .then(p => { if (active && p && p.othersDone > 0) markDone() })
+    const check = () => fetchRoomPicks(roomId, userToken.current)
+      .then(p => { if (p && p.othersDone > 0) markDone() })
       .catch(() => {})
+    check() // initial
     const unsub = subscribeToRoomPicks(roomId, userToken.current, (swipe) => {
       if (Number(swipe.item_id) === DONE_ITEM_ID) markDone()
     })
-    return () => { active = false; unsub() }
+    // Realtime can drop the single DONE event; poll as a fallback until caught.
+    const poll = setInterval(() => { if (!handled) check() }, 5000)
+    return () => { active = false; clearInterval(poll); unsub() }
   }, [isSolo, room?.type, roomId])
 
   const handleSwipe = useCallback(
