@@ -35,6 +35,7 @@ import {
   subscribeToSwipes,
   subscribeToRoomPicks,
   fetchRoomPicks,
+  fetchPartnerSwipeCount,
   updateActivityRoomPhase,
   subscribeToRoomChanges,
   getRoom,
@@ -95,6 +96,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   const [matchItem, setMatchItem] = useState(null)
   const [isDone, setIsDone] = useState(false)
   const [partnerDone, setPartnerDone] = useState(false)
+  const [partnerStop, setPartnerStop] = useState(Infinity)
   const [participantCount, setParticipantCount] = useState(1)
   const [voteCounts, setVoteCounts] = useState({})
 
@@ -227,15 +229,23 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     recordSwipe(room.id, userToken.current, DONE_ITEM_ID, 'right', playerCount).catch(() => {})
   }, [isSolo, phase, finishedSwiping, isDone, room.id, playerCount])
 
-  // ── Detect when a partner finished, to nudge this user they can stop too ──
+  // ── Detect when a partner finished + how far they swiped, so the banner shows
+  // only once this user reaches a place the partner never got to. (Places use
+  // ids ≥ 2,000,000, so count only those — not the earlier category swipes.) ──
   useEffect(() => {
     if (isSolo) return
     let active = true
+    const markDone = async () => {
+      if (!active) return
+      setPartnerDone(true)
+      const n = await fetchPartnerSwipeCount(room.id, userToken.current, 2000000)
+      if (active) setPartnerStop(n)
+    }
     fetchRoomPicks(room.id, userToken.current)
-      .then(p => { if (active && p && p.othersDone > 0) setPartnerDone(true) })
+      .then(p => { if (active && p && p.othersDone > 0) markDone() })
       .catch(() => {})
     const unsub = subscribeToRoomPicks(room.id, userToken.current, (swipe) => {
-      if (Number(swipe.item_id) === DONE_ITEM_ID) setPartnerDone(true)
+      if (Number(swipe.item_id) === DONE_ITEM_ID) markDone()
     })
     return () => { active = false; unsub() }
   }, [isSolo, room.id])
@@ -781,10 +791,10 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       </div>
 
       <div className="act-footer">
-        {partnerDone && !isSolo && (
+        {partnerDone && !isSolo && currentIndex >= partnerStop && (
           <div className="partner-done-banner">
             <span className="partner-done-dot" aria-hidden="true" />
-            {playerCount > 2 ? 'Someone finished swiping' : 'Your partner finished swiping'} — wrap up whenever you're ready
+            {playerCount > 2 ? 'Someone finished here' : 'Your partner finished here'} — no new matches ahead, wrap up anytime
           </div>
         )}
         <button className="done-early-btn" onClick={() => setIsDone(true)}>

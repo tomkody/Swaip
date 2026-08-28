@@ -386,6 +386,28 @@ export async function getRoom(roomId) {
   return data
 }
 
+// How many real (non-sentinel) cards the OTHER players have swiped — i.e. their
+// position in the shared, identically-ordered deck. For a 2-player room this is
+// the partner's position, so the UI can say "you've reached a card your partner
+// never got to". `minItemId` isolates a phase's own items (places use ids
+// ≥ 2,000,000, so pass that to skip the category swipes in food/activity rooms).
+export async function fetchPartnerSwipeCount(roomId, userToken, minItemId = 0) {
+  if (!supabase) return 0
+  const { data, error } = await supabase
+    .from('swipes').select('user_token, item_id').eq('room_id', roomId)
+  if (error || !data) return 0
+  const counts = {}
+  for (const r of data) {
+    if (r.user_token === userToken) continue
+    const id = Number(r.item_id)
+    if (DONE_SENTINELS.has(id) || id < minItemId) continue
+    counts[r.user_token] = (counts[r.user_token] || 0) + 1
+  }
+  let max = 0
+  for (const c of Object.values(counts)) if (c > max) max = c
+  return max
+}
+
 // Record a swipe — returns true when playerCount distinct users all liked this item
 export async function recordSwipe(roomId, userToken, itemId, direction, playerCount = 2) {
   if (!supabase) {

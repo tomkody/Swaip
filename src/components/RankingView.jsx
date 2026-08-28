@@ -710,6 +710,9 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
         </div>
       )}
 
+      {/* Chat is available the moment swiping ends, not only after locking in */}
+      {!isSolo && <RoomChat roomId={room.id} />}
+
       <div className="rv-footer">
         <button className="btn btn-primary rv-submit" onClick={handleSubmit} disabled={submitting}>
           {submitting ? 'Saving…' : top3.length > 0 ? `Lock In My Top ${top3.length} 🔒` : 'Skip & See Results'}

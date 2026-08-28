@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
-import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, subscribeToRoomActive, subscribeToRoomPicks, fetchRoomPicks, markRoomActive, fetchRoomMatches, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID } from '../lib/room'
+import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, subscribeToRoomActive, subscribeToRoomPicks, fetchRoomPicks, fetchPartnerSwipeCount, markRoomActive, fetchRoomMatches, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID } from '../lib/room'
 import { PLATFORMS } from '../lib/platforms'
 import { fetchTopRatedMovies } from '../lib/tmdb'
 import { fetchTopRatedSeries } from '../lib/seriesFetch'
@@ -39,6 +39,7 @@ export default function Room() {
   const [matchItem, setMatchItem] = useState(null)
   const [matches, setMatches] = useState([])
   const [partnerDone, setPartnerDone] = useState(false)
+  const [partnerStop, setPartnerStop] = useState(Infinity)  // partner's last-swiped deck position
   const [liked, setLiked] = useState([])
   const [isDone, setIsDone] = useState(false)
   const [doneMatches, setDoneMatches] = useState(null)
@@ -139,17 +140,25 @@ export default function Room() {
     return () => unsubSwipes()
   }, [room, roomId])
 
-  // Let the still-swiping user know the moment their partner finishes, so they
-  // know they can wrap up too. "Done" is the DONE_ITEM_ID sentinel row the
-  // partner writes when they tap done or their deck runs out.
+  // Let the still-swiping user know once they reach a card their partner never
+  // got to. We flag "done" from the partner's DONE_ITEM_ID sentinel (tap done or
+  // deck exhausted), then record how far they'd swiped — the banner only shows
+  // once THIS user passes that point (currentIndex >= partnerStop), i.e. exactly
+  // at the first card the partner didn't reach.
   useEffect(() => {
     if (isSolo || (room?.type !== 'movies' && room?.type !== 'series')) return
     let active = true
+    const markDone = async () => {
+      if (!active) return
+      setPartnerDone(true)
+      const n = await fetchPartnerSwipeCount(roomId, userToken.current)
+      if (active) setPartnerStop(n)
+    }
     fetchRoomPicks(roomId, userToken.current)
-      .then(p => { if (active && p && p.othersDone > 0) setPartnerDone(true) })
+      .then(p => { if (active && p && p.othersDone > 0) markDone() })
       .catch(() => {})
     const unsub = subscribeToRoomPicks(roomId, userToken.current, (swipe) => {
-      if (Number(swipe.item_id) === DONE_ITEM_ID) setPartnerDone(true)
+      if (Number(swipe.item_id) === DONE_ITEM_ID) markDone()
     })
     return () => { active = false; unsub() }
   }, [isSolo, room?.type, roomId])
@@ -361,10 +370,10 @@ export default function Room() {
       </div>
 
       <div className="room-footer">
-        {partnerDone && !isSolo && (
+        {partnerDone && !isSolo && currentIndex >= partnerStop && (
           <div className="partner-done-banner">
             <span className="partner-done-dot" aria-hidden="true" />
-            Your partner finished swiping — wrap up whenever you're ready
+            Your partner finished here — no new matches ahead, wrap up anytime
           </div>
         )}
         <button className="done-early-btn" onClick={async () => {
