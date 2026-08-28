@@ -2,3 +2,9 @@
 // Single source of truth — tmdb.js and seriesFetch.js both import this so the
 // list can never drift out of sync between movies and series.
 export const CATALOG_REGIONS = ['US', 'GB', 'CA', 'AU', 'IE', 'DE', 'FR', 'ES', 'IT', 'NL', 'BR', 'MX', 'IN', 'CZ', 'PL', 'SE']
+
+// Viewer's country (ISO-3166 alpha-2) from the browser locale, e.g. "cs-CZ" → "CZ".
+export function detectRegion() {
+  const locale = (typeof navigator !== 'undefined' && navigator.language) || 'en-US'
+  return (locale.split('-')[1] || 'US').toUpperCase()
+}

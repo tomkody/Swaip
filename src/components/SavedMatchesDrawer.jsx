@@ -19,7 +19,9 @@ export default function SavedMatchesDrawer({ open, onClose }) {
   const [matches, setMatches] = useState([])
 
   useEffect(() => {
-    if (open) setMatches(getSavedMatches())
+    if (!open) return
+    const t = setTimeout(() => setMatches(getSavedMatches()), 0)  // deferred — no sync setState in effects
+    return () => clearTimeout(t)
   }, [open])
 
   function handleRemove(id, category) {

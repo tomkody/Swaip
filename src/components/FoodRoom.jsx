@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import confetti from 'canvas-confetti'
 import HomeLogo from './HomeLogo'
 import CategoryGrid from './CategoryGrid'
+import { seededShuffle } from '../lib/random'
 import { saveMatch } from '../lib/savedMatches'
 import { FOOD_CATEGORIES, buildLocalCuisineCategory } from '../lib/foodCategories'
 import { fetchNearbyPlaces, getBrandKey } from '../lib/placesApi'
@@ -27,26 +28,15 @@ import './ActivityRoom.css'
 
 const FOOD_CAT_DONE_NUMID = 2999
 
-// ── Seeded shuffle — same order for both users in the same room ──────────────
-function seededShuffle(arr, seed) {
-  const a = [...arr]
-  let h = 0x9E3779B9
-  for (let i = 0; i < seed.length; i++) {
-    h = Math.imul(h ^ seed.charCodeAt(i), 0x9E3779B9)
-    h ^= h >>> 15
+// Stable per-room cuisine order (incl. the region's Local Cuisine tile). Module
+// cache instead of useMemo: stable identity, no hook-dependency fights.
+const catOrderCache = new Map()
+function cuisinesForRoom(roomId, countryCode) {
+  const key = roomId + ':' + (countryCode || '')
+  if (!catOrderCache.has(key)) {
+    catOrderCache.set(key, seededShuffle([...FOOD_CATEGORIES, buildLocalCuisineCategory(countryCode)], roomId))
   }
-  let t = (h >>> 0) + 0x6D2B79F5
-  function rng() {
-    t = (t + 0x6D2B79F5) >>> 0
-    let r = Math.imul(t ^ (t >>> 15), 1 | t)
-    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r)
-    return ((r ^ (r >>> 14)) >>> 0) / 4294967296
-  }
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
+  return catOrderCache.get(key)
 }
 
 // ── Parse location data from topic_id ────────────────────────────────────────
@@ -74,12 +64,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
   const userToken = useRef(getUserToken())
   const location = parseLocation(room.topic_id)
 
-  // Build the full category list: static categories + dynamic Local Cuisine for this region
-  const localCuisine = buildLocalCuisineCategory(location?.countryCode)
-  const ALL_FOOD_CATS = [...FOOD_CATEGORIES, localCuisine]
-
-  // Same shuffled order for everyone in this room
-  const FOOD_CATS = seededShuffle(ALL_FOOD_CATS, room.id)
+  const FOOD_CATS = cuisinesForRoom(room.id, location?.countryCode)
 
   const initialData = parseRoomFoodData(room)
   const [phase, setPhase] = useState(initialData.phase)
@@ -128,14 +113,16 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
   // Escape hatch: if a partner never taps "done", surface a "Continue" option
   // after a wait so the user isn't stuck on the cuisine screen forever.
   useEffect(() => {
-    if (!waitingForPartner) { setWaitedLong(false); return }
+    if (!waitingForPartner) return
     const t = setTimeout(() => setWaitedLong(true), 20000)
     return () => clearTimeout(t)
   }, [waitingForPartner])
 
   // Solo: auto-complete when all places swiped
   useEffect(() => {
-    if (isSolo && finishedSwiping) setIsDone(true)
+    if (!(isSolo && finishedSwiping)) return
+    const t = setTimeout(() => setIsDone(true), 0)   // deferred — no sync setState in effects
+    return () => clearTimeout(t)
   }, [isSolo, finishedSwiping])  
 
   // ── Track participant count ───────────────────────────────────────────────
@@ -545,7 +532,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
 
   // ── Waiting for group to finish categories ───────────────────────────────
   if (waitingForPartner && !transitioning) {
-    const likedCats = FOOD_CATS.filter(c => likedCatIdsRef.current.has(c.numId))
+    const likedCats = FOOD_CATS.filter(c => selectedCats.has(c.numId))
     const othersNeeded = playerCount - 1
     return (
       <div className="act-center">

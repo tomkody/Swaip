@@ -1,3 +1,5 @@
+import { seededRandom } from './random'
+
 // Color Duel — guess the iconic colour of a movie/series poster element.
 // Puzzles use the same official TMDB posters (and attribution) the rest of the
 // app already displays; target colours were sampled from the posters themselves.
@@ -25,22 +27,6 @@ export const COLOR_PUZZLES = [
 // add a puzzle here without one.
 
 export const ROUNDS_PER_GAME = 3
-
-// Same seeded PRNG as the rest of the app — both players get the same rounds.
-function seededRandom(seed) {
-  let h = 0x9E3779B9
-  for (let i = 0; i < seed.length; i++) {
-    h = Math.imul(h ^ seed.charCodeAt(i), 0x9E3779B9)
-    h ^= h >>> 15
-  }
-  let t = (h >>> 0) + 0x6D2B79F5
-  return function () {
-    t = (t + 0x6D2B79F5) >>> 0
-    let r = Math.imul(t ^ (t >>> 15), 1 | t)
-    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r)
-    return ((r ^ (r >>> 14)) >>> 0) / 4294967296
-  }
-}
 
 export function puzzlesForRoom(roomId) {
   const rng = roomId ? seededRandom(roomId) : Math.random

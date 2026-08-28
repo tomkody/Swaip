@@ -20,19 +20,6 @@ export default function SwipeCard({ item, onSwipe, active }) {
   const [flipped, setFlipped] = useState(false)
   const [gettingLocation, setGettingLocation] = useState(false)
 
-  // ── Keyboard shortcuts (← nope, → like) ──────────────────────────
-  useEffect(() => {
-    if (!active) return
-    function onKey(e) {
-      if (isLeavingRef.current) return
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
-      if (e.key === 'ArrowLeft')  swipeVia('left')
-      if (e.key === 'ArrowRight') swipeVia('right')
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [active]) // eslint-disable-line react-hooks/exhaustive-deps
-
   // ── Directions ────────────────────────────────────────────────────
   function handleDirections(e) {
     e.stopPropagation()
@@ -138,6 +125,19 @@ export default function SwipeCard({ item, onSwipe, active }) {
     setLeaving(direction)
     setTimeout(() => onSwipe(direction), 300)
   }
+
+  // ── Keyboard shortcuts (← nope, → like) ──────────────────────────
+  useEffect(() => {
+    if (!active) return
+    function onKey(e) {
+      if (isLeavingRef.current) return
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+      if (e.key === 'ArrowLeft')  swipeVia('left')
+      if (e.key === 'ArrowRight') swipeVia('right')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [active]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Render ────────────────────────────────────────────────────────
 

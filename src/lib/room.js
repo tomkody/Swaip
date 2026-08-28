@@ -4,9 +4,16 @@ import { detectRegion } from './tmdb'
 import { track } from './analytics'
 
 // Sentinel item ids used to signal "I'm done" rather than a real pick.
-// (activities categories, food cuisines, movie/series decks)
+// 1999 = activities categories phase, 2999 = food cuisines phase,
+// DONE_ITEM_ID = movie/series decks and the places phase.
 export const DONE_ITEM_ID = 9999999
 const DONE_SENTINELS = new Set([1999, 2999, DONE_ITEM_ID])
+
+// Movie/series rooms must only treat DONE_ITEM_ID as a sentinel: 1999 and 2999
+// are valid TMDB ids, so filtering them out there would silently make those two
+// titles unmatchable. Callers in movie/series context pass this set to
+// fetchRoomMatches / fetchRoomPicks / fetchPartnerSwipeCount.
+export const MOVIE_SENTINELS = new Set([DONE_ITEM_ID])
 
 // Supabase reuses a channel by name, and callbacks can't be added after
 // subscribe() — so two components subscribing to the same room would throw.
@@ -331,7 +338,7 @@ export function subscribeToRoomChanges(roomId, onUpdate) {
 
 // Fetch actual mutual matches from DB (authoritative source)
 // playerCount = how many players must all agree for a match
-export async function fetchRoomMatches(roomId, userToken, playerCount = 2) {
+export async function fetchRoomMatches(roomId, userToken, playerCount = 2, sentinels = DONE_SENTINELS) {
   if (!supabase) return null // demo mode: caller uses in-memory matches
 
   const { data, error } = await supabase
@@ -347,7 +354,7 @@ export async function fetchRoomMatches(roomId, userToken, playerCount = 2) {
   const myLikes = new Set()
   for (const row of data) {
     const id = Number(row.item_id)
-    if (DONE_SENTINELS.has(id)) continue   // "I'm done" marker, not a pick
+    if (sentinels.has(id)) continue   // "I'm done" marker, not a pick
     if (!likersByItem[id]) likersByItem[id] = new Set()
     likersByItem[id].add(row.user_token)
     if (row.user_token === userToken) myLikes.add(id)
@@ -411,7 +418,7 @@ export async function getRoom(roomId) {
 // the partner's position, so the UI can say "you've reached a card your partner
 // never got to". `minItemId` isolates a phase's own items (places use ids
 // ≥ 2,000,000, so pass that to skip the category swipes in food/activity rooms).
-export async function fetchPartnerSwipeCount(roomId, userToken, minItemId = 0) {
+export async function fetchPartnerSwipeCount(roomId, userToken, minItemId = 0, sentinels = DONE_SENTINELS) {
   if (!supabase) return 0
   const { data, error } = await supabase
     .from('swipes').select('user_token, item_id').eq('room_id', roomId)
@@ -420,7 +427,7 @@ export async function fetchPartnerSwipeCount(roomId, userToken, minItemId = 0) {
   for (const r of data) {
     if (r.user_token === userToken) continue
     const id = Number(r.item_id)
-    if (DONE_SENTINELS.has(id) || id < minItemId) continue
+    if (sentinels.has(id) || id < minItemId) continue
     counts[r.user_token] = (counts[r.user_token] || 0) + 1
   }
   let max = 0
@@ -663,24 +670,6 @@ export function subscribeToRankings(roomId, userToken, onPartnerSubmitted) {
   return () => supabase.removeChannel(channel)
 }
 
-// Subscribe to room presence
-export function subscribeToRoom(roomId, onJoin) {
-  if (!supabase) return () => {}
-
-  const channel = supabase
-    .channel(uniqueChannel('presence', roomId))
-    .on('presence', { event: 'join' }, () => {
-      onJoin()
-    })
-    .subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        await channel.track({ user: getUserToken() })
-      }
-    })
-
-  return () => supabase.removeChannel(channel)
-}
-
 // ── Partner picks ─────────────────────────────────────────────────────────────
 // Everything the results screen needs to compare choices, in one round-trip:
 //   myIds      — items THIS user liked
@@ -689,7 +678,7 @@ export function subscribeToRoom(roomId, onJoin) {
 //   countsById — distinct likers per item (for "3/4 picked this")
 //   participants — distinct users who have swiped at all
 // Ignores the done-sentinel rows so they never show up as picks.
-export async function fetchRoomPicks(roomId, userToken) {
+export async function fetchRoomPicks(roomId, userToken, sentinels = DONE_SENTINELS) {
   let rows = []
   if (!supabase) {
     rows = JSON.parse(localStorage.getItem(`swaip_swipes_${roomId}`) || '[]')
@@ -713,7 +702,7 @@ export async function fetchRoomPicks(roomId, userToken) {
 
   for (const r of rows) {
     const id = Number(r.item_id)
-    if (DONE_SENTINELS.has(id)) { participants.add(r.user_token); doneUsers.add(r.user_token); continue }
+    if (sentinels.has(id)) { participants.add(r.user_token); doneUsers.add(r.user_token); continue }
     participants.add(r.user_token)
     if (!likersByItem[id]) likersByItem[id] = new Set()
     likersByItem[id].add(r.user_token)

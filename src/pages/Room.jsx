@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
-import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, subscribeToRoomActive, subscribeToRoomPicks, fetchRoomPicks, fetchPartnerSwipeCount, markRoomActive, fetchRoomMatches, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID } from '../lib/room'
+import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, subscribeToRoomActive, subscribeToRoomPicks, fetchRoomPicks, fetchPartnerSwipeCount, markRoomActive, fetchRoomMatches, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID, MOVIE_SENTINELS } from '../lib/room'
 import { PLATFORMS } from '../lib/platforms'
 import { fetchTopRatedMovies } from '../lib/tmdb'
 import { fetchTopRatedSeries } from '../lib/seriesFetch'
@@ -87,7 +87,7 @@ export default function Room() {
       }
     }
     init()
-  }, [roomId])
+  }, [roomId]) // eslint-disable-line react-hooks/exhaustive-deps -- location.state is a one-shot nav payload, not a reactive dep
 
   // Detect the partner joining (creator only, non-solo). Realtime fires instantly
   // when the joiner flips the room to 'active'; a slow poll is kept only as a
@@ -139,7 +139,7 @@ export default function Room() {
     })
 
     return () => unsubSwipes()
-  }, [room, roomId])
+  }, [room, roomId, isSolo])
 
   // Let the still-swiping user know once they reach a card their partner never
   // got to. We flag "done" from the partner's DONE_ITEM_ID sentinel (tap done or
@@ -154,10 +154,10 @@ export default function Room() {
       if (!active || handled) return
       handled = true
       setPartnerDone(true)
-      const n = await fetchPartnerSwipeCount(roomId, userToken.current)
+      const n = await fetchPartnerSwipeCount(roomId, userToken.current, 0, MOVIE_SENTINELS)
       if (active) setPartnerStop(n)
     }
-    const check = () => fetchRoomPicks(roomId, userToken.current)
+    const check = () => fetchRoomPicks(roomId, userToken.current, MOVIE_SENTINELS)
       .then(p => { if (p && p.othersDone > 0) markDone() })
       .catch(() => {})
     check() // initial
@@ -392,7 +392,7 @@ export default function Room() {
           if (isSolo) { setIsDone(true); return }
           setFetchingDone(true)
           await signalDone()
-          const ids = await fetchRoomMatches(roomId, userToken.current)
+          const ids = await fetchRoomMatches(roomId, userToken.current, 2, MOVIE_SENTINELS)
           if (ids !== null) {
             setDoneMatches(movies.filter(m => ids.includes(m.id)))
           }
@@ -415,7 +415,7 @@ export default function Room() {
           onDone={async () => {
             setMatchItem(null)
             setFetchingDone(true)
-            const ids = await fetchRoomMatches(roomId, userToken.current)
+            const ids = await fetchRoomMatches(roomId, userToken.current, 2, MOVIE_SENTINELS)
             if (ids !== null) setDoneMatches(movies.filter(m => ids.includes(m.id)))
             setFetchingDone(false)
             setIsDone(true)

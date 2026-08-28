@@ -2,31 +2,10 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import confetti from 'canvas-confetti'
 import HomeLogo from './HomeLogo'
 import CategoryGrid from './CategoryGrid'
+import { seededShuffle } from '../lib/random'
 import { saveMatch } from '../lib/savedMatches'
 import { ACTIVITY_CATEGORIES as _ACTIVITY_CATEGORIES } from '../lib/activities'
 import { getRoomPlayerCount, getParticipantCount, fetchVoteCounts } from '../lib/room'
-
-// Seeded shuffle — same order for everyone in the same room, different per room
-function seededShuffle(arr, seed) {
-  const a = [...arr]
-  let h = 0x9E3779B9
-  for (let i = 0; i < seed.length; i++) {
-    h = Math.imul(h ^ seed.charCodeAt(i), 0x9E3779B9)
-    h ^= h >>> 15
-  }
-  let t = (h >>> 0) + 0x6D2B79F5
-  function rng() {
-    t = (t + 0x6D2B79F5) >>> 0
-    let r = Math.imul(t ^ (t >>> 15), 1 | t)
-    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r)
-    return ((r ^ (r >>> 14)) >>> 0) / 4294967296
-  }
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
 
 import { fetchNearbyPlaces, getBrandKey } from '../lib/placesApi'
 import {
@@ -47,6 +26,14 @@ import RankingView from './RankingView'
 import './ActivityRoom.css'
 
 const ACT_CAT_DONE_NUMID = 1999
+
+// Stable per-room category order. A module-level cache (rather than useMemo)
+// keeps the array identity stable across renders without fighting hook deps.
+const catOrderCache = new Map()
+function categoriesForRoom(roomId) {
+  if (!catOrderCache.has(roomId)) catOrderCache.set(roomId, seededShuffle(_ACTIVITY_CATEGORIES, roomId))
+  return catOrderCache.get(roomId)
+}
 
 // Parse location data from topic_id field
 function parseLocation(topicId) {
@@ -81,7 +68,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   const userToken = useRef(getUserToken())
   const location = parseLocation(room.topic_id)
 
-  const ACTIVITY_CATEGORIES = seededShuffle(_ACTIVITY_CATEGORIES, room.id)
+  const ACTIVITY_CATEGORIES = categoriesForRoom(room.id)
 
   const initialData = parseRoomActivityData(room)
   const [phase, setPhase] = useState(initialData.phase)
@@ -132,14 +119,16 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   // Escape hatch: if a partner never taps "done", surface a "Continue" option
   // after a wait so the user isn't stuck on the categories screen forever.
   useEffect(() => {
-    if (!waitingForPartner) { setWaitedLong(false); return }
+    if (!waitingForPartner) return
     const t = setTimeout(() => setWaitedLong(true), 20000)
     return () => clearTimeout(t)
   }, [waitingForPartner])
 
   // Solo: auto-complete when all places swiped
   useEffect(() => {
-    if (isSolo && finishedSwiping) setIsDone(true)
+    if (!(isSolo && finishedSwiping)) return
+    const t = setTimeout(() => setIsDone(true), 0)   // deferred — no sync setState in effects
+    return () => clearTimeout(t)
   }, [isSolo, finishedSwiping])
 
   // ── Poll for new matches while waiting for partner to finish ─────────────
@@ -556,7 +545,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
 
   // ── Waiting for group to finish categories ───────────────────────────────
   if (waitingForPartner && !transitioning) {
-    const likedCats = ACTIVITY_CATEGORIES.filter(c => likedCatIdsRef.current.has(c.numId))
+    const likedCats = ACTIVITY_CATEGORIES.filter(c => selectedCats.has(c.numId))
     const othersNeeded = playerCount - 1
     return (
       <div className="act-center">

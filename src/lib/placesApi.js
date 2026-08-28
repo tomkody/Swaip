@@ -1,4 +1,5 @@
 import { placeIdToNumId } from './activities'
+import { seededRandom } from './random'
 
 // ── Chain / brand deduplication ───────────────────────────────────────────────
 // Known international chain prefixes (lowercase, normalized).
@@ -122,22 +123,6 @@ export async function reverseGeocode(lat, lng) {
     }
   } catch {
     return { name: 'My Location', countryCode: null }
-  }
-}
-
-// Mulberry32 — same seeded PRNG as tmdb.js
-function seededRandom(seed) {
-  let h = 0x9E3779B9
-  for (let i = 0; i < seed.length; i++) {
-    h = Math.imul(h ^ seed.charCodeAt(i), 0x9E3779B9)
-    h ^= h >>> 15
-  }
-  let t = (h >>> 0) + 0x6D2B79F5
-  return function () {
-    t = (t + 0x6D2B79F5) >>> 0
-    let r = Math.imul(t ^ (t >>> 15), 1 | t)
-    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r)
-    return ((r ^ (r >>> 14)) >>> 0) / 4294967296
   }
 }
 

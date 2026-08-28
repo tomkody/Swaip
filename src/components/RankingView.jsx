@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches, subscribeToSwipes, fetchRoomPicks, subscribeToRoomPicks } from '../lib/room'
+import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches, subscribeToSwipes, fetchRoomPicks, subscribeToRoomPicks, MOVIE_SENTINELS } from '../lib/room'
 import { getPlatformMeta, getWatchUrl } from '../lib/platforms'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import { track } from '../lib/analytics'
@@ -25,6 +25,9 @@ function PlatformBadges({ platforms }) {
 
 export default function RankingView({ matches: initialMatches, liked = [], room, movies = [], onDone, isSolo = false, playerCount = 2, voteCounts = {} }) {
   const userToken = useRef(getUserToken())
+  // Movie/series rooms may legitimately contain TMDB ids 1999/2999 — only treat
+  // the real DONE sentinel as one there (undefined → the default set elsewhere).
+  const sentinels = (room.type === 'movies' || room.type === 'series') ? MOVIE_SENTINELS : undefined
   const [matches, setMatches] = useState(initialMatches)
   const [top3, setTop3] = useState([])
   const [phase, setPhase] = useState('rank') // 'rank' | 'results'
@@ -45,8 +48,8 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
     setRefreshing(true)
     try {
       const [p, ids] = await Promise.all([
-        fetchRoomPicks(room.id, userToken.current),
-        fetchRoomMatches(room.id, userToken.current, playerCount),
+        fetchRoomPicks(room.id, userToken.current, sentinels),
+        fetchRoomMatches(room.id, userToken.current, playerCount, sentinels),
       ])
       if (p) setPicks(p)
       if (ids && ids.length > 0 && movies.length > 0) {
@@ -59,7 +62,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
     } finally {
       setRefreshing(false)
     }
-  }, [isSolo, room.id, playerCount, movies])
+  }, [isSolo, room.id, playerCount, movies, sentinels])
 
   // Load once, then live-update whenever anyone else swipes.
   useEffect(() => {
@@ -151,15 +154,15 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
       if (matched) {
         setMatches(prev => prev.find(m => m.id === matched.id) ? prev : [...prev, matched])
       }
-    })
+    }, playerCount)
     return unsub
-  }, [isSolo, room.id, movies])
+  }, [isSolo, room.id, movies, playerCount])
 
   // Poll for new matches — together mode only
   useEffect(() => {
     if (isSolo) return
     const poll = async () => {
-      const ids = await fetchRoomMatches(room.id, userToken.current)
+      const ids = await fetchRoomMatches(room.id, userToken.current, playerCount, sentinels)
       if (ids !== null && ids.length > 0 && movies.length > 0) {
         const fresh = movies.filter(m => ids.includes(m.id))
         if (fresh.length > 0) setMatches(fresh)
@@ -168,7 +171,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
     poll()
     const interval = setInterval(poll, 12000)
     return () => clearInterval(interval)
-  }, [isSolo, room.id, movies])
+  }, [isSolo, room.id, movies, playerCount, sentinels])
 
   function toggleItem(item) {
     setTop3(prev => {

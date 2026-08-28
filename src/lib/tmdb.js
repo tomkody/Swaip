@@ -2,7 +2,10 @@ import { MOVIES } from './movies'
 import { MOVIE_PLATFORMS } from './platforms'
 import { MOVIE_GENRES } from './movieGenres'
 import { supabase } from './supabase'
-import { CATALOG_REGIONS } from './regions'
+import { CATALOG_REGIONS, detectRegion } from './regions'
+import { seededShuffle } from './random'
+
+export { detectRegion }
 
 // Static fallback catalog (used offline / when Supabase or the catalog is empty).
 // platforms is attached so "Where to watch" still works in fallback mode.
@@ -11,32 +14,6 @@ const MOVIES_WITH_GENRES = MOVIES.map(m => ({
   genre: MOVIE_GENRES[m.id] || '',
   platforms: MOVIE_PLATFORMS[m.id] || [],
 }))
-
-// Mulberry32 — reliable 32-bit seeded PRNG using Math.imul
-function seededRandom(seed) {
-  let h = 0x9E3779B9
-  for (let i = 0; i < seed.length; i++) {
-    h = Math.imul(h ^ seed.charCodeAt(i), 0x9E3779B9)
-    h ^= h >>> 15
-  }
-  let t = (h >>> 0) + 0x6D2B79F5
-  return function () {
-    t = (t + 0x6D2B79F5) >>> 0
-    let r = Math.imul(t ^ (t >>> 15), 1 | t)
-    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r)
-    return ((r ^ (r >>> 14)) >>> 0) / 4294967296
-  }
-}
-
-function shuffleSeeded(arr, roomId) {
-  const out = [...arr]
-  const rng = roomId ? seededRandom(roomId) : Math.random
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1))
-    ;[out[i], out[j]] = [out[j], out[i]]
-  }
-  return out
-}
 
 // Filter a movie pool by selected platforms + genres, never stranding the user:
 // if a filter empties the pool, that filter is dropped rather than showing nothing.
@@ -55,7 +32,7 @@ function filterPool(all, platforms, genres) {
 
 function fetchStaticMovies(roomId, platforms, genres) {
   const pool = filterPool(MOVIES_WITH_GENRES, platforms, genres)
-  return shuffleSeeded(pool, roomId).slice(0, 50)
+  return seededShuffle(pool, roomId).slice(0, 50)
 }
 
 // Map a movie_catalog row → the shape SwipeCard/MatchModal expect.
@@ -73,17 +50,13 @@ function rowToMovie(r) {
   }
 }
 
-// Viewer's country (ISO-3166 alpha-2) from the browser locale, e.g. "cs-CZ" → "CZ".
-export function detectRegion() {
-  const locale = (typeof navigator !== 'undefined' && navigator.language) || 'en-US'
-  return (locale.split('-')[1] || 'US').toUpperCase()
-}
-
 async function loadCatalog(region) {
   const { data, error } = await supabase
     .from('movie_catalog')
     .select('*')
     .eq('region', region)
+    .order('tmdb_id')   // deterministic set — both partners must fetch identical rows
+    .limit(2000)        // explicit; the default 1000-row cap would truncate silently
   if (error || !data || data.length === 0) return null
   return data
 }
@@ -109,7 +82,7 @@ export async function fetchTopRatedMovies(roomId, platforms = [], genres = [], r
     if (!streamable) return fetchStaticMovies(roomId, platforms, genres)
 
     const pool = filterPool(streamable, platforms, genres)
-    return shuffleSeeded(pool, roomId).slice(0, 50)
+    return seededShuffle(pool, roomId).slice(0, 50)
   } catch (e) {
     console.error('[tmdb] catalog read failed, using static list:', e)
     return fetchStaticMovies(roomId, platforms, genres)
