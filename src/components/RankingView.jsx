@@ -4,6 +4,7 @@ import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRo
 import { getPlatformMeta, getWatchUrl } from '../lib/platforms'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import { track } from '../lib/analytics'
+import RoomChat from './RoomChat'
 import './RankingView.css'
 
 // "Where to watch" brand chips for a movie/series result (nothing for places).
@@ -590,6 +591,9 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
             </div>
           )
         })()}
+
+        {/* Post-match chat — sort out the details together, right here */}
+        {!isSolo && <RoomChat roomId={room.id} />}
 
         {/* Action buttons */}
         <div className="rv-results-actions">

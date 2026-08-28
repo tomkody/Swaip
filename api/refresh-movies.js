@@ -31,7 +31,7 @@ async function cleanupOldData(supabase) {
   const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
   const counts = {}
   // Children before parents (rooms). A missing table is skipped, not fatal.
-  for (const table of ['swipes', 'rankings', 'conversation_selections', 'rooms']) {
+  for (const table of ['swipes', 'rankings', 'conversation_selections', 'messages', 'rooms']) {
     try {
       const { count, error } = await supabase
         .from(table).delete({ count: 'exact' }).lt('created_at', cutoff)
