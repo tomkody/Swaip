@@ -171,9 +171,24 @@ export default function ColorGameRoom({ room, onDone, isSolo = false }) {
             className={`cg-poster ${revealed ? '' : 'is-gray'}`}
             draggable={false}
           />
-          {/* Live colourise: your current pick painted over the greyscale poster,
-              so you see the colour IN the image while choosing. */}
-          {!revealed && <span className="cg-poster-tint" style={{ background: guess }} aria-hidden="true" />}
+          {/* Live colourise: your current pick painted over the greyscale poster —
+              clipped by the puzzle's mask so ONLY the asked-about element (suit,
+              skin, logo…) takes the colour; the rest stays greyscale. */}
+          {!revealed && (
+            <span
+              className="cg-poster-tint"
+              style={{
+                background: guess,
+                ...(puzzle.mask && {
+                  WebkitMaskImage: `url(${puzzle.mask})`,
+                  maskImage: `url(${puzzle.mask})`,
+                  WebkitMaskSize: '100% 100%',
+                  maskSize: '100% 100%',
+                }),
+              }}
+              aria-hidden="true"
+            />
+          )}
           {!revealed && <span className="cg-poster-hint">{puzzle.media === 'series' ? '📺' : '🎬'} {puzzle.title}</span>}
         </div>
 
