@@ -798,7 +798,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
         {partnerDone && !isSolo && currentIndex >= partnerStop && (
           <div className="partner-done-banner">
             <span className="partner-done-dot" aria-hidden="true" />
-            {playerCount > 2 ? 'Someone finished here' : 'Your partner finished here'} — no new matches ahead, wrap up anytime
+            {playerCount > 2 ? 'Someone finished swiping' : 'Your partner finished swiping'}
           </div>
         )}
         <button className="done-early-btn" onClick={() => setIsDone(true)}>

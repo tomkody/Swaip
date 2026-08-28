@@ -378,7 +378,7 @@ export default function Room() {
         {partnerDone && !isSolo && currentIndex >= partnerStop && (
           <div className="partner-done-banner">
             <span className="partner-done-dot" aria-hidden="true" />
-            Your partner finished here — no new matches ahead, wrap up anytime
+            Your partner finished swiping
           </div>
         )}
         <button className="done-early-btn" onClick={async () => {

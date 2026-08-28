@@ -84,18 +84,21 @@
   gap: 10px;
 }
 
-/* "Partner finished swiping" nudge — appears above the done button */
+/* "Partner finished swiping" nudge — compact single-line pill above the done button */
 .partner-done-banner {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12.5px;
+  gap: 7px;
+  font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
   color: var(--success, #16a34a);
   background: rgba(34, 197, 94, 0.12);
   border: 1px solid rgba(34, 197, 94, 0.3);
-  padding: 7px 14px;
+  padding: 6px 12px;
   border-radius: var(--radius-pill);
+  position: relative;
+  z-index: 5;
   animation: partnerDoneIn 0.35s ease;
 }
 .partner-done-dot {
