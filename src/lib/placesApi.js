@@ -60,8 +60,20 @@ export function getBrandKey(title) {
   return norm
 }
 
-const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+// Production: the browser calls the /api/places proxy and the Maps key stays on
+// the server (never in the shipped bundle). Local `vite` dev has no serverless
+// runtime, so we call Google directly with the VITE key — that branch is behind
+// `import.meta.env.DEV` and is compiled out of the production build, so the key
+// is not present in dist/ at all.
+const DEV_KEY = import.meta.env.DEV ? import.meta.env.VITE_GOOGLE_MAPS_API_KEY : null
+const PROXY = '/api/places'
 const BASE = 'https://places.googleapis.com/v1'
+
+const NEARBY_FIELD_MASK = [
+  'places.id', 'places.displayName', 'places.formattedAddress', 'places.rating',
+  'places.userRatingCount', 'places.photos', 'places.editorialSummary', 'places.types',
+  'places.location', 'places.currentOpeningHours', 'places.priceLevel', 'places.primaryType',
+].join(',')
 
 // Language for Places results — matches the user's browser so descriptions and
 // types come back in one consistent language instead of the place's local one
@@ -76,10 +88,12 @@ function placesLang() {
 // Returns { name, countryCode }.
 export async function reverseGeocode(lat, lng) {
   const lang = placesLang()
-  // 1) Google Geocoding
-  if (API_KEY) {
+  // 1) Google Geocoding (direct in dev, via proxy in prod — same response shape)
+  {
     try {
-      const r = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=${lang}&key=${API_KEY}`)
+      const r = DEV_KEY
+        ? await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=${lang}&key=${DEV_KEY}`)
+        : await fetch(`${PROXY}?op=revgeo&lat=${lat}&lng=${lng}&lang=${lang}`)
       const d = await r.json()
       if (d.status === 'OK' && d.results?.length) {
         const comps = d.results[0].address_components || []
@@ -140,10 +154,13 @@ function haversine(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-// Build a photo URL from a photo name (e.g. "places/xxx/photos/yyy")
+// Build a photo URL from a photo name (e.g. "places/xxx/photos/yyy").
+// Prod: hit the proxy, which 302-redirects to the keyless googleusercontent URL.
 export function getPhotoUrl(photoName, maxWidth = 600) {
   if (!photoName) return null
-  return `${BASE}/${photoName}/media?maxWidthPx=${maxWidth}&key=${API_KEY}`
+  return DEV_KEY
+    ? `${BASE}/${photoName}/media?maxWidthPx=${maxWidth}&key=${DEV_KEY}`
+    : `${PROXY}?op=photo&name=${encodeURIComponent(photoName)}&w=${maxWidth}`
 }
 
 // Price level label
@@ -259,17 +276,17 @@ function formatPlace(place, centerLat, centerLng) {
 
 // Geocode a city/address text → { lat, lng, name }
 export async function geocodeLocation(query) {
-  if (!API_KEY) throw new Error('Google Maps API key not configured')
-
-  const res = await fetch(`${BASE}/places:searchText`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Goog-Api-Key': API_KEY,
-      'X-Goog-FieldMask': 'places.id,places.displayName,places.location',
-    },
-    body: JSON.stringify({ textQuery: query, languageCode: placesLang() }),
-  })
+  const res = DEV_KEY
+    ? await fetch(`${BASE}/places:searchText`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': DEV_KEY,
+          'X-Goog-FieldMask': 'places.id,places.displayName,places.location',
+        },
+        body: JSON.stringify({ textQuery: query, languageCode: placesLang() }),
+      })
+    : await fetch(`${PROXY}?op=geocode&q=${encodeURIComponent(query)}&lang=${placesLang()}`)
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
@@ -290,40 +307,22 @@ export async function geocodeLocation(query) {
 // Fetch nearby places for given lat/lng, radius (meters), and array of place types
 // Returns array of place objects shaped for SwipeCard
 export async function fetchNearbyPlaces(lat, lng, radius, types, roomId) {
-  if (!API_KEY) throw new Error('Google Maps API key not configured')
-
-  const res = await fetch(`${BASE}/places:searchNearby`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Goog-Api-Key': API_KEY,
-      'X-Goog-FieldMask': [
-        'places.id',
-        'places.displayName',
-        'places.formattedAddress',
-        'places.rating',
-        'places.userRatingCount',
-        'places.photos',
-        'places.editorialSummary',
-        'places.types',
-        'places.location',
-        'places.currentOpeningHours',
-        'places.priceLevel',
-        'places.primaryType',
-      ].join(','),
-    },
-    body: JSON.stringify({
-      includedTypes: types,
-      maxResultCount: 20,
-      languageCode: placesLang(),
-      locationRestriction: {
-        circle: {
-          center: { latitude: lat, longitude: lng },
-          radius: radius,
+  const res = DEV_KEY
+    ? await fetch(`${BASE}/places:searchNearby`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': DEV_KEY,
+          'X-Goog-FieldMask': NEARBY_FIELD_MASK,
         },
-      },
-    }),
-  })
+        body: JSON.stringify({
+          includedTypes: types,
+          maxResultCount: 20,
+          languageCode: placesLang(),
+          locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius } },
+        }),
+      })
+    : await fetch(`${PROXY}?op=nearby&lat=${lat}&lng=${lng}&radius=${radius}&types=${encodeURIComponent(types.join(','))}&lang=${placesLang()}`)
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))

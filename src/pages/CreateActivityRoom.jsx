@@ -96,7 +96,7 @@ export default function CreateActivityRoom() {
         } catch (geoErr) {
           const msg = geoErr.message || ''
           if (msg.includes('API key') || msg.includes('not configured') || msg.includes('403') || msg.includes('REQUEST_DENIED')) {
-            setError('Google Maps API key issue — check the deployment environment variables (VITE_GOOGLE_MAPS_API_KEY).')
+            setError('Location search is temporarily unavailable. Please try again in a moment.')
           } else if (msg.includes('No results')) {
             setError(`Couldn't find "${locationText.trim()}". Try a different city name.`)
           } else {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
-import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, markRoomActive, fetchRoomMatches, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID } from '../lib/room'
+import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, subscribeToRoomActive, markRoomActive, fetchRoomMatches, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID } from '../lib/room'
 import { PLATFORMS } from '../lib/platforms'
 import { fetchTopRatedMovies } from '../lib/tmdb'
 import { fetchTopRatedSeries } from '../lib/seriesFetch'
@@ -86,22 +86,28 @@ export default function Room() {
     init()
   }, [roomId])
 
-  // Poll for partner joining (creator only, non-solo) — checks every 2s until partner starts
+  // Detect the partner joining (creator only, non-solo). Realtime fires instantly
+  // when the joiner flips the room to 'active'; a slow poll is kept only as a
+  // fallback in case a realtime event is missed.
   useEffect(() => {
     if (!isCreator || partnerJoined || isSolo) return
+    let fired = false
+    const trigger = () => {
+      if (fired) return
+      fired = true
+      setPartnerJustJoined(true)
+      setTimeout(() => {
+        setPartnerJustJoined(false)
+        setPartnerJoined(true)
+      }, 2500)
+    }
+    const unsub = subscribeToRoomActive(roomId, trigger)
     const interval = setInterval(async () => {
       const latest = await getRoom(roomId)
-      if (latest?.status === 'active') {
-        clearInterval(interval)
-        setPartnerJustJoined(true)
-        setTimeout(() => {
-          setPartnerJustJoined(false)
-          setPartnerJoined(true)
-        }, 2500)
-      }
-    }, 2000)
-    return () => clearInterval(interval)
-  }, [isCreator, partnerJoined, roomId])
+      if (latest?.status === 'active') trigger()
+    }, 5000)
+    return () => { unsub(); clearInterval(interval) }
+  }, [isCreator, partnerJoined, isSolo, roomId])
 
   // Keep refs in sync so subscription callbacks always see current values
   useEffect(() => { isDoneRef.current = isDone }, [isDone])

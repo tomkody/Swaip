@@ -2,6 +2,7 @@ import { MOVIES } from './movies'
 import { MOVIE_PLATFORMS } from './platforms'
 import { MOVIE_GENRES } from './movieGenres'
 import { supabase } from './supabase'
+import { CATALOG_REGIONS } from './regions'
 
 // Static fallback catalog (used offline / when Supabase or the catalog is empty).
 // platforms is attached so "Where to watch" still works in fallback mode.
@@ -10,9 +11,6 @@ const MOVIES_WITH_GENRES = MOVIES.map(m => ({
   genre: MOVIE_GENRES[m.id] || '',
   platforms: MOVIE_PLATFORMS[m.id] || [],
 }))
-
-// Regions the nightly refresh job populates (see api/refresh-movies.js).
-const CATALOG_REGIONS = ['US', 'GB', 'CA', 'AU', 'IE', 'DE', 'FR', 'ES', 'IT', 'NL', 'BR', 'MX', 'IN', 'CZ', 'PL', 'SE']
 
 // Mulberry32 — reliable 32-bit seeded PRNG using Math.imul
 function seededRandom(seed) {

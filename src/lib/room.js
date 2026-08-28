@@ -22,6 +22,11 @@ export function isRoomSolo(room) {
   } catch { return false }
 }
 
+// Round a coordinate to ~110 m before it's stored in the (publicly readable)
+// rooms row — good enough for a nearby search, but no longer pinpoints the
+// creator. Also clusters cache keys for the Places proxy.
+const coarse = n => (n == null ? n : Math.round(n * 1000) / 1000)
+
 // Read playerCount stored in topic_id JSON (defaults to 2)
 export function getRoomPlayerCount(room) {
   if (!room?.topic_id) return 2
@@ -71,11 +76,15 @@ export async function fetchVoteCounts(roomId) {
   return Object.fromEntries(Object.entries(byItem).map(([id, set]) => [id, set.size]))
 }
 
+// Stable per-device identity. Uses localStorage (persists across tabs, reloads
+// and browser restarts) — sessionStorage was per-tab, so reopening a room link
+// minted a NEW identity and could break the "playerCount distinct likers" match
+// count. Migrates any existing sessionStorage token so in-flight rooms survive.
 export function getUserToken() {
-  let token = sessionStorage.getItem('swaip_user_token')
+  let token = localStorage.getItem('swaip_user_token')
   if (!token) {
-    token = uuidv4()
-    sessionStorage.setItem('swaip_user_token', token)
+    token = sessionStorage.getItem('swaip_user_token') || uuidv4()
+    localStorage.setItem('swaip_user_token', token)
   }
   return token
 }
@@ -206,7 +215,7 @@ export async function createFoodRoom({ lat, lng, locationName, radius, countryCo
   const roomId = uuidv4().slice(0, 8)
   const pc = solo ? 1 : Math.max(2, Math.min(6, playerCount))
   const locationData = (lat != null && lng != null)
-    ? JSON.stringify({ lat, lng, locationName: locationName || '', radius: radius || 5000, countryCode: countryCode || null, ...(solo && { solo: true }), ...(pc > 2 && { playerCount: pc }) })
+    ? JSON.stringify({ lat: coarse(lat), lng: coarse(lng), locationName: locationName || '', radius: radius || 5000, countryCode: countryCode || null, ...(solo && { solo: true }), ...(pc > 2 && { playerCount: pc }) })
     : (solo || pc > 2 ? JSON.stringify({ ...(solo && { solo: true }), ...(pc > 2 && { playerCount: pc }) }) : null)
   if (!supabase) {
     const room = { id: roomId, type: 'food', topic_id: locationData, created_at: new Date().toISOString(), status: 'waiting' }
@@ -228,7 +237,7 @@ export async function createActivityRoom({ lat, lng, locationName, radius, solo 
   const pc = solo ? 1 : Math.max(2, Math.min(6, playerCount))
 
   const locationData = (lat != null && lng != null)
-    ? JSON.stringify({ lat, lng, locationName: locationName || '', radius: radius || 5000, ...(solo && { solo: true }), ...(pc > 2 && { playerCount: pc }) })
+    ? JSON.stringify({ lat: coarse(lat), lng: coarse(lng), locationName: locationName || '', radius: radius || 5000, ...(solo && { solo: true }), ...(pc > 2 && { playerCount: pc }) })
     : (solo || pc > 2 ? JSON.stringify({ ...(solo && { solo: true }), ...(pc > 2 && { playerCount: pc }) }) : null)
 
   if (!supabase) {

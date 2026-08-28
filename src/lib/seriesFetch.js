@@ -2,6 +2,7 @@ import { SERIES } from './series'
 import { SERIES_PLATFORMS } from './platforms'
 import { SERIES_GENRES } from './seriesGenres'
 import { supabase } from './supabase'
+import { CATALOG_REGIONS } from './regions'
 
 // Static fallback catalog (used offline / when Supabase or the catalog is empty).
 const SERIES_WITH_GENRES = SERIES.map(s => ({
@@ -9,9 +10,6 @@ const SERIES_WITH_GENRES = SERIES.map(s => ({
   genre: SERIES_GENRES[s.id] || '',
   platforms: SERIES_PLATFORMS[s.id] || [],
 }))
-
-// Regions the nightly refresh job populates (see api/refresh-movies.js).
-const CATALOG_REGIONS = ['US', 'GB', 'CA', 'AU', 'IE', 'DE', 'FR', 'ES', 'IT', 'NL', 'BR', 'MX', 'IN', 'CZ', 'PL', 'SE']
 
 // Mulberry32 — reliable 32-bit seeded PRNG using Math.imul
 function seededRandom(seed) {

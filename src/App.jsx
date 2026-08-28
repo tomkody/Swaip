@@ -8,20 +8,16 @@ import CreateFoodRoom from './pages/CreateFoodRoom'
 import Room from './pages/Room'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
-import TripHome from './pages/trip/TripHome'
-import PlanningWizard from './pages/trip/PlanningWizard'
-import TripDashboard from './pages/trip/TripDashboard'
 import ThemeToggle from './components/ThemeToggle'
 import './App.css'
 
 export default function App() {
   const location = useLocation()
-  const isTripRoute = location.pathname.startsWith('/trip')
   const isLanding = location.pathname === '/'
 
   return (
     <div className="app">
-      {!isTripRoute && !isLanding && <ThemeToggle />}
+      {!isLanding && <ThemeToggle />}
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/create/movies" element={<CreateMovieRoom />} />
@@ -32,10 +28,6 @@ export default function App() {
         <Route path="/room/:roomId" element={<Room />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
-        {/* Trip Planner */}
-        <Route path="/trip" element={<TripHome />} />
-        <Route path="/trip/plan" element={<PlanningWizard />} />
-        <Route path="/trip/dashboard" element={<TripDashboard />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
