@@ -6,6 +6,38 @@ import { puzzlesForRoom, hslToHex, scoreGuess, scoreVerdict, encodeGuess, decode
 import { track } from '../lib/analytics'
 import './ColorGameRoom.css'
 
+// One-tap colour wheel: hue around the circle, saturation from centre out.
+// Dragging works too (pointer capture). The chosen colour is applied LIVE onto
+// the greyscale poster via mix-blend-mode, so you judge it in the image itself.
+function ColorWheel({ h, s, onPick }) {
+  const ref = useRef(null)
+  const pick = (e) => {
+    const rect = ref.current.getBoundingClientRect()
+    const x = e.clientX - rect.left - rect.width / 2
+    const y = e.clientY - rect.top - rect.height / 2
+    const hue = Math.round((Math.atan2(x, -y) * 180 / Math.PI + 360) % 360)
+    const sat = Math.round(Math.min(1, Math.sqrt(x * x + y * y) / (rect.width / 2)) * 100)
+    onPick(hue, Math.max(8, sat))
+  }
+  // marker position for current h/s
+  const rad = (h - 90) * Math.PI / 180
+  const mr = (s / 100) * 50
+  const mx = 50 + Math.cos(rad) * mr
+  const my = 50 + Math.sin(rad) * mr
+  return (
+    <div
+      ref={ref}
+      className="cg-wheel"
+      onPointerDown={(e) => { try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* capture unsupported */ } pick(e) }}
+      onPointerMove={(e) => { if (e.buttons) pick(e) }}
+      role="slider"
+      aria-label="Colour wheel"
+    >
+      <span className="cg-wheel-marker" style={{ left: `${mx}%`, top: `${my}%`, background: hslToHex(h, s, 55) }} />
+    </div>
+  )
+}
+
 // Color Duel — each round shows a desaturated official poster; both players mix
 // the colour they remember, then the original is revealed and scored by
 // perceptual distance (ΔE). Duel guesses travel over the existing swipes
@@ -139,21 +171,22 @@ export default function ColorGameRoom({ room, onDone, isSolo = false }) {
             className={`cg-poster ${revealed ? '' : 'is-gray'}`}
             draggable={false}
           />
+          {/* Live colourise: your current pick painted over the greyscale poster,
+              so you see the colour IN the image while choosing. */}
+          {!revealed && <span className="cg-poster-tint" style={{ background: guess }} aria-hidden="true" />}
           {!revealed && <span className="cg-poster-hint">{puzzle.media === 'series' ? '📺' : '🎬'} {puzzle.title}</span>}
         </div>
 
         {!hasMine && (
           <>
-            <div className="cg-preview" style={{ background: guess }} />
-            <div className="cg-sliders">
-              <input type="range" min="0" max="360" value={h} onChange={e => setH(+e.target.value)}
-                className="cg-slider cg-slider--hue" aria-label="Hue" />
-              <input type="range" min="0" max="100" value={s} onChange={e => setS(+e.target.value)}
-                className="cg-slider" aria-label="Saturation"
-                style={{ background: `linear-gradient(to right, ${hslToHex(h, 0, l)}, ${hslToHex(h, 100, l)})` }} />
-              <input type="range" min="5" max="95" value={l} onChange={e => setL(+e.target.value)}
-                className="cg-slider" aria-label="Lightness"
-                style={{ background: `linear-gradient(to right, #000, ${hslToHex(h, s, 50)}, #fff)` }} />
+            <div className="cg-pick-row">
+              <ColorWheel h={h} s={s} onPick={(nh, ns) => { setH(nh); setS(ns) }} />
+              <div className="cg-pick-side">
+                <span className="cg-pick-chip" style={{ background: guess }} />
+                <input type="range" min="12" max="88" value={l} onChange={e => setL(+e.target.value)}
+                  className="cg-slider cg-slider--vert" aria-label="Lightness"
+                  style={{ background: `linear-gradient(to right, #000, ${hslToHex(h, s, 50)}, #fff)` }} />
+              </div>
             </div>
             <button className="btn btn-primary cg-cta" onClick={lockIn}>Lock in my colour</button>
           </>

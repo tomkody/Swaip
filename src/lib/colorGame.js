@@ -83,8 +83,15 @@ export function deltaE(hexA, hexB) {
 
 // ΔE → 0–100 score. ΔE < 2.3 is a "just noticeable difference" → basically 100;
 // ΔE 60+ is a completely different colour → 0.
+//
+// Lightness is down-weighted: the picker colourises the poster via
+// mix-blend-mode "color", which keeps the image's own luminosity — so what the
+// player actually judges by eye is hue + chroma (a/b), not L. Scoring must
+// match what they can see.
 export function scoreGuess(guessHex, targetHex) {
-  const dE = deltaE(guessHex, targetHex)
+  const [L1, a1, b1] = rgbToLab(...hexToRgb(guessHex))
+  const [L2, a2, b2] = rgbToLab(...hexToRgb(targetHex))
+  const dE = Math.sqrt((0.35 * (L1 - L2)) ** 2 + (a1 - a2) ** 2 + (b1 - b2) ** 2)
   return Math.max(0, Math.min(100, Math.round(100 - dE * (100 / 60))))
 }
 
