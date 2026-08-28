@@ -18,11 +18,13 @@ export const COLOR_PUZZLES = [
   { id: 'simpsons', media: 'series', title: 'The Simpsons',      label: "Bart's skin",                 poster: 'https://image.tmdb.org/t/p/w500/uWpG7GqfKGQqX4YMAo3nv5OrglV.jpg', mask: '/game-masks/simpsons.png', hex: '#F9D716' },
   { id: 'monsters', media: 'movie',  title: 'Monsters, Inc.',    label: "Sulley's fur",                poster: 'https://image.tmdb.org/t/p/w500/wFSpyMsp7H0ttERbxY7Trlv8xry.jpg', mask: '/game-masks/monsters.png', hex: '#278BA0' },
   { id: 'stranger', media: 'series', title: 'Stranger Things',   label: 'the STRANGER THINGS logo',    poster: 'https://image.tmdb.org/t/p/w500/uOOtwVbSr4QDjAGIifLDwpb2Pdl.jpg', mask: '/game-masks/stranger.png', hex: '#C63032' },
-  { id: 'killbill', media: 'movie',  title: 'Kill Bill: Vol. 1', label: 'the iconic Kill Bill yellow', poster: 'https://image.tmdb.org/t/p/w500/v7TaX8kXMXs5yFFGR41guUDNcnB.jpg', hex: '#FFE31E' },
-  { id: 'shining',  media: 'movie',  title: 'The Shining',       label: 'the iconic poster yellow',    poster: 'https://image.tmdb.org/t/p/w500/uAR0AWqhQL1hQa69UDEbb2rE5Wx.jpg', hex: '#FFDF01' },
 ]
 
-export const ROUNDS_PER_GAME = 4
+// NOTE: a puzzle without a mask tints the WHOLE poster, which makes the question
+// ambiguous ("which of the five yellows?"). So a mask is now mandatory — never
+// add a puzzle here without one.
+
+export const ROUNDS_PER_GAME = 3
 
 // Same seeded PRNG as the rest of the app — both players get the same rounds.
 function seededRandom(seed) {
