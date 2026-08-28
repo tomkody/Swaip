@@ -186,6 +186,7 @@
 .category-emoji--activities { background: rgba(16, 185, 129, 0.16); }
 .category-emoji--food       { background: rgba(249, 115, 22, 0.16); }
 .category-emoji--convo      { background: rgba(139, 92, 246, 0.16); }
+.category-emoji--game       { background: rgba(236, 72, 153, 0.16); }
 
 /* Cards ease in with a gentle stagger on load */
 @keyframes catCardIn {

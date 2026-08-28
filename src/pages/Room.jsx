@@ -9,6 +9,7 @@ import MatchModal from '../components/MatchModal'
 import ConversationRoom from '../components/ConversationRoom'
 import ActivityRoom from '../components/ActivityRoom'
 import FoodRoom from '../components/FoodRoom'
+import ColorGameRoom from '../components/ColorGameRoom'
 import RankingView from '../components/RankingView'
 import InvitePanel from '../components/InvitePanel'
 import { track } from '../lib/analytics'
@@ -243,6 +244,7 @@ export default function Room() {
       conversations: { emoji: '💬', label: 'Conversations', desc: 'Pick the topics you\'d love to talk about. You\'ll only see topics you both chose.' },
       activities:    { emoji: '🎯', label: 'Activities',    desc: 'Pick activities you\'re up for. You\'ll see which ones you both want to do.' },
       food:          { emoji: '🍽️', label: 'Food & Drinks', desc: 'Swipe on cuisines first, then on real restaurants nearby. Time to eat!' },
+      colorgame:     { emoji: '🎨', label: 'Color Duel',    desc: 'Posters with the colour drained — mix the shade you remember. Closest guess wins the round!' },
     }
     const info = typeInfo[room.type] || typeInfo.movies
 
@@ -254,7 +256,7 @@ export default function Room() {
           <h2 className="join-title">{info.label} Room</h2>
           <p className="join-desc">{info.desc}</p>
           <button className="btn btn-primary join-btn" onClick={() => { markRoomActive(roomId); setHasJoined(true) }}>
-            {room.type === 'movies' || room.type === 'series' ? 'Start Swiping 👆' : 'See the options 👆'}
+            {room.type === 'movies' || room.type === 'series' ? 'Start Swiping 👆' : room.type === 'colorgame' ? 'Start Guessing 👆' : 'See the options 👆'}
           </button>
         </div>
       </div>
@@ -281,7 +283,7 @@ export default function Room() {
     return (
       <div className="room-center">
         <div className="waiting-category">
-          {room.type === 'movies' ? '🎬 Movies' : room.type === 'series' ? '📺 TV Series' : room.type === 'activities' ? '🎯 Activities' : room.type === 'food' ? '🍽️ Food & Drinks' : `💬 ${room.topic_name}`}
+          {room.type === 'movies' ? '🎬 Movies' : room.type === 'series' ? '📺 TV Series' : room.type === 'activities' ? '🎯 Activities' : room.type === 'food' ? '🍽️ Food & Drinks' : room.type === 'colorgame' ? '🎨 Color Duel' : `💬 ${room.topic_name}`}
         </div>
         <div className="waiting">
           <div className="waiting-pulse" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -318,6 +320,11 @@ export default function Room() {
   // Food mode
   if (room.type === 'food') {
     return <FoodRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} />
+  }
+
+  // Color Duel mini-game
+  if (room.type === 'colorgame') {
+    return <ColorGameRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} />
   }
 
   // Movie/Series mode — done (all swiped or clicked "I'm done")

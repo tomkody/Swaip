@@ -5,6 +5,7 @@ import CreateSeriesRoom from './pages/CreateSeriesRoom'
 import CreateConversationRoom from './pages/CreateConversationRoom'
 import CreateActivityRoom from './pages/CreateActivityRoom'
 import CreateFoodRoom from './pages/CreateFoodRoom'
+import CreateColorGame from './pages/CreateColorGame'
 import Room from './pages/Room'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/create/conversations" element={<CreateConversationRoom />} />
         <Route path="/create/activities" element={<CreateActivityRoom />} />
         <Route path="/create/food" element={<CreateFoodRoom />} />
+        <Route path="/create/colorgame" element={<CreateColorGame />} />
         <Route path="/room/:roomId" element={<Room />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />

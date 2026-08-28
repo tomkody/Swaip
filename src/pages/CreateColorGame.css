@@ -1,0 +1,52 @@
+.create-cg {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 20px calc(32px + env(safe-area-inset-bottom));
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.create-cg-hero { font-size: 52px; line-height: 1; margin-top: 8px; }
+
+.create-cg h1 {
+  margin: 0;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.create-cg-beta {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, #F74F5E, #F5B83A);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.create-cg .subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin: 0 auto;
+  max-width: 360px;
+}
+
+.create-cg-demo { display: flex; gap: 8px; justify-content: center; }
+.create-cg-chip {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-xs);
+  display: inline-block;
+}
+
+.create-cg-btn { max-width: 360px; width: 100%; margin: 6px auto 0; }
+.create-cg-attrib { font-size: 11px; color: var(--text-muted); opacity: 0.6; margin: 0; }

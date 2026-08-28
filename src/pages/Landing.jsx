@@ -101,6 +101,15 @@ export default function Landing() {
               <span className="category-desc">Questions that spark a real talk</span>
             </div>
           </button>
+
+          <button className="category-card category-card--wide" onClick={() => navigate('/create/colorgame')}>
+            <span className="category-beta">Beta</span>
+            <span className="category-emoji category-emoji--game">🎨</span>
+            <div className="category-text">
+              <span className="category-name">Color Duel</span>
+              <span className="category-desc">Guess iconic movie colours from memory</span>
+            </div>
+          </button>
         </div>
 
         <button className="how-toggle" onClick={() => setShowHow(!showHow)}>

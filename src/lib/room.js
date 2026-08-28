@@ -266,6 +266,26 @@ export async function createActivityRoom({ lat, lng, locationName, radius, solo 
   return data
 }
 
+// Create a Color Duel game room
+export async function createColorGameRoom({ solo = false } = {}) {
+  track('room_created', { type: 'colorgame', solo })
+  const roomId = uuidv4().slice(0, 8)
+  const topicId = JSON.stringify({ game: 'color', ...(solo && { solo: true }) })
+
+  if (!supabase) {
+    const room = { id: roomId, type: 'colorgame', topic_id: topicId, created_at: new Date().toISOString(), status: 'waiting' }
+    localStorage.setItem(`swaip_room_${roomId}`, JSON.stringify(room))
+    return room
+  }
+
+  const { data, error } = await supabase
+    .from('rooms')
+    .insert({ id: roomId, type: 'colorgame', topic_id: topicId, status: 'waiting' })
+    .select().single()
+  if (error) throw error
+  return data
+}
+
 // Update activity room phase (categories → places).
 // Packs phase data into topic_id so no custom DB columns are required.
 // locationData should be the parsed location object { lat, lng, locationName, radius }
