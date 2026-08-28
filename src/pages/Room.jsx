@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
-import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, subscribeToRoomActive, markRoomActive, fetchRoomMatches, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID } from '../lib/room'
+import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, subscribeToRoomActive, subscribeToRoomPicks, fetchRoomPicks, markRoomActive, fetchRoomMatches, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID } from '../lib/room'
 import { PLATFORMS } from '../lib/platforms'
 import { fetchTopRatedMovies } from '../lib/tmdb'
 import { fetchTopRatedSeries } from '../lib/seriesFetch'
@@ -38,6 +38,7 @@ export default function Room() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [matchItem, setMatchItem] = useState(null)
   const [matches, setMatches] = useState([])
+  const [partnerDone, setPartnerDone] = useState(false)
   const [liked, setLiked] = useState([])
   const [isDone, setIsDone] = useState(false)
   const [doneMatches, setDoneMatches] = useState(null)
@@ -137,6 +138,21 @@ export default function Room() {
 
     return () => unsubSwipes()
   }, [room, roomId])
+
+  // Let the still-swiping user know the moment their partner finishes, so they
+  // know they can wrap up too. "Done" is the DONE_ITEM_ID sentinel row the
+  // partner writes when they tap done or their deck runs out.
+  useEffect(() => {
+    if (isSolo || (room?.type !== 'movies' && room?.type !== 'series')) return
+    let active = true
+    fetchRoomPicks(roomId, userToken.current)
+      .then(p => { if (active && p && p.othersDone > 0) setPartnerDone(true) })
+      .catch(() => {})
+    const unsub = subscribeToRoomPicks(roomId, userToken.current, (swipe) => {
+      if (Number(swipe.item_id) === DONE_ITEM_ID) setPartnerDone(true)
+    })
+    return () => { active = false; unsub() }
+  }, [isSolo, room?.type, roomId])
 
   const handleSwipe = useCallback(
     async (direction) => {
@@ -345,6 +361,12 @@ export default function Room() {
       </div>
 
       <div className="room-footer">
+        {partnerDone && !isSolo && (
+          <div className="partner-done-banner">
+            <span className="partner-done-dot" aria-hidden="true" />
+            Your partner finished swiping — wrap up whenever you're ready
+          </div>
+        )}
         <button className="done-early-btn" onClick={async () => {
           if (isSolo) { setIsDone(true); return }
           setFetchingDone(true)

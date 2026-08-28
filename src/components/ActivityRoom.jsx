@@ -33,10 +33,13 @@ import {
   getUserToken,
   recordSwipe,
   subscribeToSwipes,
+  subscribeToRoomPicks,
+  fetchRoomPicks,
   updateActivityRoomPhase,
   subscribeToRoomChanges,
   getRoom,
   fetchRoomMatches,
+  DONE_ITEM_ID,
 } from '../lib/room'
 import SwipeCard from './SwipeCard'
 import RankingView from './RankingView'
@@ -91,6 +94,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   const [likedPlaces, setLikedPlaces] = useState([])
   const [matchItem, setMatchItem] = useState(null)
   const [isDone, setIsDone] = useState(false)
+  const [partnerDone, setPartnerDone] = useState(false)
   const [participantCount, setParticipantCount] = useState(1)
   const [voteCounts, setVoteCounts] = useState({})
 
@@ -105,6 +109,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   const pendingSwipesRef = useRef([])
   const likedCatIdsRef = useRef(new Set())
   const rejectedBrandsRef = useRef(new Set())
+  const donePlacesSignalledRef = useRef(false)
 
   useEffect(() => { isDoneRef.current = isDone }, [isDone])
 
@@ -213,6 +218,27 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     }, playerCount)
     return unsub
   }, [isSolo, room.id, phase, places]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Tell others this user finished swiping places (DONE sentinel) ─────────
+  useEffect(() => {
+    if (isSolo || phase !== 'places') return
+    if (!(finishedSwiping || isDone) || donePlacesSignalledRef.current) return
+    donePlacesSignalledRef.current = true
+    recordSwipe(room.id, userToken.current, DONE_ITEM_ID, 'right', playerCount).catch(() => {})
+  }, [isSolo, phase, finishedSwiping, isDone, room.id, playerCount])
+
+  // ── Detect when a partner finished, to nudge this user they can stop too ──
+  useEffect(() => {
+    if (isSolo) return
+    let active = true
+    fetchRoomPicks(room.id, userToken.current)
+      .then(p => { if (active && p && p.othersDone > 0) setPartnerDone(true) })
+      .catch(() => {})
+    const unsub = subscribeToRoomPicks(room.id, userToken.current, (swipe) => {
+      if (Number(swipe.item_id) === DONE_ITEM_ID) setPartnerDone(true)
+    })
+    return () => { active = false; unsub() }
+  }, [isSolo, room.id])
 
   // ── fetchAndTransitionToPlaces ────────────────────────────────────────────
   const fetchAndTransitionToPlaces = useCallback(async (matchedCats) => {
@@ -755,6 +781,12 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       </div>
 
       <div className="act-footer">
+        {partnerDone && !isSolo && (
+          <div className="partner-done-banner">
+            <span className="partner-done-dot" aria-hidden="true" />
+            {playerCount > 2 ? 'Someone finished swiping' : 'Your partner finished swiping'} — wrap up whenever you're ready
+          </div>
+        )}
         <button className="done-early-btn" onClick={() => setIsDone(true)}>
           {isSolo
             ? `I'm done · ${likedPlaces.length} pick${likedPlaces.length !== 1 ? 's' : ''}`
