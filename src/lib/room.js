@@ -76,15 +76,18 @@ export async function fetchVoteCounts(roomId) {
   return Object.fromEntries(Object.entries(byItem).map(([id, set]) => [id, set.size]))
 }
 
-// Stable per-device identity. Uses localStorage (persists across tabs, reloads
-// and browser restarts) — sessionStorage was per-tab, so reopening a room link
-// minted a NEW identity and could break the "playerCount distinct likers" match
-// count. Migrates any existing sessionStorage token so in-flight rooms survive.
+// Per-tab identity — MUST stay sessionStorage, not localStorage. Matches need
+// `playerCount` DISTINCT user_tokens on the same item; localStorage is shared
+// across every tab/window of a browser, so two people (or two test tabs) in the
+// same browser would collapse to ONE token and never match. sessionStorage is
+// per-tab and survives reloads, which is exactly what we want. (Clean up any
+// stale localStorage token left by an earlier build.)
 export function getUserToken() {
-  let token = localStorage.getItem('swaip_user_token')
+  try { localStorage.removeItem('swaip_user_token') } catch { /* ignore */ }
+  let token = sessionStorage.getItem('swaip_user_token')
   if (!token) {
-    token = sessionStorage.getItem('swaip_user_token') || uuidv4()
-    localStorage.setItem('swaip_user_token', token)
+    token = uuidv4()
+    sessionStorage.setItem('swaip_user_token', token)
   }
   return token
 }
