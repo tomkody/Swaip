@@ -4,7 +4,6 @@ import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRo
 import { getPlatformMeta, getWatchUrl } from '../lib/platforms'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import { track } from '../lib/analytics'
-import RoomChat from './RoomChat'
 import './RankingView.css'
 
 // "Where to watch" brand chips for a movie/series result (nothing for places).
@@ -595,9 +594,6 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
           )
         })()}
 
-        {/* Post-match chat — sort out the details together, right here */}
-        {!isSolo && <RoomChat roomId={room.id} />}
-
         {/* Action buttons */}
         <div className="rv-results-actions">
           <button
@@ -712,9 +708,6 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
           })}
         </div>
       )}
-
-      {/* Chat is available the moment swiping ends, not only after locking in */}
-      {!isSolo && <RoomChat roomId={room.id} />}
 
       <div className="rv-footer">
         <button className="btn btn-primary rv-submit" onClick={handleSubmit} disabled={submitting}>
