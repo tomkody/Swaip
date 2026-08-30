@@ -13,6 +13,7 @@ import ColorGameRoom from '../components/ColorGameRoom'
 import RankingView from '../components/RankingView'
 import InvitePanel from '../components/InvitePanel'
 import { track } from '../lib/analytics'
+import { isPushSupported, enablePushForRoom, notifyRoom } from '../lib/push'
 import './Room.css'
 
 function parseRoomFilters(raw) {
@@ -53,6 +54,7 @@ export default function Room() {
   const [hasJoined, setHasJoined] = useState(isCreator)
   const [invited, setInvited] = useState(false)       // shared / copied / showed QR at least once
   const [remindSolo, setRemindSolo] = useState(false) // one-time nudge before going solo
+  const [pushState, setPushState] = useState('idle')  // idle | enabled | denied
   const userToken = useRef(getUserToken())
 
   useEffect(() => {
@@ -183,6 +185,7 @@ export default function Room() {
           const isMatch = await recordSwipe(roomId, userToken.current, movie.id, direction)
           if (isMatch) {
             track('match', { type: room.type })
+            notifyRoom(roomId, 'match', { from: userToken.current, title: movie.title })
             setMatchItem(movie)
             setMatches((prev) => [...prev, movie])
           }
@@ -255,7 +258,7 @@ export default function Room() {
           <p className="join-invited">{getRoomPlayerCount(room) > 2 ? `You've been invited to a group!` : `Your friend invited you!`}</p>
           <h2 className="join-title">{info.label} Room</h2>
           <p className="join-desc">{info.desc}</p>
-          <button className="btn btn-primary join-btn" onClick={() => { markRoomActive(roomId); setHasJoined(true) }}>
+          <button className="btn btn-primary join-btn" onClick={() => { markRoomActive(roomId); notifyRoom(roomId, 'joined', { from: userToken.current }); setHasJoined(true) }}>
             {room.type === 'movies' || room.type === 'series' ? 'Start Swiping 👆' : room.type === 'colorgame' ? 'Start Guessing 👆' : 'See the options 👆'}
           </button>
         </div>
@@ -289,6 +292,21 @@ export default function Room() {
           <div className="waiting-pulse" aria-hidden="true"><span></span><span></span><span></span></div>
           <h2>{pc > 2 ? `Waiting for your group` : `Waiting for your partner`}</h2>
           <InvitePanel roomId={roomId} type={room.type} onInteract={() => setInvited(true)} />
+          {isPushSupported() && pushState !== 'enabled' && (
+            <button
+              className="push-enable-btn"
+              onClick={async () => {
+                const result = await enablePushForRoom(roomId, userToken.current)
+                setPushState(result === 'enabled' ? 'enabled' : result)
+                if (result === 'enabled') track('push_enabled', { type: room.type })
+              }}
+            >
+              {pushState === 'denied' ? 'Notifications blocked in browser settings' : '🔔 Notify me when they join'}
+            </button>
+          )}
+          {pushState === 'enabled' && (
+            <p className="push-enabled-note">🔔 We'll ping you — feel free to close this tab.</p>
+          )}
           {remindSolo && !invited && (
             <p className="skip-wait-reminder">Don't forget to send a link to your partner 🙂</p>
           )}

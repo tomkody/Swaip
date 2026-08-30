@@ -8,6 +8,7 @@ import { ACTIVITY_CATEGORIES as _ACTIVITY_CATEGORIES } from '../lib/activities'
 import { getRoomPlayerCount, getParticipantCount, fetchVoteCounts } from '../lib/room'
 
 import { fetchNearbyPlaces, getBrandKey } from '../lib/placesApi'
+import { notifyRoom } from '../lib/push'
 import {
   getUserToken,
   recordSwipe,
@@ -451,6 +452,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       try {
         const isMatch = await recordSwipe(room.id, userToken.current, place.numId, direction, playerCount)
         if (isMatch) {
+          notifyRoom(room.id, 'match', { from: userToken.current, title: place.title })
           setMatchItem(place)
           setMatches(prev => prev.find(m => m.id === place.id) ? prev : [...prev, place])
           confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })

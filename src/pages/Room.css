@@ -525,3 +525,25 @@
   from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Push-notification opt-in on the waiting screen ──────────────── */
+.push-enable-btn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 9px 18px;
+  margin-top: 10px;
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.push-enable-btn:hover { border-color: var(--border-hover); }
+.push-enabled-note {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--success, #16a34a);
+  margin: 10px 0 0;
+}

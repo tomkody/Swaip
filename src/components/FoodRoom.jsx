@@ -6,6 +6,7 @@ import { seededShuffle } from '../lib/random'
 import { saveMatch } from '../lib/savedMatches'
 import { FOOD_CATEGORIES, buildLocalCuisineCategory } from '../lib/foodCategories'
 import { fetchNearbyPlaces, getBrandKey } from '../lib/placesApi'
+import { notifyRoom } from '../lib/push'
 import {
   getUserToken,
   recordSwipe,
@@ -439,6 +440,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
       try {
         const isMatch = await recordSwipe(room.id, userToken.current, place.numId, direction, playerCount)
         if (isMatch) {
+          notifyRoom(room.id, 'match', { from: userToken.current, title: place.title })
           setMatchItem(place)
           setMatches(prev => prev.find(m => m.id === place.id) ? prev : [...prev, place])
           confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
