@@ -16,3 +16,4 @@ alter table saved_matches enable row level security;
 create policy "anon can read"   on saved_matches for select to anon, authenticated using (true);
 create policy "anon can insert" on saved_matches for insert to anon, authenticated with check (true);
 create policy "anon can delete" on saved_matches for delete to anon, authenticated using (true);
+create policy "anon can update" on saved_matches for update to anon, authenticated using (true) with check (true);

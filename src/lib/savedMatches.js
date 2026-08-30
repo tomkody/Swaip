@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { getUser, onAuthChange } from './auth'
 
 // Saved matches: localStorage is the instant source of truth, and every save is
 // mirrored to a Supabase `saved_matches` table under a persistent DEVICE id so
@@ -12,6 +13,29 @@ const KEY = 'swaip_saved_matches'
 const DEVICE_KEY = 'swaip_device_id'
 
 let remoteUnavailable = false
+
+// When signed in, history lives under the account key instead of the device id,
+// so it follows the user across devices. Call initHistorySync() once at boot;
+// on sign-in this device's anonymous rows are adopted into the account
+// (best-effort — a duplicate item just stays under the old key).
+let historyKey = null
+function currentKey() { return historyKey || getDeviceId() }
+
+export function initHistorySync() {
+  if (!supabase) return
+  const apply = (user) => {
+    if (!user) { historyKey = null; return }
+    const userKey = `user:${user.id}`
+    const device = getDeviceId()
+    if (device && historyKey !== userKey && !remoteUnavailable) {
+      supabase.from('saved_matches').update({ device_key: userKey })
+        .eq('device_key', device).then(() => {}, () => {})
+    }
+    historyKey = userKey
+  }
+  getUser().then(apply)
+  onAuthChange(apply)
+}
 
 export function getDeviceId() {
   try {
@@ -46,7 +70,7 @@ export function saveMatch({ id, title, category, image, year, rating }) {
   writeLocal([entry, ...matches])
 
   // Mirror to Supabase (best-effort, never blocks the UI)
-  const device = getDeviceId()
+  const device = currentKey()
   if (!supabase || remoteUnavailable || !device) return
   supabase.from('saved_matches').upsert(
     {
@@ -69,7 +93,7 @@ export function removeMatch(id, category) {
   const matches = getSavedMatches()
   writeLocal(matches.filter(m => !(String(m.id) === String(id) && m.category === category)))
 
-  const device = getDeviceId()
+  const device = currentKey()
   if (!supabase || remoteUnavailable || !device) return
   supabase.from('saved_matches').delete()
     .eq('device_key', device).eq('category', category).eq('item_id', String(id))
@@ -82,7 +106,7 @@ export function removeMatch(id, category) {
 // merged list (remote-only entries appended), or the local list on any failure.
 export async function syncSavedMatches() {
   const local = getSavedMatches()
-  const device = getDeviceId()
+  const device = currentKey()
   if (!supabase || remoteUnavailable || !device) return local
   try {
     const { data, error } = await supabase

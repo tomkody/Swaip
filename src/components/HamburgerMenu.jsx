@@ -1,5 +1,76 @@
 import { useState, useEffect, useRef } from 'react'
+import { isAuthAvailable, getUser, onAuthChange, signInWithEmail, signOut } from '../lib/auth'
+import { track } from '../lib/analytics'
 import './HamburgerMenu.css'
+
+// Passwordless account section: enter an email, get a magic link. Signing in
+// makes saved-match history follow the user across devices; everything else
+// stays anonymous.
+function AccountSection() {
+  const [user, setUser] = useState(null)
+  const [email, setEmail] = useState('')
+  const [status, setStatus] = useState('idle')   // idle | sending | sent | error
+  const [errorMsg, setErrorMsg] = useState('')
+
+  useEffect(() => {
+    let active = true
+    getUser().then(u => { if (active) setUser(u) })
+    const unsub = onAuthChange(u => setUser(u))
+    return () => { active = false; unsub() }
+  }, [])
+
+  if (!isAuthAvailable()) return null
+
+  if (user) {
+    return (
+      <>
+        <div className="hm-account">
+          <span className="hm-icon">👤</span>
+          <span className="hm-account-email">{user.email}</span>
+        </div>
+        <button className="hm-item" onClick={() => { signOut(); track('signed_out') }}>
+          <span className="hm-icon">🚪</span>
+          Sign out
+        </button>
+      </>
+    )
+  }
+
+  if (status === 'sent') {
+    return <p className="hm-note">✉️ Check your inbox — we sent you a sign-in link.</p>
+  }
+
+  return (
+    <form
+      className="hm-signin"
+      onSubmit={async (e) => {
+        e.preventDefault()
+        const addr = email.trim()
+        if (!addr || status === 'sending') return
+        setStatus('sending')
+        const err = await signInWithEmail(addr)
+        if (err) { setErrorMsg(err); setStatus('error') }
+        else { setStatus('sent'); track('signin_link_sent') }
+      }}
+    >
+      <p className="hm-signin-label">Sign in to keep your history on every device</p>
+      <div className="hm-signin-row">
+        <input
+          className="hm-signin-input"
+          type="email"
+          placeholder="you@email.com"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          aria-label="Email for sign-in link"
+        />
+        <button className="hm-signin-btn" type="submit" disabled={!email.trim() || status === 'sending'}>
+          {status === 'sending' ? '…' : 'Send link'}
+        </button>
+      </div>
+      {status === 'error' && <p className="hm-signin-error">{errorMsg}</p>}
+    </form>
+  )
+}
 
 export default function HamburgerMenu({ onSavedMatches, dark, onToggleDark }) {
   const [open, setOpen] = useState(false)
@@ -55,6 +126,11 @@ export default function HamburgerMenu({ onSavedMatches, dark, onToggleDark }) {
             <span className="hm-icon">🔖</span>
             Saved Matches
           </button>
+
+          <div className="hm-divider" />
+
+          {/* Account */}
+          <AccountSection />
 
           <div className="hm-divider" />
 
