@@ -836,3 +836,85 @@
   background: rgba(74, 222, 128, 0.15);
   color: #22c55e;
 }
+
+/* ── "Decide for us" roulette ─────────────────────────────────────── */
+.rv-dice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto 18px;
+}
+.rv-dice-btn {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-pill, 99px);
+  padding: 10px 22px;
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.1s;
+}
+.rv-dice-btn:hover:not(:disabled) { border-color: var(--border-hover); }
+.rv-dice-btn:active:not(:disabled) { transform: scale(0.97); }
+.rv-dice-btn:disabled { opacity: 0.7; cursor: default; }
+.rv-dice-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-xs);
+  transition: border-color 0.2s;
+}
+.rv-dice-card.is-landed {
+  border-color: var(--accent-coral, #FF6B6B);
+  box-shadow: 0 0 0 1.5px var(--accent-coral, #FF6B6B), var(--shadow);
+  animation: diceLand 0.35s ease;
+}
+@keyframes diceLand {
+  0% { transform: scale(0.96); }
+  60% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+.rv-dice-poster {
+  width: 46px;
+  height: 66px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.rv-dice-poster--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  background: var(--bg-surface);
+}
+.rv-dice-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.rv-dice-info strong {
+  font-size: 15px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rv-dice-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--accent-coral, #FF6B6B);
+  text-transform: uppercase;
+}

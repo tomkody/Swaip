@@ -6,6 +6,58 @@ import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import { track } from '../lib/analytics'
 import './RankingView.css'
 
+// "Decide for us" — a little roulette over the matches for the moment nobody
+// wants to choose. Purely local (each player can roll their own); driven from
+// the click handler with timeouts, no effects.
+function DecideForUs({ matches, emoji, onRolled }) {
+  const [spinIndex, setSpinIndex] = useState(null)   // index while spinning / final
+  const [spinning, setSpinning] = useState(false)
+  const timerRef = useRef(null)
+
+  const roll = () => {
+    if (spinning || matches.length < 2) return
+    setSpinning(true)
+    onRolled?.()
+    const winner = Math.floor(Math.random() * matches.length)
+    // ~18 hops with an easing slowdown, landing on the winner
+    const hops = 18 + ((winner - ((18 - 1) % matches.length) + matches.length) % matches.length)
+    let i = 0
+    const step = () => {
+      setSpinIndex(i % matches.length)
+      i++
+      if (i <= hops) {
+        const t = i / hops
+        timerRef.current = setTimeout(step, 40 + 260 * t * t)   // ease-out
+      } else {
+        setSpinning(false)
+      }
+    }
+    step()
+  }
+
+  useEffect(() => () => clearTimeout(timerRef.current), [])
+
+  const current = spinIndex != null ? matches[spinIndex] : null
+  return (
+    <div className="rv-dice">
+      {current && (
+        <div className={`rv-dice-card ${spinning ? 'is-spinning' : 'is-landed'}`}>
+          {current.poster
+            ? <img src={current.poster} alt="" className="rv-dice-poster" />
+            : <span className="rv-dice-poster rv-dice-poster--empty">{emoji}</span>}
+          <div className="rv-dice-info">
+            {!spinning && <span className="rv-dice-eyebrow">🎉 Tonight's pick</span>}
+            <strong>{current.title}</strong>
+          </div>
+        </div>
+      )}
+      <button className="rv-dice-btn" onClick={roll} disabled={spinning}>
+        {spinning ? '🎲 Rolling…' : spinIndex == null ? "🎲 Can't choose? Decide for us" : '🎲 Roll again'}
+      </button>
+    </div>
+  )
+}
+
 // "Where to watch" brand chips for a movie/series result (nothing for places).
 function PlatformBadges({ platforms }) {
   if (!platforms || platforms.length === 0) return null
@@ -295,6 +347,11 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
             return sub ? <p className="rv-hero-sub">{sub}</p> : null
           })()}
         </div>
+
+        {/* Can't-choose roulette — only useful with 2+ matches */}
+        {matches.length >= 2 && (
+          <DecideForUs matches={matches} emoji={emoji} onRolled={() => track('dice_rolled', { type: room.type })} />
+        )}
 
         {/* Recommended pick — once both have locked in a Top 3 */}
         {recommendation && (() => {
