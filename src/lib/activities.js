@@ -22,5 +22,8 @@ export function placeIdToNumId(placeId) {
     h = h >>> 0 // keep unsigned 32-bit
   }
   // Offset to avoid collision with categories (1000–1011) and typical movie IDs (< 1000000)
-  return (h % 9000000) + 2000000
+  const n = (h % 9000000) + 2000000
+  // One value in this range is the DONE sentinel — a place hashing exactly onto
+  // it would be silently unmatchable, so nudge it off.
+  return n === 9999999 ? 9999998 : n
 }
