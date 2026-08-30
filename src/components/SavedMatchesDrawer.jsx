@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getSavedMatches, removeMatch } from '../lib/savedMatches'
+import { getSavedMatches, removeMatch, syncSavedMatches } from '../lib/savedMatches'
 import './SavedMatchesDrawer.css'
 
 const CATEGORY_LABELS = {
@@ -20,8 +20,11 @@ export default function SavedMatchesDrawer({ open, onClose }) {
 
   useEffect(() => {
     if (!open) return
+    let active = true
+    // local list immediately, then merge in this device's remote history
     const t = setTimeout(() => setMatches(getSavedMatches()), 0)  // deferred — no sync setState in effects
-    return () => clearTimeout(t)
+    syncSavedMatches().then(merged => { if (active) setMatches(merged) })
+    return () => { active = false; clearTimeout(t) }
   }, [open])
 
   function handleRemove(id, category) {
