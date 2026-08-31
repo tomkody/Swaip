@@ -68,3 +68,35 @@ export function formatAccuracy(accuracy) {
     ? `±${Math.round(accuracy / 100) / 10} km`
     : `±${Math.round(accuracy)} m`
 }
+
+// ── Platform-aware guidance ───────────────────────────────────────────────────
+// The "turn on Precise Location" path only exists on iOS; showing it on Android
+// or desktop is just confusing, and desktops have no GPS at all.
+export function platformTag() {
+  const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || ''
+  if (/iPhone|iPad|iPod/.test(ua)) return 'ios'
+  if (/Android/.test(ua)) return 'android'
+  return 'desktop'
+}
+
+export function accuracyAdvice() {
+  switch (platformTag()) {
+    case 'ios':
+      return 'Turn on Settings → Privacy & Security → Location Services → Safari Websites → Precise Location, step outside for a moment, or type your city below.'
+    case 'android':
+      return 'Make sure precise location is allowed for your browser, step outside for a moment, or type your city below.'
+    default:
+      return 'Desktop browsers locate by Wi-Fi/IP, which is often kilometres off — type your city below for accurate results.'
+  }
+}
+
+// Coarse buckets for analytics: enough to see the real-world distribution of fix
+// quality without recording anything about where anyone actually is.
+export function accuracyBucket(accuracy) {
+  if (accuracy == null) return 'unknown'
+  if (accuracy <= 50) return '0-50m'
+  if (accuracy <= 250) return '50-250m'
+  if (accuracy <= 1000) return '250m-1km'
+  if (accuracy <= 5000) return '1-5km'
+  return '5km+'
+}

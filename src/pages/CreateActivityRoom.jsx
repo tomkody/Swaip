@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createActivityRoom, getUserToken } from '../lib/room'
 import { geocodeLocation, reverseGeocode } from '../lib/placesApi'
-import { getBestPosition, accuracyLevel, formatAccuracy } from '../lib/geo'
+import { getBestPosition, accuracyLevel, formatAccuracy, accuracyAdvice, accuracyBucket, platformTag } from '../lib/geo'
 import ModeToggle from '../components/ModeToggle'
+import { track } from '../lib/analytics'
 import './CreateActivityRoom.css'
 
 const RADIUS_OPTIONS = [
@@ -35,6 +36,7 @@ export default function CreateActivityRoom() {
     // IP-based fallbacks can be 50–200 km off. We no longer silently fall back.
     function onDenied() {
       setGeoLoading(false)
+      track('geo_denied', { platform: platformTag() })
       const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
       setError(
         isIOS
@@ -64,10 +66,12 @@ export default function CreateActivityRoom() {
         setGeoAccuracy(accuracy)
         applyCoords(lat, lng)
         const level = accuracyLevel(accuracy)
+        // Fix quality only — a bucket and the platform, never a position.
+        track('geo_fix', { level, bucket: accuracyBucket(accuracy), platform: platformTag() })
         if (level === 'bad') {
           setError(
             `⚠️ Your location is only accurate to ${formatAccuracy(accuracy)}, so "nearby" results and distances would be way off. ` +
-            `Turn on Settings → Privacy & Security → Location Services → Safari Websites → Precise Location, or just type your city below.`
+            accuracyAdvice()
           )
         } else if (level === 'rough') {
           setError(
