@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createFoodRoom, getUserToken } from '../lib/room'
 import { geocodeLocation, reverseGeocode } from '../lib/placesApi'
+import { getBestPosition, accuracyLevel, formatAccuracy } from '../lib/geo'
 import ModeToggle from '../components/ModeToggle'
 import './CreateActivityRoom.css'
 
@@ -31,6 +32,7 @@ export default function CreateFoodRoom() {
   const navigate = useNavigate()
   const [locationText, setLocationText] = useState('')
   const [pinnedCoords, setPinnedCoords] = useState(null)
+  const [geoAccuracy, setGeoAccuracy] = useState(null)   // metres, from the GPS fix
   const [pinnedCountryCode, setPinnedCountryCode] = useState(null)
   const [radius, setRadius] = useState(5000)
   const [loading, setLoading] = useState(false)
@@ -71,21 +73,25 @@ export default function CreateFoodRoom() {
       return
     }
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude, accuracy } = pos.coords
-        applyCoords(latitude, longitude)
-        // accuracy is in metres — anything above 200m means iOS gave approximate location
-        if (accuracy > 200) {
+    // Wait for the best fix we can get (iOS hands over a coarse one first),
+    // then be explicit about how good it actually is.
+    getBestPosition()
+      .then(({ lat, lng, accuracy }) => {
+        setGeoAccuracy(accuracy)
+        applyCoords(lat, lng)
+        const level = accuracyLevel(accuracy)
+        if (level === 'bad') {
           setError(
-            `⚠️ Approximate location only (±${Math.round(accuracy / 1000 * 10) / 10} km). ` +
-            `For precise results: Settings → Privacy & Security → Location Services → Safari Websites → enable Precise Location.`
+            `⚠️ Your location is only accurate to ${formatAccuracy(accuracy)}, so "nearby" results and distances would be way off. ` +
+            `Turn on Settings → Privacy & Security → Location Services → Safari Websites → Precise Location, or just type your city below.`
+          )
+        } else if (level === 'rough') {
+          setError(
+            `Heads up: location accurate to ${formatAccuracy(accuracy)} — distances may be off by about that much.`
           )
         }
-      },
-      onDenied,
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
-    )
+      })
+      .catch(onDenied)
   }
 
   async function handleCreate() {
@@ -207,7 +213,7 @@ export default function CreateFoodRoom() {
               type="text"
               placeholder="City or address…"
               value={locationText}
-              onChange={e => { setLocationText(e.target.value); setPinnedCoords(null); setPinnedCountryCode(null); setError(null) }}
+              onChange={e => { setLocationText(e.target.value); setPinnedCoords(null); setGeoAccuracy(null); setPinnedCountryCode(null); setError(null) }}
               onKeyDown={e => e.key === 'Enter' && handleCreate()}
             />
             <button
@@ -219,6 +225,15 @@ export default function CreateFoodRoom() {
               {geoLoading ? <span className="geo-spinner" /> : '📍'}
             </button>
           </div>
+
+          {/* Be upfront about fix quality — a coarse fix makes every "nearby"
+              distance wrong, so the user should see it before creating a room. */}
+          {pinnedCoords && geoAccuracy != null && (
+            <p className={`geo-accuracy geo-accuracy--${accuracyLevel(geoAccuracy)}`}>
+              {accuracyLevel(geoAccuracy) === 'good' ? '🎯' : '⚠️'} Located to {formatAccuracy(geoAccuracy)}
+              {accuracyLevel(geoAccuracy) !== 'good' && ' — type a city for better results'}
+            </p>
+          )}
 
           <label className="form-label" style={{ marginTop: 20 }}>Search radius</label>
           <div className="radius-chips">

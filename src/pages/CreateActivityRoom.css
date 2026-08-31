@@ -261,3 +261,14 @@
   width: 100%;
   margin-top: 24px;
 }
+
+/* GPS fix quality shown under the location field */
+.geo-accuracy {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 8px 0 0;
+  line-height: 1.4;
+}
+.geo-accuracy--good  { color: var(--success, #16a34a); }
+.geo-accuracy--rough { color: var(--accent-orange, #f59e0b); }
+.geo-accuracy--bad   { color: var(--danger, #dc2626); }
