@@ -28,7 +28,7 @@ export default defineConfig([
   },
   {
     // Server-side code (Vercel functions + local scripts) runs in Node.
-    files: ['api/**/*.js', 'scripts/**/*.{js,mjs}'],
+    files: ['api/**/*.js', 'scripts/**/*.{js,mjs}', 'e2e/**/*.js', 'playwright.config.js'],
     languageOptions: {
       globals: globals.node,
     },

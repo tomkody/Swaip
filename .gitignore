@@ -27,3 +27,7 @@ VITE_*.local
 
 # Local TMDB refresh output
 scratch-catalog.json
+
+# Playwright
+test-results
+playwright-report
