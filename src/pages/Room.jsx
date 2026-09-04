@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
-import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, subscribeToRoomActive, subscribeToRoomPicks, fetchRoomPicks, fetchPartnerSwipeCount, markRoomActive, fetchRoomMatches, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID, MOVIE_SENTINELS } from '../lib/room'
+import { getRoom, getUserToken, newGuestToken, recordSwipe, subscribeToSwipes, subscribeToRoomActive, subscribeToRoomPicks, fetchRoomPicks, fetchPartnerSwipeCount, markRoomActive, fetchRoomMatches, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID, MOVIE_SENTINELS } from '../lib/room'
 import { PLATFORMS } from '../lib/platforms'
 import { fetchTopRatedMovies } from '../lib/tmdb'
 import { fetchTopRatedSeries } from '../lib/seriesFetch'
@@ -56,6 +56,11 @@ export default function Room() {
   const [remindSolo, setRemindSolo] = useState(false) // one-time nudge before going solo
   const [pushState, setPushState] = useState('idle')  // idle | enabled | denied
   const [othersProgress, setOthersProgress] = useState(null) // invitee: how many picks the creator already made
+  // Pass-the-phone: both people swipe on THIS device, one after the other, under
+  // two identities. `player` flips 1 → 2 at the handoff screen.
+  const [sharedDevice, setSharedDevice] = useState(false)
+  const [player, setPlayer] = useState(1)
+  const [handoff, setHandoff] = useState(false)
   const userToken = useRef(getUserToken())
 
   useEffect(() => {
@@ -98,8 +103,9 @@ export default function Room() {
   useEffect(() => {
     if (!isCreator || partnerJoined || isSolo) return
     let fired = false
+    let active = true
     const trigger = () => {
-      if (fired) return
+      if (fired || !active) return
       fired = true
       setPartnerJustJoined(true)
       setTimeout(() => {
@@ -112,7 +118,7 @@ export default function Room() {
       const latest = await getRoom(roomId)
       if (latest?.status === 'active') trigger()
     }, 5000)
-    return () => { unsub(); clearInterval(interval) }
+    return () => { active = false; unsub(); clearInterval(interval) }
   }, [isCreator, partnerJoined, isSolo, roomId])
 
   // ── Invite funnel: the invitee just opened the link ──────────────────────
@@ -159,7 +165,7 @@ export default function Room() {
     })
 
     return () => unsubSwipes()
-  }, [room, roomId, isSolo])
+  }, [room, roomId, isSolo, player])
 
   // Let the still-swiping user know once they reach a card their partner never
   // got to. We flag "done" from the partner's DONE_ITEM_ID sentinel (tap done or
@@ -187,7 +193,7 @@ export default function Room() {
     // Realtime can drop the single DONE event; poll as a fallback until caught.
     const poll = setInterval(() => { if (!handled) check() }, 5000)
     return () => { active = false; clearInterval(poll); unsub() }
-  }, [isSolo, room?.type, roomId])
+  }, [isSolo, room?.type, roomId, player])
 
   const handleSwipe = useCallback(
     async (direction) => {
@@ -197,6 +203,9 @@ export default function Room() {
       if (direction === 'right') {
         setLiked((prev) => [...prev, movie])
       }
+      // Advance immediately — the next card shouldn't wait on the network, and
+      // leaving the old card up until the insert returns invited double swipes.
+      setCurrentIndex((i) => i + 1)
 
       if (!isSolo) {
         try {
@@ -205,14 +214,12 @@ export default function Room() {
             track('match', { type: room.type })
             notifyRoom(roomId, 'match', { from: userToken.current, title: movie.title })
             setMatchItem(movie)
-            setMatches((prev) => [...prev, movie])
+            setMatches((prev) => prev.find(m => m.id === movie.id) ? prev : [...prev, movie])
           }
         } catch (err) {
           console.error('Failed to record swipe:', err)
         }
       }
-
-      setCurrentIndex((i) => i + 1)
     },
     [movies, currentIndex, roomId, isSolo, room?.type]
   )
@@ -232,6 +239,29 @@ export default function Room() {
   useEffect(() => {
     if (!isSolo && movies.length > 0 && currentIndex >= movies.length) signalDone()
   }, [isSolo, movies.length, currentIndex, signalDone])
+
+  // Pass-the-phone handoff: player 1 is finished, hand the deck to player 2
+  // under a brand-new identity. Every subscription keyed on `player` re-runs
+  // and picks up the new token; the partner-done effect then finds player 1's
+  // DONE sentinel on its own, so the "your partner finished" banner works too.
+  const finishPlayerOne = async () => {
+    await signalDone()
+    setHandoff(true)
+  }
+  const startPlayerTwo = () => {
+    track('pass_phone_handoff', { type: room.type, swiped: currentIndex, liked: liked.length })
+    userToken.current = newGuestToken()
+    doneSignalledRef.current = false
+    setLiked([])
+    setMatches([])
+    setDoneMatches(null)
+    setMatchItem(null)
+    setPartnerDone(false)
+    setPartnerStop(Infinity)
+    setCurrentIndex(0)
+    setHandoff(false)
+    setPlayer(2)
+  }
 
   if (loading) {
     return (
@@ -334,6 +364,19 @@ export default function Room() {
           {remindSolo && !invited && (
             <p className="skip-wait-reminder">Don't forget to send a link to your partner 🙂</p>
           )}
+          {pc === 2 && (
+            <button
+              className="btn pass-phone-btn"
+              onClick={() => {
+                track('pass_phone_started', { type: room.type })
+                setSharedDevice(true)
+                setPartnerJoined(true)
+                markRoomActive(roomId)
+              }}
+            >
+              📱 Together on one phone — take turns
+            </button>
+          )}
           <button
             className="btn skip-wait"
             onClick={() => {
@@ -379,11 +422,26 @@ export default function Room() {
     )
   }
 
+  if (sharedDevice && player === 1 && (handoff || currentIndex >= movies.length)) {
+    return (
+      <div className="room-center">
+        <div className="handoff">
+          <div className="handoff-icon">📱</div>
+          <h2>Now pass the phone</h2>
+          <p>You liked <strong>{liked.length}</strong> of {currentIndex} — your partner swipes next. Whatever you both like is a match.</p>
+          <button className="btn btn-primary handoff-btn" onClick={startPlayerTwo}>
+            I'm the partner — start swiping 👆
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (isDone || currentIndex >= movies.length) {
     const matchesToShow = isSolo
       ? liked
       : (doneMatches !== null && doneMatches.length >= matches.length) ? doneMatches : matches
-    return <RankingView matches={matchesToShow} liked={liked} room={room} movies={movies} onDone={() => navigate('/')} isSolo={isSolo} />
+    return <RankingView matches={matchesToShow} liked={liked} room={room} movies={movies} onDone={() => navigate('/')} isSolo={isSolo} sharedDevice={sharedDevice} />
   }
 
   // Movie mode — swipe UI
@@ -410,6 +468,7 @@ export default function Room() {
               </span>
             )
           )}
+          {sharedDevice && <span className="room-player">P{player}</span>}
           <span className="room-progress">{currentIndex + 1} / {movies.length}</span>
         </div>
       </div>
@@ -427,11 +486,12 @@ export default function Room() {
         {partnerDone && !isSolo && currentIndex >= partnerStop && (
           <div className="partner-done-banner">
             <span className="partner-done-dot" aria-hidden="true" />
-            Your partner finished swiping
+            {sharedDevice ? 'Your partner stopped here' : 'Your partner finished swiping'}
           </div>
         )}
         <button className="done-early-btn" onClick={async () => {
           if (isSolo) { setIsDone(true); return }
+          if (sharedDevice && player === 1) { finishPlayerOne(); return }
           setFetchingDone(true)
           await signalDone()
           const ids = await fetchRoomMatches(roomId, userToken.current, 2, MOVIE_SENTINELS)
@@ -443,7 +503,9 @@ export default function Room() {
         }}>
           {isSolo
             ? `I'm done · ${liked.length} pick${liked.length !== 1 ? 's' : ''}`
-            : `I'm done swiping${matches.length > 0 ? ` · ${matches.length} match${matches.length !== 1 ? 'es' : ''}` : ''}`}
+            : sharedDevice && player === 1
+              ? `I'm done · pass the phone${liked.length > 0 ? ` · ${liked.length} liked` : ''}`
+              : `I'm done swiping${matches.length > 0 ? ` · ${matches.length} match${matches.length !== 1 ? 'es' : ''}` : ''}`}
         </button>
       </div>
 

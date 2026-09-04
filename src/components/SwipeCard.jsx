@@ -120,6 +120,9 @@ export default function SwipeCard({ item, onSwipe, active }) {
 
   function swipeVia(direction) {
     if (!active) return
+    // The card stays on screen until the parent advances (after its network
+    // round-trip); a second tap in that window must not swipe it twice.
+    if (isLeavingRef.current) return
     setFlipped(false)
     isLeavingRef.current = true
     setLeaving(direction)

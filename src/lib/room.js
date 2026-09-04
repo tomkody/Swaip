@@ -99,6 +99,13 @@ export function getUserToken() {
   return token
 }
 
+// A fresh, unsaved identity for pass-the-phone mode: the second player swipes
+// on the same device, so they can't share the tab's token or every swipe would
+// count as one person and nothing could ever match.
+export function newGuestToken() {
+  return uuidv4()
+}
+
 // Create a movie room
 export async function createMovieRoom(platforms = [], genres = [], { solo = false } = {}) {
   track('room_created', { type: 'movies', solo })
