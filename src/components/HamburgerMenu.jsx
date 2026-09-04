@@ -6,6 +6,14 @@ import './HamburgerMenu.css'
 // Passwordless account section: enter an email, get a magic link. Signing in
 // makes saved-match history follow the user across devices; everything else
 // stays anonymous.
+//
+// Paused for now: Supabase's built-in mailer (no custom SMTP configured yet)
+// has a very low project-wide send-rate limit, so a second real user signing
+// in within the same hour would just see "email rate limit exceeded". Flip
+// this back to true once a custom SMTP provider (e.g. Resend) is wired up in
+// Supabase → Project Settings → Authentication → SMTP Settings.
+const SIGNIN_ENABLED = false
+
 function AccountSection() {
   const [user, setUser] = useState(null)
   const [email, setEmail] = useState('')
@@ -19,6 +27,7 @@ function AccountSection() {
     return () => { active = false; unsub() }
   }, [])
 
+  if (!SIGNIN_ENABLED) return null
   if (!isAuthAvailable()) return null
 
   if (user) {
