@@ -9,10 +9,18 @@ export const config = { maxDuration: 60 }
 async function writeCatalog(supabase, table, rows, regions, runStamp) {
   const stamped = rows.map(r => ({ ...r, updated_at: runStamp }))
   const CHUNK = 500
+  // `popularity` was added later (supabase/catalog_popularity.sql). If the column
+  // isn't there yet, drop it and retry rather than failing the whole refresh.
+  let dropPopularity = false
+  const strip = rows => rows.map(({ popularity, ...r }) => r)   // eslint-disable-line no-unused-vars
   for (let i = 0; i < stamped.length; i += CHUNK) {
-    const { error } = await supabase
-      .from(table)
-      .upsert(stamped.slice(i, i + CHUNK), { onConflict: 'tmdb_id,region' })
+    let chunk = stamped.slice(i, i + CHUNK)
+    if (dropPopularity) chunk = strip(chunk)
+    let { error } = await supabase.from(table).upsert(chunk, { onConflict: 'tmdb_id,region' })
+    if (error && !dropPopularity && /popularity/i.test(error.message || '')) {
+      dropPopularity = true
+      ;({ error } = await supabase.from(table).upsert(strip(chunk), { onConflict: 'tmdb_id,region' }))
+    }
     if (error) throw error
   }
   const { error: pruneErr } = await supabase

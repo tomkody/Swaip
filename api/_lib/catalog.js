@@ -112,6 +112,7 @@ function detailToRows(id, detail, regions) {
     genres: (detail.genres || []).map(g => normalizeGenre(g.name)),
     poster_url: detail.poster_path ? `https://image.tmdb.org/t/p/w500${detail.poster_path}` : null,
     overview: detail.overview || '',
+    popularity: detail.popularity != null ? Number(Number(detail.popularity).toFixed(2)) : null,
   }
   const provByRegion = detail['watch/providers']?.results || {}
   return regions.map(region => {
@@ -223,6 +224,7 @@ function tvDetailToRows(id, detail, regions) {
     genres: (detail.genres || []).map(g => normalizeTvGenre(g.name)),
     poster_url: detail.poster_path ? `https://image.tmdb.org/t/p/w500${detail.poster_path}` : null,
     overview: detail.overview || '',
+    popularity: detail.popularity != null ? Number(Number(detail.popularity).toFixed(2)) : null,
   }
   const provByRegion = detail['watch/providers']?.results || {}
   return regions.map(region => {

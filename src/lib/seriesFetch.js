@@ -3,7 +3,7 @@ import { SERIES_PLATFORMS } from './platforms'
 import { SERIES_GENRES } from './seriesGenres'
 import { supabase } from './supabase'
 import { CATALOG_REGIONS, detectRegion } from './regions'
-import { seededShuffle } from './random'
+import { buildDeck } from './deck'
 
 // Static fallback catalog (used offline / when Supabase or the catalog is empty).
 const SERIES_WITH_GENRES = SERIES.map(s => ({
@@ -29,7 +29,7 @@ function filterPool(all, platforms, genres) {
 
 function fetchStaticSeries(roomId, platforms, genres) {
   const pool = filterPool(SERIES_WITH_GENRES, platforms, genres)
-  return seededShuffle(pool, roomId).slice(0, 50)
+  return buildDeck(pool, roomId)
 }
 
 // Map a series_catalog row → the shape SwipeCard/MatchModal expect.
@@ -44,6 +44,7 @@ function rowToSeries(r) {
     genre: (r.genres || []).join(' · '),
     overview: r.overview || '',
     platforms: r.platforms || [],
+    popularity: r.popularity ?? null,
   }
 }
 
@@ -77,7 +78,7 @@ export async function fetchTopRatedSeries(roomId, platforms = [], genres = [], r
     if (!streamable) return fetchStaticSeries(roomId, platforms, genres)
 
     const pool = filterPool(streamable, platforms, genres)
-    return seededShuffle(pool, roomId).slice(0, 50)
+    return buildDeck(pool, roomId)
   } catch (e) {
     console.error('[seriesFetch] catalog read failed, using static list:', e)
     return fetchStaticSeries(roomId, platforms, genres)

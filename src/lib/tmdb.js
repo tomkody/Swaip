@@ -3,7 +3,7 @@ import { MOVIE_PLATFORMS } from './platforms'
 import { MOVIE_GENRES } from './movieGenres'
 import { supabase } from './supabase'
 import { CATALOG_REGIONS, detectRegion } from './regions'
-import { seededShuffle } from './random'
+import { buildDeck } from './deck'
 
 export { detectRegion }
 
@@ -32,7 +32,7 @@ function filterPool(all, platforms, genres) {
 
 function fetchStaticMovies(roomId, platforms, genres) {
   const pool = filterPool(MOVIES_WITH_GENRES, platforms, genres)
-  return seededShuffle(pool, roomId).slice(0, 50)
+  return buildDeck(pool, roomId)
 }
 
 // Map a movie_catalog row → the shape SwipeCard/MatchModal expect.
@@ -47,6 +47,7 @@ function rowToMovie(r) {
     genre: (r.genres || []).join(' · '),
     overview: r.overview || '',
     platforms: r.platforms || [],
+    popularity: r.popularity ?? null,
   }
 }
 
@@ -82,7 +83,7 @@ export async function fetchTopRatedMovies(roomId, platforms = [], genres = [], r
     if (!streamable) return fetchStaticMovies(roomId, platforms, genres)
 
     const pool = filterPool(streamable, platforms, genres)
-    return seededShuffle(pool, roomId).slice(0, 50)
+    return buildDeck(pool, roomId)
   } catch (e) {
     console.error('[tmdb] catalog read failed, using static list:', e)
     return fetchStaticMovies(roomId, platforms, genres)
