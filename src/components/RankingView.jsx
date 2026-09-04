@@ -88,6 +88,11 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
   const [sharing, setSharing] = useState(false)
   const dragFrom = useRef(null)
 
+  // Funnel: results screen reached (once per mount)
+  useEffect(() => {
+    track('results_viewed', { type: room.type, matches: initialMatches.length, solo: isSolo })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Partner picks (live comparison without leaving the app) ──────────────
   const [picks, setPicks] = useState(null)
   const [refreshing, setRefreshing] = useState(false)

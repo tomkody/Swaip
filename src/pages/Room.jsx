@@ -55,6 +55,7 @@ export default function Room() {
   const [invited, setInvited] = useState(false)       // shared / copied / showed QR at least once
   const [remindSolo, setRemindSolo] = useState(false) // one-time nudge before going solo
   const [pushState, setPushState] = useState('idle')  // idle | enabled | denied
+  const [othersProgress, setOthersProgress] = useState(null) // invitee: how many picks the creator already made
   const userToken = useRef(getUserToken())
 
   useEffect(() => {
@@ -113,6 +114,23 @@ export default function Room() {
     }, 5000)
     return () => { unsub(); clearInterval(interval) }
   }, [isCreator, partnerJoined, isSolo, roomId])
+
+  // ── Invite funnel: the invitee just opened the link ──────────────────────
+  // 64% of rooms never get a second swiper and today we can't tell whether the
+  // link never reached them or they bounced right here. So: log the open, and
+  // show live social proof ("your friend already picked 6") while they decide.
+  useEffect(() => {
+    if (isCreator || hasJoined || !room) return
+    track('invite_opened', { type: room.type })
+    let active = true
+    const sentinels = (room.type === 'movies' || room.type === 'series') ? MOVIE_SENTINELS : undefined
+    const load = () => fetchPartnerSwipeCount(roomId, userToken.current, 0, sentinels)
+      .then(n => { if (active) setOthersProgress(n) })
+      .catch(() => {})
+    load()
+    const t = setInterval(load, 4000)
+    return () => { active = false; clearInterval(t) }
+  }, [isCreator, hasJoined, room, roomId])
 
   // Keep refs in sync so subscription callbacks always see current values
   useEffect(() => { isDoneRef.current = isDone }, [isDone])
@@ -205,9 +223,10 @@ export default function Room() {
   const signalDone = useCallback(async () => {
     if (isSolo || doneSignalledRef.current) return
     doneSignalledRef.current = true
+    track('swiping_done', { type: room?.type || 'movies', swiped: currentIndex, matches: matches.length })
     try { await recordSwipe(roomId, userToken.current, DONE_ITEM_ID, 'right') }
     catch (err) { console.error('Failed to signal done:', err) }
-  }, [isSolo, roomId])
+  }, [isSolo, roomId, currentIndex, matches.length, room?.type])
 
   // Deck exhausted counts as finished too.
   useEffect(() => {
@@ -258,7 +277,12 @@ export default function Room() {
           <p className="join-invited">{getRoomPlayerCount(room) > 2 ? `You've been invited to a group!` : `Your friend invited you!`}</p>
           <h2 className="join-title">{info.label} Room</h2>
           <p className="join-desc">{info.desc}</p>
-          <button className="btn btn-primary join-btn" onClick={() => { markRoomActive(roomId); notifyRoom(roomId, 'joined', { from: userToken.current }); setHasJoined(true) }}>
+          {othersProgress > 0 && (
+            <p className="join-progress">
+              {getRoomPlayerCount(room) > 2 ? 'The group has' : 'Your friend has'} already made <strong>{othersProgress}</strong> {othersProgress === 1 ? 'pick' : 'picks'} — jump in!
+            </p>
+          )}
+          <button className="btn btn-primary join-btn" onClick={() => { markRoomActive(roomId); notifyRoom(roomId, 'joined', { from: userToken.current }); track('joined', { type: room.type }); setHasJoined(true) }}>
             {room.type === 'movies' || room.type === 'series' ? 'Start Swiping 👆' : room.type === 'colorgame' ? 'Start Guessing 👆' : 'See the options 👆'}
           </button>
         </div>
