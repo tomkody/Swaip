@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test'
 
-// The whole product is "two people swipe the same deck and match". These run
+// The whole product is "two people swipe the same deck and match". This runs
 // that path for real — two browser contexts (two sessionStorage identities)
-// on one movie room — and the single-device pass-the-phone variant.
+// on one movie room.
 test.skip(!process.env.VITE_SUPABASE_URL, 'needs VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY')
 
 async function createMovieRoom(page) {
@@ -42,20 +42,4 @@ test('two players match on the first card', async ({ browser }) => {
 
   await creator.close()
   await partner.close()
-})
-
-test('pass-the-phone: second player matches on the same device', async ({ page }) => {
-  await createMovieRoom(page)
-  await page.getByRole('button', { name: /Together on one phone/ }).click()
-
-  const first = await page.locator('.card-title').first().textContent()
-  await page.getByRole('button', { name: 'Like' }).click()
-  await page.getByRole('button', { name: /pass the phone/ }).click()
-  await expect(page.getByText('Now pass the phone')).toBeVisible()
-  await page.getByRole('button', { name: /start swiping/ }).click()
-
-  // Same deck from the top, new identity.
-  await expect(page.locator('.card-title').first()).toHaveText(first)
-  await page.getByRole('button', { name: 'Like' }).click()
-  await expect(page.getByText("It's a Match!")).toBeVisible()
 })

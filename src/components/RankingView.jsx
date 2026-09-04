@@ -74,7 +74,7 @@ function PlatformBadges({ platforms }) {
   )
 }
 
-export default function RankingView({ matches: initialMatches, liked = [], room, movies = [], onDone, isSolo = false, playerCount = 2, voteCounts = {}, sharedDevice = false }) {
+export default function RankingView({ matches: initialMatches, liked = [], room, movies = [], onDone, isSolo = false, playerCount = 2, voteCounts = {} }) {
   const userToken = useRef(getUserToken())
   // Movie/series rooms may legitimately contain TMDB ids 1999/2999 — only treat
   // the real DONE sentinel as one there (undefined → the default set elsewhere).
@@ -458,7 +458,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
         )}
 
         {/* Partner's / group's locked-in Top 3 — live, with manual refresh */}
-        {!isSolo && !rankingsOff && !sharedDevice && (() => {
+        {!isSolo && !rankingsOff && (() => {
           const groupWord = playerCount > 2 ? 'The group' : 'Partner'
           const rankItems = (partnerRanks || [])
             .map(id => movies.find(m => m.id === id))
@@ -713,7 +713,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
       {/* Matches / picks list */}
       <div className="rv-match-list">
         <p className="rv-label">{isSolo ? `✨ Your Picks (${matches.length})` : `🤝 Mutual Matches (${matches.length})`}</p>
-        {matches.length === 0 && <p className="rv-empty">{isSolo ? 'Nothing picked yet.' : sharedDevice ? 'No overlap this time — roll again with a fresh deck?' : 'No matches yet — still waiting for your partner.'}</p>}
+        {matches.length === 0 && <p className="rv-empty">{isSolo ? 'Nothing picked yet.' : 'No matches yet — still waiting for your partner.'}</p>}
         {matches.map(m => {
           const inTop = isInTop3(m.id)
           const rank = rankOf(m.id)
@@ -751,7 +751,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
       {liked.length > 0 && !isSolo && (
         <div className="rv-match-list rv-my-selection">
           <p className="rv-label">👤 My Selection ({liked.length})</p>
-          <p className="rv-selection-note">{sharedDevice ? 'Everything you liked.' : 'Everything you liked — waiting to see what your partner picked too.'}</p>
+          <p className="rv-selection-note">Everything you liked — waiting to see what your partner picked too.</p>
           {liked.map(m => {
             const isMatch = matches.some(x => x.id === m.id)
             return (
