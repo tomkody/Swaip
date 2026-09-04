@@ -1,4 +1,3 @@
-import { MOVIES } from './movies'
 import { MOVIE_PLATFORMS } from './platforms'
 import { MOVIE_GENRES } from './movieGenres'
 import { supabase } from './supabase'
@@ -9,11 +8,6 @@ export { detectRegion }
 
 // Static fallback catalog (used offline / when Supabase or the catalog is empty).
 // platforms is attached so "Where to watch" still works in fallback mode.
-const MOVIES_WITH_GENRES = MOVIES.map(m => ({
-  ...m,
-  genre: MOVIE_GENRES[m.id] || '',
-  platforms: MOVIE_PLATFORMS[m.id] || [],
-}))
 
 // Filter a movie pool by selected platforms + genres, never stranding the user:
 // if a filter empties the pool, that filter is dropped rather than showing nothing.
@@ -30,8 +24,11 @@ function filterPool(all, platforms, genres) {
   return pool
 }
 
-function fetchStaticMovies(roomId, platforms, genres) {
-  const pool = filterPool(MOVIES_WITH_GENRES, platforms, genres)
+// Loaded on demand — the static list is a fallback, not a dependency.
+async function fetchStaticMovies(roomId, platforms, genres) {
+  const { MOVIES } = await import('./movies')
+  const all = MOVIES.map(m => ({ ...m, genre: MOVIE_GENRES[m.id] || '', platforms: MOVIE_PLATFORMS[m.id] || [] }))
+  const pool = filterPool(all, platforms, genres)
   return buildDeck(pool, roomId)
 }
 

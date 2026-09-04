@@ -1,4 +1,3 @@
-import { SERIES } from './series'
 import { SERIES_PLATFORMS } from './platforms'
 import { SERIES_GENRES } from './seriesGenres'
 import { supabase } from './supabase'
@@ -6,11 +5,6 @@ import { CATALOG_REGIONS, detectRegion } from './regions'
 import { buildDeck } from './deck'
 
 // Static fallback catalog (used offline / when Supabase or the catalog is empty).
-const SERIES_WITH_GENRES = SERIES.map(s => ({
-  ...s,
-  genre: SERIES_GENRES[s.id] || '',
-  platforms: SERIES_PLATFORMS[s.id] || [],
-}))
 
 // Filter by selected platforms + genres, never stranding the user: if a filter
 // empties the pool, that filter is dropped rather than showing nothing.
@@ -27,8 +21,11 @@ function filterPool(all, platforms, genres) {
   return pool
 }
 
-function fetchStaticSeries(roomId, platforms, genres) {
-  const pool = filterPool(SERIES_WITH_GENRES, platforms, genres)
+// Loaded on demand — the static list is a fallback, not a dependency.
+async function fetchStaticSeries(roomId, platforms, genres) {
+  const { SERIES } = await import('./series')
+  const all = SERIES.map(s => ({ ...s, genre: SERIES_GENRES[s.id] || '', platforms: SERIES_PLATFORMS[s.id] || [] }))
+  const pool = filterPool(all, platforms, genres)
   return buildDeck(pool, roomId)
 }
 
