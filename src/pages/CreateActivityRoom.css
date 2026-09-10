@@ -25,11 +25,11 @@
 }
 
 .create-activity h1 {
-  font-size: 25px;
+  font-size: 30px;
   font-weight: 800;
-  margin: 0 0 5px;
+  margin: 0 0 6px;
   color: var(--text);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.03em;
 }
 
 .create-activity .subtitle {
@@ -149,7 +149,7 @@
 .radius-chip.active {
   background: var(--gradient-primary);
   border-color: transparent;
-  color: #1E222B;
+  color: var(--brand-ink);
   box-shadow: 0 3px 12px rgba(255,107,107,0.28);
 }
 

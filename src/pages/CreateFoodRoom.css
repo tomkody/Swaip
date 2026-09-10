@@ -19,14 +19,11 @@
 }
 
 .create-food h1 {
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 800;
-  margin: 0 0 8px;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: -0.5px;
+  margin: 0 0 6px;
+  color: var(--text);
+  letter-spacing: -0.03em;
 }
 
 .create-food .subtitle {

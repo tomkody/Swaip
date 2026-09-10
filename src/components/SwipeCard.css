@@ -411,18 +411,22 @@
 
 .swipe-btn:active { transform: scale(0.88); }
 
-.nope-btn { color: var(--danger); }
+/* Same pair as the landing demo card: quiet X on a surface, coral heart. */
+.nope-btn { color: var(--text); }
 .nope-btn:hover {
-  background: rgba(255, 92, 106, 0.12);
-  border-color: var(--danger);
-  box-shadow: 0 0 20px rgba(255, 92, 106, 0.15);
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
 }
 
-.like-btn { color: var(--success); }
+.like-btn {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--brand-ink);
+  box-shadow: 0 8px 22px rgba(255, 116, 110, 0.30);
+}
 .like-btn:hover {
-  background: rgba(74, 222, 128, 0.12);
-  border-color: var(--success);
-  box-shadow: 0 0 20px rgba(74, 222, 128, 0.15);
+  box-shadow: 0 10px 28px rgba(255, 116, 110, 0.40);
+  filter: brightness(1.05);
 }
 
 /* ── Swipe hint bar ──────────────────────────────────────────────── */

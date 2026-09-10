@@ -35,12 +35,11 @@
 }
 
 .room-logo-text {
+  font-family: 'Manrope', -apple-system, sans-serif;
   font-size: 22px;
   font-weight: 800;
-  background: var(--gradient-warm);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  letter-spacing: -0.02em;
+  color: var(--text);
   letter-spacing: -0.8px;
   cursor: pointer;
   transition: opacity 0.2s;

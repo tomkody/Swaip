@@ -2,40 +2,44 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&display=swap');
 
 /* ── Design Tokens — Light ──────────────────────────────────────────────── */
+/* Palette follows the landing page (warm cream / near-black ink / coral).
+   Every screen reads these tokens, so the app and the landing share one
+   visual system without touching each component. */
 :root {
-  /* iOS System Backgrounds */
-  --bg:            #F2F2F7;
+  /* Surfaces */
+  --bg:            #FBF7F2;
   --bg-card:       #FFFFFF;
-  --bg-card-hover: #F7F7F7;
-  --bg-surface:    rgba(118,118,128,0.08);
-  --bg-secondary:  #EFEFF4;
-  --bg-glass:      rgba(242,242,247,0.92);
+  --bg-card-hover: #FFF8F3;
+  --bg-surface:    rgba(16,18,28,0.05);
+  --bg-secondary:  #F3EDE6;
+  --bg-glass:      rgba(251,247,242,0.92);
 
   /* Semantic labels */
-  --text:          #000000;
-  --text-muted:    rgba(60,60,67,0.60);
-  --text-soft:     rgba(60,60,67,0.30);
+  --text:          #15171F;
+  --text-muted:    rgba(21,23,31,0.64);
+  --text-soft:     rgba(21,23,31,0.36);
 
   /* Separators / borders */
-  --separator:     rgba(60,60,67,0.29);
-  --border:        rgba(60,60,67,0.16);
-  --border-hover:  rgba(60,60,67,0.34);
+  --separator:     rgba(16,18,28,0.14);
+  --border:        rgba(16,18,28,0.11);
+  --border-hover:  rgba(16,18,28,0.26);
 
   /* Brand accent */
-  --brand-ink:     #1E222B;
+  --brand-ink:     #1A0F0E;
   --accent-coral:  #FF6B6B;
-  --accent-orange: #FF8A4C;
+  --accent-orange: #FF8A6A;
   --accent-peach:  #FFB15E;
-  --accent-soft:   rgba(255,138,76,0.10);
+  --accent-soft:   rgba(255,116,110,0.12);
 
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #FF6B6B 0%, #FF8A4C 50%, #FFB15E 100%);
-  --gradient-warm:    linear-gradient(135deg, #FF6B6B 0%, #FF8A4C 50%, #FFB15E 100%);
+  /* Gradients — near-flat coral; the landing uses a solid pill, the app a
+     hint of warmth on the same hue so both read as one button. */
+  --gradient-primary: linear-gradient(135deg, #FF746E 0%, #FF8A6A 100%);
+  --gradient-warm:    linear-gradient(135deg, #FF746E 0%, #FF8A6A 100%);
 
-  /* iOS segmented control tokens */
-  --seg-tray:   rgba(118,118,128,0.12);
+  /* Segmented control tokens */
+  --seg-tray:   rgba(16,18,28,0.06);
   --seg-active: #FFFFFF;
-  --seg-shadow: 0 2px 8px rgba(0,0,0,0.12), 0 0 1px rgba(0,0,0,0.07);
+  --seg-shadow: 0 2px 8px rgba(0,0,0,0.10), 0 0 1px rgba(0,0,0,0.06);
 
   /* iOS-tuned shadows — very soft, layered */
   --shadow-xs: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 0.5px rgba(0,0,0,0.04);
@@ -63,24 +67,26 @@
 [data-theme="dark"] {
   color-scheme: dark;
 
-  --bg:            #000000;
-  --bg-card:       #1C1C1E;
-  --bg-card-hover: #2C2C2E;
-  --bg-surface:    #2C2C2E;
-  --bg-secondary:  #1C1C1E;
-  --bg-glass:      rgba(28,28,30,0.96);
+  --bg:            #10121C;
+  --bg-card:       #191D27;
+  --bg-card-hover: #202532;
+  --bg-surface:    rgba(255,255,255,0.05);
+  --bg-secondary:  #151823;
+  --bg-glass:      rgba(16,18,28,0.92);
 
-  --text:          #FFFFFF;
-  --text-muted:    rgba(235,235,245,0.60);
-  --text-soft:     rgba(235,235,245,0.28);
+  --text:          #F6F5F2;
+  --text-muted:    rgba(246,245,242,0.66);
+  --text-soft:     rgba(246,245,242,0.34);
 
-  --separator:     rgba(84,84,88,0.65);
-  --border:        rgba(84,84,88,0.55);
-  --border-hover:  rgba(84,84,88,0.85);
-  --accent-soft:   rgba(255,138,76,0.15);
+  --separator:     rgba(255,255,255,0.12);
+  --border:        rgba(255,255,255,0.10);
+  --border-hover:  rgba(255,255,255,0.22);
+  --accent-soft:   rgba(255,116,110,0.14);
+  --primary:       #FF746E;
+  --primary-glow:  rgba(255,116,110,0.22);
 
-  --seg-tray:   rgba(118,118,128,0.24);
-  --seg-active: #3A3A3C;
+  --seg-tray:   rgba(255,255,255,0.06);
+  --seg-active: #262B37;
   --seg-shadow: 0 1px 4px rgba(0,0,0,0.45);
 
   --shadow-xs: 0 1px 4px rgba(0,0,0,0.40);
@@ -120,7 +126,7 @@
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100dvh;
@@ -150,8 +156,8 @@ a      { color: inherit; text-decoration: none; }
 
 /* ── Headings ────────────────────────────────────────────────────────────── */
 h1, h2, h3, h4 {
-  font-family: -apple-system, 'Manrope', BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-  letter-spacing: -0.3px;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  letter-spacing: -0.02em;
 }
 
 /* ── Shared button system ────────────────────────────────────────────────── */
@@ -163,9 +169,9 @@ h1, h2, h3, h4 {
   padding: 0 24px;
   height: 50px;
   border-radius: var(--radius-pill);
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  font-family: inherit;
   font-size: 17px;
-  font-weight: 600;
+  font-weight: 700;
   width: 100%;
   transition: transform 0.15s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s, opacity 0.15s;
   letter-spacing: -0.2px;
@@ -180,11 +186,11 @@ h1, h2, h3, h4 {
 /* Primary — gradient */
 .btn-primary {
   background: var(--gradient-primary);
-  color: #1E222B;
-  box-shadow: 0 4px 18px rgba(255,107,107,0.32), 0 1px 4px rgba(255,107,107,0.18);
+  color: var(--brand-ink);
+  box-shadow: 0 6px 18px rgba(255,116,110,0.26);
 }
 .btn-primary:hover:not(:disabled) {
-  box-shadow: 0 6px 26px rgba(255,107,107,0.42);
+  box-shadow: 0 8px 24px rgba(255,116,110,0.34);
 }
 .btn-primary:disabled {
   opacity: 0.40;
@@ -207,7 +213,7 @@ h1, h2, h3, h4 {
 /* Ghost — tinted text link */
 .btn-ghost {
   background: transparent;
-  color: var(--accent-orange);
+  color: var(--primary);
   border: none;
   box-shadow: none;
   padding: 12px 20px;

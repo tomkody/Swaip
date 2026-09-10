@@ -25,11 +25,11 @@
 }
 
 .create-movie h1 {
-  font-size: 25px;
+  font-size: 30px;
   font-weight: 800;
-  margin: 0 0 5px;
+  margin: 0 0 6px;
   color: var(--text);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.03em;
 }
 
 .create-movie .subtitle {

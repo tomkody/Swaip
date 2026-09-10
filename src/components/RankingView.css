@@ -237,7 +237,7 @@
   flex-shrink: 0;
 }
 .rv-badge-add { background: var(--bg-surface); color: var(--text-muted); border: 1px solid var(--border); }
-.rv-badge-ranked { background: var(--gradient-primary); color: #1E222B; }
+.rv-badge-ranked { background: var(--gradient-primary); color: var(--brand-ink); }
 .rv-badge-full { background: transparent; color: var(--border); }
 
 /* Footer */
@@ -474,20 +474,16 @@
   display: block;
   text-align: center;
   padding: 20px 0 0;
-  font-family: -apple-system, 'Manrope', BlinkMacSystemFont, sans-serif;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 18px;
   font-weight: 800;
+  letter-spacing: -0.02em;
   letter-spacing: -0.4px;
   text-decoration: none;
   cursor: pointer;
 }
 .rv-brand:hover { opacity: 0.75; }
-.rv-brand-name {
-  background: var(--gradient-warm);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
+.rv-brand-name { color: var(--text); }
 .rv-brand-tld { color: var(--text-muted); }
 .rv-result-both {
   border-color: rgba(74, 222, 128, 0.4);
@@ -499,7 +495,7 @@
 }
 .rv-top-badge {
   background: var(--gradient-primary);
-  color: #1E222B;
+  color: var(--brand-ink);
   font-size: 11px;
   font-weight: 800;
   padding: 4px 12px;
