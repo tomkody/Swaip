@@ -27,11 +27,20 @@ function parseRoomFilters(raw) {
   }
 }
 
+// Per-room progress survives a reload. iOS Safari happily reloads the tab
+// after a trip to the share sheet — i.e. right after sending the invite — and
+// without this the creator came back as an "invitee" at card 1 with no likes.
+const progressKey = id => `swaip_progress_${id}`
+function loadProgress(id) {
+  try { return JSON.parse(sessionStorage.getItem(progressKey(id)) || 'null') } catch { return null }
+}
+
 export default function Room() {
   const { roomId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const isCreator = location.state?.isCreator || false
+  const [saved] = useState(() => loadProgress(roomId))
+  const isCreator = location.state?.isCreator || saved?.creator || false
 
   const [room, setRoom] = useState(null)
   const [isSolo, setIsSolo] = useState(location.state?.isSolo || false)
@@ -49,9 +58,9 @@ export default function Room() {
   const [fetchingDone, setFetchingDone] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [partnerJoined, setPartnerJoined] = useState(!isCreator || (location.state?.isSolo || false))
+  const [partnerJoined, setPartnerJoined] = useState(!isCreator || (location.state?.isSolo || false) || Boolean(saved?.started))
   const [partnerJustJoined, setPartnerJustJoined] = useState(false)
-  const [hasJoined, setHasJoined] = useState(isCreator)
+  const [hasJoined, setHasJoined] = useState(isCreator || Boolean(saved?.started))
   const [invited, setInvited] = useState(false)       // shared / copied / showed QR at least once
   const [remindSolo, setRemindSolo] = useState(false) // one-time nudge before going solo
   const [pushState, setPushState] = useState('idle')  // idle | enabled | denied
@@ -77,10 +86,17 @@ export default function Room() {
         }
 
         const { platforms, genres, region } = parseRoomFilters(roomData.platforms ?? roomData.topic_id)
+        let deck = []
         if (roomData.type === 'movies') {
-          setMovies(await fetchTopRatedMovies(roomData.id, platforms, genres, region))
+          deck = await fetchTopRatedMovies(roomData.id, platforms, genres, region)
         } else if (roomData.type === 'series') {
-          setMovies(await fetchTopRatedSeries(roomData.id, platforms, genres, region))
+          deck = await fetchTopRatedSeries(roomData.id, platforms, genres, region)
+        }
+        setMovies(deck)
+        if (saved && deck.length > 0) {
+          setCurrentIndex(Math.min(saved.index || 0, deck.length))
+          setLiked(deck.filter(m => (saved.liked || []).includes(m.id)))
+          if (saved.done) setIsDone(true)
         }
       } catch (err) {
         setError('Failed to load room')
@@ -207,7 +223,7 @@ export default function Room() {
           const isMatch = await recordSwipe(roomId, userToken.current, movie.id, direction)
           if (isMatch) {
             track('match', { type: room.type })
-            notifyRoom(roomId, 'match', { from: userToken.current, title: movie.title })
+            notifyRoom(roomId, 'match', { from: userToken.current, itemId: movie.id })
             setMatchItem(movie)
             setMatches((prev) => prev.find(m => m.id === movie.id) ? prev : [...prev, movie])
           }
@@ -234,6 +250,19 @@ export default function Room() {
   useEffect(() => {
     if (!isSolo && movies.length > 0 && currentIndex >= movies.length) signalDone()
   }, [isSolo, movies.length, currentIndex, signalDone])
+
+  useEffect(() => {
+    if (!room) return
+    try {
+      sessionStorage.setItem(progressKey(roomId), JSON.stringify({
+        creator: isCreator,
+        started: partnerJoined || hasJoined,
+        index: currentIndex,
+        liked: liked.map(m => m.id),
+        done: isDone,
+      }))
+    } catch { /* storage blocked — progress just won't survive a reload */ }
+  }, [room, roomId, isCreator, partnerJoined, hasJoined, currentIndex, liked, isDone])
 
   if (loading) {
     return (
@@ -459,6 +488,7 @@ export default function Room() {
           onDone={async () => {
             setMatchItem(null)
             setFetchingDone(true)
+            await signalDone()
             const ids = await fetchRoomMatches(roomId, userToken.current, 2, MOVIE_SENTINELS)
             if (ids !== null) setDoneMatches(movies.filter(m => ids.includes(m.id)))
             setFetchingDone(false)

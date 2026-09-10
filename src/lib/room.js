@@ -14,6 +14,8 @@ const DONE_SENTINELS = new Set([1999, 2999, DONE_ITEM_ID])
 // titles unmatchable. Callers in movie/series context pass this set to
 // fetchRoomMatches / fetchRoomPicks / fetchPartnerSwipeCount.
 export const MOVIE_SENTINELS = new Set([DONE_ITEM_ID])
+// Conversation rooms have no numeric ids; a text sentinel marks "submitted".
+export const CONV_DONE_ID = '__done__'
 
 // Supabase reuses a channel by name, and callbacks can't be added after
 // subscribe() — so two components subscribing to the same room would throw.
@@ -445,11 +447,19 @@ export async function recordSwipe(roomId, userToken, itemId, direction, playerCo
     return checkLocalMatch(roomId, itemId, userToken, direction, playerCount)
   }
 
-  const { error } = await supabase
-    .from('swipes')
-    .insert({ room_id: roomId, user_token: userToken, item_id: itemId, direction })
-
-  if (error) throw error
+  // The card has already advanced on screen, so a lost insert silently costs a
+  // vote (and possibly the match). Retry transient failures; a duplicate-key
+  // error means an earlier attempt did land (or this is a re-vote after a
+  // reload) and counts as success.
+  const row = { room_id: roomId, user_token: userToken, item_id: itemId, direction }
+  let lastError = null
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, 300 * 3 ** (attempt - 1)))
+    const { error } = await supabase.from('swipes').insert(row)
+    if (!error || error.code === '23505') { lastError = null; break }
+    lastError = error
+  }
+  if (lastError) throw lastError
 
   if (direction === 'right') {
     const { data: matchSwipes } = await supabase
@@ -486,7 +496,10 @@ export async function submitConversationSelections(roomId, userToken, subtopicId
     return
   }
 
-  const rows = subtopicIds.map((id) => ({
+  // Always write the DONE sentinel too: someone who passed on every topic
+  // submits an empty list, and without a row of their own they'd never count
+  // as a participant — the partner would wait on "no match" forever.
+  const rows = [...subtopicIds, CONV_DONE_ID].map((id) => ({
     room_id: roomId,
     user_token: userToken,
     subtopic_id: id,
@@ -526,7 +539,7 @@ export async function getConversationMatches(roomId, userToken) {
   const byUser = {}
   for (const row of data) {
     if (!byUser[row.user_token]) byUser[row.user_token] = []
-    byUser[row.user_token].push(row.subtopic_id)
+    if (row.subtopic_id !== CONV_DONE_ID) byUser[row.user_token].push(row.subtopic_id)
   }
 
   const users = Object.keys(byUser)
@@ -702,8 +715,12 @@ export async function fetchRoomPicks(roomId, userToken, sentinels = DONE_SENTINE
 
   for (const r of rows) {
     const id = Number(r.item_id)
-    if (sentinels.has(id)) { participants.add(r.user_token); doneUsers.add(r.user_token); continue }
     participants.add(r.user_token)
+    // Only DONE_ITEM_ID means "finished swiping". The category sentinels
+    // (1999/2999) are hidden from picks too, but they only mark the end of
+    // the category phase — the partner is about to START on places.
+    if (id === DONE_ITEM_ID) { doneUsers.add(r.user_token); continue }
+    if (sentinels.has(id)) continue
     if (!likersByItem[id]) likersByItem[id] = new Set()
     likersByItem[id].add(r.user_token)
     if (r.user_token === userToken) myLikes.add(id)

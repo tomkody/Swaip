@@ -15,7 +15,6 @@ import {
   subscribeToSwipes,
   subscribeToRoomPicks,
   fetchRoomPicks,
-  fetchPartnerSwipeCount,
   updateActivityRoomPhase,
   subscribeToRoomChanges,
   getRoom,
@@ -84,7 +83,6 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   const [matchItem, setMatchItem] = useState(null)
   const [isDone, setIsDone] = useState(false)
   const [partnerDone, setPartnerDone] = useState(false)
-  const [partnerStop, setPartnerStop] = useState(Infinity)
   const [participantCount, setParticipantCount] = useState(1)
   const [voteCounts, setVoteCounts] = useState({})
 
@@ -219,19 +217,17 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     recordSwipe(room.id, userToken.current, DONE_ITEM_ID, 'right', playerCount).catch(() => {})
   }, [isSolo, phase, finishedSwiping, isDone, room.id, playerCount])
 
-  // ── Detect when a partner finished + how far they swiped, so the banner shows
-  // only once this user reaches a place the partner never got to. (Places use
-  // ids ≥ 2,000,000, so count only those — not the earlier category swipes.) ──
+  // ── Tell the still-swiping user once a partner finished the places phase.
+  // Places don't record passes, so "how far did they get" can't be derived
+  // from likes — the banner simply shows as soon as they're done. ──
   useEffect(() => {
     if (isSolo) return
     let active = true
     let handled = false
-    const markDone = async () => {
+    const markDone = () => {
       if (!active || handled) return
       handled = true
       setPartnerDone(true)
-      const n = await fetchPartnerSwipeCount(room.id, userToken.current, 2000000)
-      if (active) setPartnerStop(n)
     }
     const check = () => fetchRoomPicks(room.id, userToken.current)
       .then(p => { if (p && p.othersDone > 0) markDone() })
@@ -452,7 +448,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       try {
         const isMatch = await recordSwipe(room.id, userToken.current, place.numId, direction, playerCount)
         if (isMatch) {
-          notifyRoom(room.id, 'match', { from: userToken.current, title: place.title })
+          notifyRoom(room.id, 'match', { from: userToken.current, itemId: place.numId })
           setMatchItem(place)
           setMatches(prev => prev.find(m => m.id === place.id) ? prev : [...prev, place])
           confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
@@ -786,7 +782,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       </div>
 
       <div className="act-footer">
-        {partnerDone && !isSolo && currentIndex >= partnerStop && (
+        {partnerDone && !isSolo && (
           <div className="partner-done-banner">
             <span className="partner-done-dot" aria-hidden="true" />
             {playerCount > 2 ? 'Someone finished swiping' : 'Your partner finished swiping'}

@@ -63,6 +63,22 @@ function key() {
   return process.env.GOOGLE_MAPS_API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY || ''
 }
 
+// This proxy spends our Google budget, so only serve our own pages. Same-origin
+// fetches carry a Referer (Referrer-Policy is strict-origin-when-cross-origin),
+// cross-origin ones an Origin; a bare script carries neither. Spoofable, but it
+// turns away the casual drive-by — the hard cap lives in the Google quota.
+const ALLOWED_SITES = [
+  'https://swaip.app', 'https://www.swaip.app',
+  'http://localhost:5173', 'http://127.0.0.1:5173',
+  process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`,
+  process.env.VERCEL_BRANCH_URL && `https://${process.env.VERCEL_BRANCH_URL}`,
+].filter(Boolean)
+
+function fromOurSite(req) {
+  const src = String(req.headers?.origin || req.headers?.referer || '')
+  return ALLOWED_SITES.some(site => src === site || src.startsWith(site + '/'))
+}
+
 function send(res, status, cacheSeconds, payload) {
   if (cacheSeconds && status === 200) {
     res.setHeader('Cache-Control', `public, s-maxage=${cacheSeconds}, stale-while-revalidate=${cacheSeconds * 2}`)
@@ -74,6 +90,7 @@ function send(res, status, cacheSeconds, payload) {
 export default async function handler(req, res) {
   const API_KEY = key()
   if (!API_KEY) return send(res, 500, 0, { error: 'Maps key not configured on the server' })
+  if (!fromOurSite(req)) return send(res, 403, 0, { error: 'forbidden' })
 
   const q = req.query || {}
   const op = q.op
