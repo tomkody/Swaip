@@ -4,9 +4,22 @@ import { createClient } from '@supabase/supabase-js'
 // Allow up to 60s — movie + TV catalogs each fetch hundreds of titles' providers.
 export const config = { maxDuration: 60 }
 
+// A run that comes back much smaller than what's already stored is a TMDB
+// outage (5xx, rate limit, partial failure — detail fetches fail soft to null),
+// not a catalog that genuinely shrank. Nightly churn is a few percent; anything
+// past this is treated as incomplete: upsert what we got, never prune.
+const MIN_COMPLETE_RATIO = 0.7
+
 // Upsert rows into a catalog table, then prune rows in the refreshed regions
-// that this run didn't touch (titles that dropped out of the top list).
+// that this run didn't touch (titles that dropped out of the top list) — but
+// only when the run looks complete. Returns a small report for the response.
 async function writeCatalog(supabase, table, rows, regions, runStamp) {
+  const { data: existing, error: countErr } = await supabase
+    .from(table).select('tmdb_id').in('region', regions)
+  if (countErr) throw countErr
+  const before = existing?.length ?? 0
+  const complete = rows.length >= Math.max(1, Math.floor(before * MIN_COMPLETE_RATIO))
+
   const stamped = rows.map(r => ({ ...r, updated_at: runStamp }))
   const CHUNK = 500
   // `popularity` was added later (supabase/catalog_popularity.sql). If the column
@@ -23,9 +36,11 @@ async function writeCatalog(supabase, table, rows, regions, runStamp) {
     }
     if (error) throw error
   }
+  if (!complete) return { table, before, written: rows.length, pruned: false }
   const { error: pruneErr } = await supabase
     .from(table).delete().in('region', regions).lt('updated_at', runStamp)
   if (pruneErr) throw pruneErr
+  return { table, before, written: rows.length, pruned: true }
 }
 
 // Delete decision-room data older than RETENTION_DAYS. Rooms are ephemeral
@@ -78,15 +93,24 @@ export default async function handler(req, res) {
 
     const supabase = createClient(url, key, { auth: { persistSession: false } })
     const runStamp = new Date().toISOString()
-    await writeCatalog(supabase, 'movie_catalog', movieRows, regions, runStamp)
-    await writeCatalog(supabase, 'series_catalog', tvRows, regions, runStamp)
+    const reports = [
+      await writeCatalog(supabase, 'movie_catalog', movieRows, regions, runStamp),
+      await writeCatalog(supabase, 'series_catalog', tvRows, regions, runStamp),
+    ]
 
     // Housekeeping — never let it fail the catalog refresh.
     let cleanup = null
     try { cleanup = await cleanupOldData(supabase) }
     catch (e) { cleanup = { error: String(e?.message || e) } }
 
-    return res.status(200).json({ ok: true, movies: movieRows.length, series: tvRows.length, regions, cleanup })
+    // An incomplete run is a failure as far as the cron is concerned (Vercel
+    // surfaces non-2xx), even though the partial data was still written.
+    const incomplete = reports.filter(r => !r.pruned)
+    return res.status(incomplete.length ? 500 : 200).json({
+      ok: incomplete.length === 0,
+      error: incomplete.length ? `incomplete refresh, prune skipped for: ${incomplete.map(r => r.table).join(', ')}` : undefined,
+      movies: movieRows.length, series: tvRows.length, regions, catalogs: reports, cleanup,
+    })
   } catch (e) {
     return res.status(500).json({ error: String(e?.message || e) })
   }
