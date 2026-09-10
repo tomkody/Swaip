@@ -84,8 +84,9 @@ function AccountSection() {
 export default function HamburgerMenu({ onSavedMatches, dark, onToggleDark }) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef(null)
+  const btnRef = useRef(null)
 
-  // Close on outside click
+  // Close on outside click or Escape (Escape hands focus back to the button).
   useEffect(() => {
     if (!open) return
     function onDown(e) {
@@ -93,20 +94,29 @@ export default function HamburgerMenu({ onSavedMatches, dark, onToggleDark }) {
         setOpen(false)
       }
     }
+    function onKey(e) {
+      if (e.key === 'Escape') { setOpen(false); btnRef.current?.focus() }
+    }
     document.addEventListener('mousedown', onDown)
     document.addEventListener('touchstart', onDown)
+    document.addEventListener('keydown', onKey)
     return () => {
       document.removeEventListener('mousedown', onDown)
       document.removeEventListener('touchstart', onDown)
+      document.removeEventListener('keydown', onKey)
     }
   }, [open])
 
   return (
     <div className="hamburger-wrap" ref={menuRef}>
       <button
+        ref={btnRef}
         className={`hamburger-btn ${open ? 'is-open' : ''}`}
         onClick={() => setOpen(o => !o)}
         aria-label="Menu"
+        aria-haspopup="true"
+        aria-expanded={open}
+        aria-controls="hm-panel"
       >
         {open ? (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -123,7 +133,7 @@ export default function HamburgerMenu({ onSavedMatches, dark, onToggleDark }) {
       </button>
 
       {open && (
-        <div className="hm-panel">
+        <div className="hm-panel" id="hm-panel">
           {/* Theme toggle */}
           <button className="hm-item" onClick={onToggleDark}>
             <span className="hm-icon">{dark ? '☀️' : '🌙'}</span>

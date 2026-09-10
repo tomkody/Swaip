@@ -3,8 +3,8 @@
   top: 64px; /* below the header bookmark button — no overlap */
   right: 16px;
   z-index: 100;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: var(--bg-glass);
   border: 1px solid var(--border);

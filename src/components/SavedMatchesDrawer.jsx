@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getSavedMatches, removeMatch, syncSavedMatches } from '../lib/savedMatches'
+import { useDialogFocus } from '../lib/useDialogFocus'
 import './SavedMatchesDrawer.css'
 
 const CATEGORY_LABELS = {
@@ -17,6 +18,10 @@ function formatDate(iso) {
 
 export default function SavedMatchesDrawer({ open, onClose }) {
   const [matches, setMatches] = useState([])
+  const drawerRef = useRef(null)
+  // Opened from a menu item that unmounts when the menu closes, so focus
+  // returns to the menu button itself.
+  useDialogFocus(drawerRef, { open, onClose, fallbackFocus: '.hamburger-btn' })
 
   useEffect(() => {
     if (!open) return
@@ -43,7 +48,15 @@ export default function SavedMatchesDrawer({ open, onClose }) {
   return (
     <>
       {open && <div className="drawer-backdrop" onClick={onClose} />}
-      <div className={`saved-drawer ${open ? 'open' : ''}`}>
+      <div
+        className={`saved-drawer ${open ? 'open' : ''}`}
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Saved Matches"
+        aria-hidden={!open}
+        tabIndex={-1}
+      >
         <div className="drawer-header">
           <div className="drawer-title-row">
             <span className="drawer-title">Saved Matches</span>

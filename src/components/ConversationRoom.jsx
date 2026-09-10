@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import confetti from 'canvas-confetti'
+import { prefersReducedMotion } from '../lib/motion'
 import { getSubtopicsForTopics } from '../lib/topics'
 import {
   getUserToken,
@@ -100,7 +101,7 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
 
   // Confetti on match reveal
   useEffect(() => {
-    if (matches && matches.length > 0 && !hasConfettied.current) {
+    if (matches && matches.length > 0 && !hasConfettied.current && !prefersReducedMotion()) {
       hasConfettied.current = true
       const end = Date.now() + 1500
       const colors = ['#ff6b6b', '#ee5a24', '#2ecc71', '#f1c40f', '#9b59b6']

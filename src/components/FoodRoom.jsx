@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import confetti from 'canvas-confetti'
+import { prefersReducedMotion } from '../lib/motion'
 import HomeLogo from './HomeLogo'
 import CategoryGrid from './CategoryGrid'
 import { seededShuffle } from '../lib/random'
@@ -193,7 +194,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
           // Only celebrate while still swiping — not over the results/waiting screen.
           if (!resultsShownRef.current) {
             setMatchItem(place)
-            confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
+            if (!prefersReducedMotion()) confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
           }
         }
       }
@@ -439,7 +440,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
           notifyRoom(room.id, 'match', { from: userToken.current, itemId: place.numId })
           setMatchItem(place)
           setMatches(prev => prev.find(m => m.id === place.id) ? prev : [...prev, place])
-          confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
+          if (!prefersReducedMotion()) confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
         }
       } catch (err) {
         console.error('recordSwipe error:', err)

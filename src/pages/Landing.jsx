@@ -131,7 +131,7 @@ export default function Landing() {
 
           <div className="lp-container lp-hero-inner">
             <p className="lp-eyebrow">Good plans. Better company.</p>
-            <h1 id="lp-hero-title" className="lp-h1">Make tonight<br />a shared <em>yes.</em></h1>
+            <h1 id="lp-hero-title" className="lp-h1">Make tonight <br />a shared <em>yes.</em></h1>
             <p className="lp-sub">A film worth watching. A table worth sharing. Find something you both want to do.</p>
             <div className="lp-hero-cta">
               <a className="lp-btn lp-btn--lg" href="#explore" onClick={() => cta('hero')}>Find our plan <Arrow /></a>

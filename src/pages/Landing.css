@@ -89,7 +89,7 @@
 }
 .lp-btn:hover { background: var(--lp-accent-hi); transform: translateY(-1px); }
 .lp-btn:active { transform: translateY(0); }
-.lp-btn--sm { height: 40px; padding: 0 18px; font-size: 14px; }
+.lp-btn--sm { height: 44px; padding: 0 18px; font-size: 14px; }
 .lp-btn--lg { height: 56px; padding: 0 30px; font-size: 17px; }
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
@@ -103,6 +103,7 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  min-height: 44px;
   font-family: 'Manrope', sans-serif;
   font-weight: 800;
   font-size: 22px;
@@ -525,7 +526,7 @@
   letter-spacing: -0.02em;
 }
 .lp-footer .site-footer { padding-top: 12px; }
-.lp-footer .site-footer-links a { color: var(--lp-muted); }
+.lp-footer .site-footer-links a { color: var(--lp-muted); padding: 12px 4px; }
 .lp-footer .site-footer-links a:hover { color: var(--lp-text); }
 .lp-footer .site-footer-copy, .lp-footer .site-footer-attrib { color: var(--lp-soft); opacity: 1; }
 .lp-footer .site-footer-links span { color: var(--lp-soft); }

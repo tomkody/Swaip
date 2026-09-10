@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import confetti from 'canvas-confetti'
 import { saveMatch } from '../lib/savedMatches'
+import { useDialogFocus } from '../lib/useDialogFocus'
+import { prefersReducedMotion } from '../lib/motion'
 import WhereToWatch from './WhereToWatch'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import './MatchModal.css'
@@ -19,6 +21,11 @@ export default function MatchModal({ item, roomType, swipeCount = 0, matchCount 
   const hasConfettied = useRef(false)
   const hasSaved = useRef(false)
   const [sharing, setSharing] = useState(false)
+  const modalRef = useRef(null)
+  // Escape = "Keep Swiping" (or Done when there's nothing to continue). The
+  // button that opened this is gone with the card, so focus lands on the next
+  // card's Like button afterwards.
+  useDialogFocus(modalRef, { onClose: onContinue || onDone, fallbackFocus: '.like-btn' })
 
   // 1-based position of this match. First match gets the full treatment;
   // later ones rotate through fresh copy and a lighter confetti burst.
@@ -31,6 +38,7 @@ export default function MatchModal({ item, roomType, swipeCount = 0, matchCount 
   useEffect(() => {
     if (!hasConfettied.current) {
       hasConfettied.current = true
+      if (prefersReducedMotion()) return
       const end = Date.now() + (isFirst ? 1500 : 700) // shorter burst on repeats
       const count = isFirst ? 3 : 2
       const colors = ['#ff6b6b', '#ee5a24', '#2ecc71', '#f1c40f', '#9b59b6']
@@ -80,13 +88,13 @@ export default function MatchModal({ item, roomType, swipeCount = 0, matchCount 
 
   return (
     <div className="match-overlay">
-      <div className="match-modal">
+      <div className="match-modal" ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="match-title" tabIndex={-1}>
         <div className="celebrate-badge celebrate-badge--heart match-badge">
           <svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
           </svg>
         </div>
-        <h1 className="match-title">{title}</h1>
+        <h1 id="match-title" className="match-title">{title}</h1>
         <p className="match-subtitle">{subtitle}</p>
 
         <div className="match-card">
