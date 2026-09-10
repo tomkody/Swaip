@@ -18,42 +18,19 @@ export default function SwipeCard({ item, onSwipe, active }) {
   const [dragging, setDragging] = useState(false)
   const [leaving, setLeaving] = useState(null)
   const [flipped, setFlipped] = useState(false)
-  const [gettingLocation, setGettingLocation] = useState(false)
 
   // ── Directions ────────────────────────────────────────────────────
+  // No origin param — Google Maps asks for the device's live location itself
+  // once opened. Leaving that to Maps keeps this a single synchronous
+  // window.open() in the click handler; the previous version fetched our own
+  // geolocation first and navigated an already-open blank tab once it
+  // resolved, but that gap between opening and navigating is exactly what
+  // made Safari/Chrome fall back to replacing the current tab instead.
   function handleDirections(e) {
     e.stopPropagation()
     const dest = `${item.lat},${item.lng}`
-    const googleUrl = (origin) =>
-      `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=walking${origin ? `&origin=${origin}` : ''}`
-
-    // window.open MUST be called synchronously inside the click handler —
-    // Safari (desktop + iOS) blocks it if called inside any async callback.
-    // Open a blank window now, then navigate it once we have the origin.
-    const win = window.open('', '_blank', 'noopener,noreferrer')
-    if (!win) {
-      // Popup blocked — navigate current tab as last resort
-      window.location.href = googleUrl()
-      return
-    }
-
-    if (!navigator.geolocation) {
-      win.location.href = googleUrl()
-      return
-    }
-
-    setGettingLocation(true)
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setGettingLocation(false)
-        win.location.href = googleUrl(`${pos.coords.latitude},${pos.coords.longitude}`)
-      },
-      () => {
-        setGettingLocation(false)
-        win.location.href = googleUrl()
-      },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-    )
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=walking`
+    window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   // ── Drag handlers (swipe detection only) ──────────────────────────
@@ -275,12 +252,11 @@ export default function SwipeCard({ item, onSwipe, active }) {
                   <button
                     className="card-back-directions"
                     onClick={handleDirections}
-                    disabled={gettingLocation}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <polygon points="3 11 22 2 13 21 11 13 3 11"/>
                     </svg>
-                    {gettingLocation ? 'Getting location…' : 'Get walking directions'}
+                    Get walking directions
                   </button>
                 )}
 
