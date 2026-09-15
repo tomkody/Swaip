@@ -83,12 +83,14 @@ function Chevron() {
 export default function Landing() {
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  // Theme: honour a saved choice; first-time visitors get the dark landing.
-  // Only persist when the user actually toggles, so we never overwrite a
-  // choice they haven't made.
+  // Theme: honour a saved choice; first-time visitors default to light, same
+  // as the rest of the app (ThemeToggle.jsx) — the landing used to default
+  // new visitors to dark on its own, which meant the theme flipped the
+  // moment you clicked through to create a room. Only persist when the user
+  // actually toggles, so we never overwrite a choice they haven't made.
   const [dark, setDark] = useState(() => {
     const saved = localStorage.getItem('swaip-theme')
-    return saved ? saved === 'dark' : true
+    return saved === 'dark'
   })
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
