@@ -35,7 +35,7 @@ const DEMO = [
   // Local photo slots — drop the files at these paths in public/landing/.
   // Until a file exists the card shows a tinted tile with the emoji.
   { title: 'Restaurant U Prince', meta: 'Place · Restaurant · Prague', stamp: 'Want to visit', poster: '/landing/u-prince.jpg',      emoji: '🍽️', focus: '50% 55%' },
-  { title: 'Prague Castle',       meta: 'Place · Landmark · Prague',   stamp: 'Want to visit', poster: '/landing/prague-castle.jpg', emoji: '🏰', focus: '45% 40%' },
+  { title: 'Prague Castle',       meta: 'Place · Landmark · Prague',   stamp: 'Want to visit', poster: '/landing/prague-castle.jpg', emoji: '🏰', focus: '35% 35%' },
 ]
 
 // Timeline per card (ms): card settles → stamp pops → card flies off → next.
