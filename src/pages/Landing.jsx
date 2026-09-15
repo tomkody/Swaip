@@ -37,8 +37,9 @@ const DEMO = [
 ]
 
 // Timeline per card (ms): card settles → stamp pops → card flies off → next.
-// After the last card a "3 matches" pill shows, then the deck refills.
-const DEMO_T = { stamp: 1100, out: 1000, next: 480, done: 2000, refill: 700 }
+// After the last card an "It's a match" pill shows, then the whole block
+// collapses and unmounts so it doesn't linger under the CTA.
+const DEMO_T = { stamp: 1100, out: 1000, next: 480, done: 1800, hide: 650 }
 
 function Arrow() {
   return (
@@ -77,13 +78,14 @@ export default function Landing() {
 
   // ── Hero demo (self-playing, decorative) ────────────────────────────────
   // stage: 'in' → 'stamp' → 'out' per card; 'done' after the last card;
-  // 'refill' brings the stack back and the loop restarts.
+  // 'hide' collapses the block; 'removed' takes it out of the DOM. Plays once.
   const [demoActive, setDemoActive] = useState(0)
   const [demoStage, setDemoStage] = useState('in')
   const [demoStatic] = useState(() => prefersReducedMotion())   // static stack, stamp visible, nothing moves
   useEffect(() => {
     if (demoStatic) return
-    const wait = { in: DEMO_T.stamp, stamp: DEMO_T.out, out: DEMO_T.next, done: DEMO_T.done, refill: DEMO_T.refill }[demoStage]
+    if (demoStage === 'removed') return
+    const wait = { in: DEMO_T.stamp, stamp: DEMO_T.out, out: DEMO_T.next, done: DEMO_T.done, hide: DEMO_T.hide }[demoStage]
     const t = setTimeout(() => {
       if (demoStage === 'in') setDemoStage('stamp')
       else if (demoStage === 'stamp') setDemoStage('out')
@@ -91,8 +93,8 @@ export default function Landing() {
         if (demoActive + 1 < DEMO.length) { setDemoActive(a => a + 1); setDemoStage('in') }
         else setDemoStage('done')
       }
-      else if (demoStage === 'done') { setDemoActive(0); setDemoStage('refill') }
-      else setDemoStage('in')
+      else if (demoStage === 'done') setDemoStage('hide')
+      else setDemoStage('removed')
     }, wait)
     return () => clearTimeout(t)
   }, [demoActive, demoStage, demoStatic])
@@ -140,16 +142,18 @@ export default function Landing() {
               <p className="lp-fineprint">No sign-up. Send a link. Start swiping.</p>
             </div>
 
-            <div className={`lp-demo ${demoStage === 'done' ? 'is-done' : ''} ${demoStage === 'refill' ? 'is-refill' : ''}`} aria-hidden="true">
+            {demoStage !== 'removed' && (
+            <div className={`lp-demo-wrap ${demoStage === 'hide' ? 'is-hidden' : ''}`}>
+            <div className={`lp-demo ${demoStage === 'done' || demoStage === 'hide' ? 'is-done' : ''}`} aria-hidden="true">
               <div className="lp-stack">
                 {DEMO.map((d, i) => {
                   const rel = i - demoActive
-                  const gone = demoStage !== 'done' && demoStage !== 'refill' && rel < 0
-                  const top = rel === 0 && demoStage !== 'done'
+                  const gone = rel < 0
+                  const top = rel === 0 && demoStage !== 'done' && demoStage !== 'hide'
                   const cls = [
                     'lp-card',
                     gone ? 'is-gone' : '',
-                    demoStage === 'done' ? 'is-gone' : '',
+                    demoStage === 'done' || demoStage === 'hide' ? 'is-gone' : '',
                     top ? 'is-top' : '',
                     top && (demoStage === 'stamp' || demoStage === 'out' || demoStatic) ? 'is-stamped' : '',
                     top && demoStage === 'out' ? 'is-out' : '',
@@ -163,7 +167,7 @@ export default function Landing() {
                           <p className="lp-card-title">{d.title}</p>
                           <p className="lp-card-meta">{d.meta}</p>
                         </div>
-                        <span className="lp-card-stamp">{d.stamp}</span>
+                        <span className="lp-card-stamp"><span className="lp-card-stamp-heart">❤️</span> {d.stamp}</span>
                       </div>
                     </div>
                   )
@@ -188,6 +192,8 @@ export default function Landing() {
                 </span>
               </div>
             </div>
+            </div>
+            )}
             <p className="lp-visually-hidden">Swipe right on a film, a series or a place you want. When your partner swipes right too, it’s a match.</p>
           </div>
         </section>

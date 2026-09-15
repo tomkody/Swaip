@@ -137,7 +137,7 @@
 .lp-hero {
   position: relative;
   isolation: isolate;
-  padding: clamp(28px, 5vw, 56px) 0 0;
+  padding: clamp(28px, 5vw, 56px) 0 clamp(36px, 5vw, 64px);
   text-align: center;
   overflow: hidden;
 }
@@ -229,12 +229,20 @@
   color: var(--lp-soft);
 }
 
-/* Self-playing demo stack */
+/* Self-playing demo stack. The wrapper collapses (grid-row 1fr → 0fr) once
+   the sequence has played, so the content below slides up. */
+.lp-demo-wrap {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.6s var(--lp-ease), opacity 0.45s var(--lp-ease);
+}
+.lp-demo-wrap > .lp-demo { min-height: 0; overflow: hidden; }
+.lp-demo-wrap.is-hidden { grid-template-rows: 0fr; opacity: 0; }
 .lp-demo {
   --lp-card-w: min(200px, 54vw);
   width: var(--lp-card-w);
   margin: clamp(28px, 4vw, 44px) auto 0;
-  padding-bottom: clamp(32px, 5vw, 56px);
+  padding-bottom: 4px;   /* button shadow room; hero padding does the rest */
 }
 .lp-stack {
   position: relative;
@@ -258,8 +266,6 @@
 .lp-card.is-behind-2 { z-index: 1; transform: translateY(-18px) scale(0.9); }
 .lp-card.is-out  { z-index: 4; transform: translateX(120%) rotate(16deg); opacity: 0; }
 .lp-card.is-gone { z-index: 0; transform: translateX(120%) rotate(16deg); opacity: 0; transition: none; }
-.lp-demo.is-refill .lp-card { transition-duration: 0.5s; }
-.lp-demo.is-refill .lp-card.is-gone { transform: translateY(24px) scale(0.96); }
 .lp-card-poster {
   position: relative;
   height: 100%;
@@ -285,25 +291,32 @@
   line-height: 1.15;
 }
 .lp-card-meta { margin: 0; font-size: 11px; color: rgba(246, 245, 242, 0.78); }
-/* "Want to watch / visit" stamp: pops in when the card is liked */
+/* "Want to watch / visit" stamp: same green as the in-app YES stamp
+   (SwipeCard.css .stamp-yes), so the demo and the app say "yes" alike. */
 .lp-card-stamp {
   position: absolute;
   top: 14px;
   left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 5px 9px;
-  border: 2.5px solid var(--lp-accent);
+  border: 2.5px solid #4ade80;
   border-radius: 8px;
-  background: rgba(10, 11, 18, 0.35);
-  color: var(--lp-accent);
+  background: rgba(74, 222, 128, 0.14);
+  color: #4ade80;
   font-family: 'Manrope', sans-serif;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  text-shadow: 0 0 16px rgba(74, 222, 128, 0.4);
+  box-shadow: 0 0 20px rgba(74, 222, 128, 0.2);
   transform: rotate(-12deg) scale(1.6);
   opacity: 0;
   transition: transform 0.28s cubic-bezier(0.2, 1.4, 0.4, 1), opacity 0.2s var(--lp-ease);
 }
+.lp-card-stamp-heart { font-size: 12px; text-shadow: none; }
 .lp-card.is-stamped .lp-card-stamp { transform: rotate(-12deg) scale(1); opacity: 1; }
 /* Shown once the whole stack has been swiped */
 .lp-match-pill {
