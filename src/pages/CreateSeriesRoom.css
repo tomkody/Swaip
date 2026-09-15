@@ -146,6 +146,7 @@
 }
 
 .create-series .filter-all-btn {
+  min-height: 44px;
   width: 100%;
   padding: 10px 14px;
   margin-top: 12px;
@@ -176,6 +177,7 @@
 }
 
 .create-series .filter-btn {
+  min-height: 44px;
   padding: 10px 13px;
   background: var(--bg-card);
   border: 1px solid var(--border);
