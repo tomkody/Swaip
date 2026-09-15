@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import HamburgerMenu from '../components/HamburgerMenu'
 import SavedMatchesDrawer from '../components/SavedMatchesDrawer'
 import Footer from '../components/Footer'
 import { track } from '../lib/analytics'
+import { prefersReducedMotion } from '../lib/motion'
 import './Landing.css'
 
 // Category cards, same composition as the original homepage: the two
@@ -24,13 +25,20 @@ const CATEGORIES = [
 //   { src: '/landing/hero.jpg', mobile: '/landing/hero-mobile.jpg' }
 const HERO_IMAGE = null
 
-// Demo deck for the hero card: three titles from the bundled catalog (same
-// posters the app itself shows). Purely local state — nothing is written.
+// Hero demo: a three-card stack that plays itself on load — a film, a
+// series and a place, each swiped right with its own stamp — so the principle
+// is visible in a few seconds without a big interactive card. Posters come
+// from the bundled catalog; the castle photo is CC0 (Wikimedia Commons,
+// "Prague Castle at Night viewed from Charles Bridge" by Lucas Garron).
 const DEMO = [
-  { title: 'The Grand Budapest Hotel', meta: 'Comedy · Adventure · 2014', poster: 'https://m.media-amazon.com/images/M/MV5BMzM5NjUxOTEyMl5BMl5BanBnXkFtZTgwNjEyMDM0MDE@._V1_QL75_UX500' },
-  { title: 'Amélie',                   meta: 'Comedy · Romance · 2001',   poster: 'https://m.media-amazon.com/images/M/MV5BOTNmYzY0MWQtZGZmNy00Y2Y4LWFmMDQtMTZjYTdiYzEwZGQ2XkEyXkFqcGc@._V1_QL75_UX500' },
-  { title: 'Ratatouille',              meta: 'Animation · Comedy · 2007', poster: 'https://m.media-amazon.com/images/M/MV5BMTMzODU0NTkxMF5BMl5BanBnXkFtZTcwMjQ4MzMzMw@@._V1_QL75_UX500' },
+  { title: 'The Grand Budapest Hotel', meta: 'Film · Comedy · 2014',      stamp: 'Want to watch', poster: 'https://m.media-amazon.com/images/M/MV5BMzM5NjUxOTEyMl5BMl5BanBnXkFtZTgwNjEyMDM0MDE@._V1_QL75_UX500' },
+  { title: 'Breaking Bad',             meta: 'Series · Drama · 2008',      stamp: 'Want to watch', poster: 'https://m.media-amazon.com/images/M/MV5BMzU5ZGYzNmQtMTdhYy00OGRiLTg0NmQtYjVjNzliZTg1ZGE4XkEyXkFqcGc@._V1_QL75_UX500.jpg' },
+  { title: 'Prague Castle',            meta: 'Place · Landmark · Prague',  stamp: 'Want to visit', poster: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Prague_Castle_at_Night_viewed_from_Charles_Bridge.jpg/960px-Prague_Castle_at_Night_viewed_from_Charles_Bridge.jpg', focus: '50% 30%' },
 ]
+
+// Timeline per card (ms): card settles → stamp pops → card flies off → next.
+// After the last card a "3 matches" pill shows, then the deck refills.
+const DEMO_T = { stamp: 1100, out: 1000, next: 480, done: 2000, refill: 700 }
 
 function Arrow() {
   return (
@@ -67,31 +75,29 @@ export default function Landing() {
     setDark(next)
   }
 
-  // ── Hero demo card (local only) ──────────────────────────────────────────
-  const [demoIdx, setDemoIdx] = useState(0)
-  const [demoOut, setDemoOut] = useState(null)     // 'left' | 'right' while the card flies off
-  const [demoStatus, setDemoStatus] = useState('')
-  const demoTimer = useRef(null)
-  useEffect(() => () => clearTimeout(demoTimer.current), [])
-
-  function demoSwipe(dir) {
-    if (demoOut) return
-    const item = DEMO[demoIdx]
-    setDemoStatus(dir === 'right'
-      ? `You liked ${item.title}. In a real room, it’s a match once your partner likes it too.`
-      : `You passed on ${item.title}.`)
-    track('landing_demo_swipe', { dir })
-    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    if (reduced) { setDemoIdx(i => (i + 1) % DEMO.length); return }
-    setDemoOut(dir)
-    demoTimer.current = setTimeout(() => {
-      setDemoOut(null)
-      setDemoIdx(i => (i + 1) % DEMO.length)
-    }, 260)
-  }
+  // ── Hero demo (self-playing, decorative) ────────────────────────────────
+  // stage: 'in' → 'stamp' → 'out' per card; 'done' after the last card;
+  // 'refill' brings the stack back and the loop restarts.
+  const [demoActive, setDemoActive] = useState(0)
+  const [demoStage, setDemoStage] = useState('in')
+  const [demoStatic] = useState(() => prefersReducedMotion())   // static stack, stamp visible, nothing moves
+  useEffect(() => {
+    if (demoStatic) return
+    const wait = { in: DEMO_T.stamp, stamp: DEMO_T.out, out: DEMO_T.next, done: DEMO_T.done, refill: DEMO_T.refill }[demoStage]
+    const t = setTimeout(() => {
+      if (demoStage === 'in') setDemoStage('stamp')
+      else if (demoStage === 'stamp') setDemoStage('out')
+      else if (demoStage === 'out') {
+        if (demoActive + 1 < DEMO.length) { setDemoActive(a => a + 1); setDemoStage('in') }
+        else setDemoStage('done')
+      }
+      else if (demoStage === 'done') { setDemoActive(0); setDemoStage('refill') }
+      else setDemoStage('in')
+    }, wait)
+    return () => clearTimeout(t)
+  }, [demoActive, demoStage, demoStatic])
 
   const cta = where => track('landing_cta', { where })
-  const demo = DEMO[demoIdx]
 
   return (
     <div className={`lp ${dark ? '' : 'lp--light'}`}>
@@ -134,31 +140,55 @@ export default function Landing() {
               <p className="lp-fineprint">No sign-up. Send a link. Start swiping.</p>
             </div>
 
-            <div className="lp-demo">
-              <div className={`lp-card ${demoOut ? `is-out-${demoOut}` : ''}`}>
-                <div className="lp-card-poster">
-                  <img key={demo.poster} src={demo.poster} alt={`${demo.title} poster`} width="300" height="450" loading="eager" decoding="async" />
-                  <div className="lp-card-caption">
-                    <p className="lp-card-title">{demo.title}</p>
-                    <p className="lp-card-meta">{demo.meta}</p>
-                  </div>
+            <div className={`lp-demo ${demoStage === 'done' ? 'is-done' : ''} ${demoStage === 'refill' ? 'is-refill' : ''}`} aria-hidden="true">
+              <div className="lp-stack">
+                {DEMO.map((d, i) => {
+                  const rel = i - demoActive
+                  const gone = demoStage !== 'done' && demoStage !== 'refill' && rel < 0
+                  const top = rel === 0 && demoStage !== 'done'
+                  const cls = [
+                    'lp-card',
+                    gone ? 'is-gone' : '',
+                    demoStage === 'done' ? 'is-gone' : '',
+                    top ? 'is-top' : '',
+                    top && (demoStage === 'stamp' || demoStage === 'out' || demoStatic) ? 'is-stamped' : '',
+                    top && demoStage === 'out' ? 'is-out' : '',
+                    rel > 0 ? `is-behind-${Math.min(rel, 2)}` : '',
+                  ].join(' ')
+                  return (
+                    <div key={d.title} className={cls}>
+                      <div className="lp-card-poster">
+                        <img src={d.poster} alt="" width="200" height="300" loading={i === 0 ? 'eager' : 'lazy'} decoding="async" style={d.focus ? { objectPosition: d.focus } : undefined} />
+                        <div className="lp-card-caption">
+                          <p className="lp-card-title">{d.title}</p>
+                          <p className="lp-card-meta">{d.meta}</p>
+                        </div>
+                        <span className="lp-card-stamp">{d.stamp}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+                <div className="lp-match-pill">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                  </svg>
+                  It’s a match
                 </div>
               </div>
               <div className="lp-card-actions">
-                <button type="button" className="lp-card-btn lp-card-btn--no" onClick={() => demoSwipe('left')} aria-label={`Pass on ${demo.title}`}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
+                <span className="lp-card-btn lp-card-btn--no">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
-                </button>
-                <button type="button" className="lp-card-btn lp-card-btn--yes" onClick={() => demoSwipe('right')} aria-label={`Like ${demo.title}`}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                </span>
+                <span className={`lp-card-btn lp-card-btn--yes ${demoStage === 'stamp' || demoStage === 'out' ? 'is-pressed' : ''}`}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                   </svg>
-                </button>
+                </span>
               </div>
-              <p className="lp-demo-note">Interactive preview · demo titles only, nothing is saved</p>
-              <p className="lp-demo-status" aria-live="polite">{demoStatus}</p>
             </div>
+            <p className="lp-visually-hidden">Swipe right on a film, a series or a place you want. When your partner swipes right too, it’s a match.</p>
           </div>
         </section>
 
