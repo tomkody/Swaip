@@ -3,6 +3,7 @@ import { MOVIE_GENRES } from './movieGenres'
 import { supabase } from './supabase'
 import { CATALOG_REGIONS, detectRegion } from './regions'
 import { buildDeck } from './deck'
+import { prefsPredicate } from './movieFilters'
 
 export { detectRegion }
 
@@ -25,11 +26,14 @@ function filterPool(all, platforms, genres) {
 }
 
 // Loaded on demand — the static list is a fallback, not a dependency.
-async function fetchStaticMovies(roomId, platforms, genres) {
+async function loadStaticMovies() {
   const { MOVIES } = await import('./movies')
-  const all = MOVIES.map(m => ({ ...m, genre: MOVIE_GENRES[m.id] || '', platforms: MOVIE_PLATFORMS[m.id] || [] }))
-  const pool = filterPool(all, platforms, genres)
-  return buildDeck(pool, roomId)
+  return MOVIES.map(m => ({ ...m, genre: MOVIE_GENRES[m.id] || '', platforms: MOVIE_PLATFORMS[m.id] || [] }))
+}
+
+async function fetchStaticMovies(roomId, platforms, genres, prefs) {
+  const pool = filterPool(await loadStaticMovies(), platforms, genres)
+  return buildDeck(pool, roomId, { prefer: prefsPredicate(prefs) })
 }
 
 // Map a movie_catalog row → the shape SwipeCard/MatchModal expect.
@@ -70,19 +74,43 @@ async function loadStreamable(region) {
   return streamable.length ? streamable : null
 }
 
-export async function fetchTopRatedMovies(roomId, platforms = [], genres = [], region) {
-  if (!supabase) return fetchStaticMovies(roomId, platforms, genres)
-  try {
-    // Prefer the room's pinned region so both partners swipe the SAME deck.
-    const reg = (region || detectRegion())
-    let streamable = await loadStreamable(CATALOG_REGIONS.includes(reg) ? reg : 'US')
-    if (!streamable && reg !== 'US') streamable = await loadStreamable('US')
-    if (!streamable) return fetchStaticMovies(roomId, platforms, genres)
+// The full streamable pool for a region (catalog → US catalog → static list).
+// Cached per region for the session: the create page loads it for the live
+// "N titles" count and the room reuses it seconds later without a second fetch.
+const poolCache = new Map()
+export async function loadMoviePool(region) {
+  const reg = region || detectRegion()
+  const key = CATALOG_REGIONS.includes(reg) ? reg : 'US'
+  if (poolCache.has(key)) return poolCache.get(key)
+  const promise = (async () => {
+    if (!supabase) return loadStaticMovies()
+    try {
+      let streamable = await loadStreamable(key)
+      if (!streamable && key !== 'US') streamable = await loadStreamable('US')
+      return streamable || loadStaticMovies()
+    } catch (e) {
+      console.error('[tmdb] catalog read failed, using static list:', e)
+      return loadStaticMovies()
+    }
+  })()
+  poolCache.set(key, promise)
+  promise.catch(() => poolCache.delete(key))
+  return promise
+}
 
-    const pool = filterPool(streamable, platforms, genres)
-    return buildDeck(pool, roomId)
+// Hard filters (platforms, genres) narrow the pool; `prefs` (length, era)
+// only reorder it — see movieFilters.js.
+export function filterMoviePool(all, platforms = [], genres = []) {
+  return filterPool(all, platforms, genres)
+}
+
+export async function fetchTopRatedMovies(roomId, platforms = [], genres = [], region, prefs) {
+  // Prefer the room's pinned region so both partners swipe the SAME deck.
+  try {
+    const pool = filterPool(await loadMoviePool(region), platforms, genres)
+    return buildDeck(pool, roomId, { prefer: prefsPredicate(prefs) })
   } catch (e) {
-    console.error('[tmdb] catalog read failed, using static list:', e)
-    return fetchStaticMovies(roomId, platforms, genres)
+    console.error('[tmdb] pool load failed, using static list:', e)
+    return fetchStaticMovies(roomId, platforms, genres, prefs)
   }
 }

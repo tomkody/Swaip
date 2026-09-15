@@ -102,11 +102,18 @@ export function getUserToken() {
 }
 
 // Create a movie room
-export async function createMovieRoom(platforms = [], genres = [], { solo = false } = {}) {
-  track('room_created', { type: 'movies', solo })
+// `length` / `era` are soft "tonight" preferences (see movieFilters.js); only
+// non-default values are stored so old rooms and old clients read the same JSON.
+export async function createMovieRoom(platforms = [], genres = [], { solo = false, length = 'any', era = 'any' } = {}) {
+  track('room_created', { type: 'movies', solo, length, era })
   const roomId = uuidv4().slice(0, 8)
   // Pin the creator's region so every partner swipes the SAME deck.
-  const filters = JSON.stringify({ platforms, genres, region: detectRegion(), ...(solo && { solo: true }) })
+  const filters = JSON.stringify({
+    platforms, genres, region: detectRegion(),
+    ...(solo && { solo: true }),
+    ...(length !== 'any' && { length }),
+    ...(era !== 'any' && { era }),
+  })
 
   if (!supabase) {
     const room = { id: roomId, type: 'movies', platforms: filters, created_at: new Date().toISOString(), status: 'waiting' }

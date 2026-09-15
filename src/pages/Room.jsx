@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, subscribeToRoomActive, subscribeToRoomPicks, fetchRoomPicks, fetchPartnerSwipeCount, markRoomActive, fetchRoomMatches, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID, MOVIE_SENTINELS } from '../lib/room'
 import { PLATFORMS } from '../lib/platforms'
 import { fetchTopRatedMovies } from '../lib/tmdb'
+import { normalizePrefs } from '../lib/movieFilters'
 import { fetchTopRatedSeries } from '../lib/seriesFetch'
 import SwipeCard from '../components/SwipeCard'
 import MatchModal from '../components/MatchModal'
@@ -17,13 +18,19 @@ import { isPushSupported, enablePushForRoom, notifyRoom } from '../lib/push'
 import './Room.css'
 
 function parseRoomFilters(raw) {
-  if (!raw) return { platforms: [], genres: [], region: undefined }
+  const none = { platforms: [], genres: [], region: undefined, prefs: normalizePrefs() }
+  if (!raw) return none
   try {
     const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed)) return { platforms: parsed, genres: [], region: undefined } // legacy
-    return { platforms: parsed.platforms || [], genres: parsed.genres || [], region: parsed.region }
+    if (Array.isArray(parsed)) return { ...none, platforms: parsed } // legacy
+    return {
+      platforms: parsed.platforms || [],
+      genres: parsed.genres || [],
+      region: parsed.region,
+      prefs: normalizePrefs(parsed),
+    }
   } catch {
-    return { platforms: [], genres: [], region: undefined }
+    return none
   }
 }
 
@@ -85,10 +92,10 @@ export default function Room() {
           setPartnerJoined(true)
         }
 
-        const { platforms, genres, region } = parseRoomFilters(roomData.platforms ?? roomData.topic_id)
+        const { platforms, genres, region, prefs } = parseRoomFilters(roomData.platforms ?? roomData.topic_id)
         let deck = []
         if (roomData.type === 'movies') {
-          deck = await fetchTopRatedMovies(roomData.id, platforms, genres, region)
+          deck = await fetchTopRatedMovies(roomData.id, platforms, genres, region, prefs)
         } else if (roomData.type === 'series') {
           deck = await fetchTopRatedSeries(roomData.id, platforms, genres, region)
         }
