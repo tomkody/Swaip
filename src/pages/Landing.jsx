@@ -28,15 +28,14 @@ const HERO_IMAGE = null
 // Hero demo: a three-card stack that plays itself on load — a film, a
 // series and a place, each swiped right with its own stamp — so the principle
 // is visible in a few seconds without a big interactive card. Posters come
-// from the bundled catalog; the castle photo is CC0 (Wikimedia Commons,
-// "Prague Castle at Night viewed from Charles Bridge" by Lucas Garron).
+// from the bundled catalog; the two place photos are local files.
 const DEMO = [
-  { title: 'Forrest Gump',   meta: 'Film · Drama · 1994',           stamp: 'Want to watch', poster: 'https://m.media-amazon.com/images/M/MV5BNDYwNzVjMTItZmU5YS00YjQ5LTljYjgtMjY2NDVmYWMyNWFmXkEyXkFqcGc@._V1_QL75_UX500' },
-  { title: 'Breaking Bad',   meta: 'Series · Drama · 2008',         stamp: 'Want to watch', poster: 'https://m.media-amazon.com/images/M/MV5BMzU5ZGYzNmQtMTdhYy00OGRiLTg0NmQtYjVjNzliZTg1ZGE4XkEyXkFqcGc@._V1_QL75_UX500.jpg' },
-  // Local photo slot: drop the restaurant photo at public/landing/420-restaurant.jpg
-  // (portrait or square works best). Until it exists the card shows the emoji tile.
-  { title: '420 Restaurant', meta: 'Place · Restaurant · Prague',  stamp: 'Want to visit', poster: '/landing/420-restaurant.jpg', emoji: '🍽️', focus: '50% 60%' },
-  { title: 'Prague Castle',  meta: 'Place · Landmark · Prague',    stamp: 'Want to visit', poster: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Prague_Castle_at_Night_viewed_from_Charles_Bridge.jpg/960px-Prague_Castle_at_Night_viewed_from_Charles_Bridge.jpg', focus: '50% 30%' },
+  { title: 'Forrest Gump',        meta: 'Film · Drama · 1994',          stamp: 'Want to watch', poster: 'https://m.media-amazon.com/images/M/MV5BNDYwNzVjMTItZmU5YS00YjQ5LTljYjgtMjY2NDVmYWMyNWFmXkEyXkFqcGc@._V1_QL75_UX500' },
+  { title: 'Breaking Bad',        meta: 'Series · Drama · 2008',        stamp: 'Want to watch', poster: 'https://m.media-amazon.com/images/M/MV5BMzU5ZGYzNmQtMTdhYy00OGRiLTg0NmQtYjVjNzliZTg1ZGE4XkEyXkFqcGc@._V1_QL75_UX500.jpg' },
+  // Local photo slots — drop the files at these paths in public/landing/.
+  // Until a file exists the card shows a tinted tile with the emoji.
+  { title: 'Restaurant U Prince', meta: 'Place · Restaurant · Prague', stamp: 'Want to visit', poster: '/landing/u-prince.jpg',      emoji: '🍽️', focus: '50% 55%' },
+  { title: 'Prague Castle',       meta: 'Place · Landmark · Prague',   stamp: 'Want to visit', poster: '/landing/prague-castle.jpg', emoji: '🏰', focus: '45% 40%' },
 ]
 
 // Timeline per card (ms): card settles → stamp pops → card flies off → next.
