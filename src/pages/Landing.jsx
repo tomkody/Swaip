@@ -6,18 +6,15 @@ import Footer from '../components/Footer'
 import { track } from '../lib/analytics'
 import './Landing.css'
 
+// Category cards, same composition as the original homepage: the two
+// catalogue-backed picks lead as coral tiles, the beta rooms follow on
+// neutral cards. `tone` keys the icon tile colour.
 const CATEGORIES = [
-  { to: '/create/movies',        label: 'Movies' },
-  { to: '/create/series',        label: 'Series' },
-  { to: '/create/food',          label: 'Food & drinks' },
-  { to: '/create/activities',    label: 'Activities' },
-  { to: '/create/conversations', label: 'Conversations' },
-]
-
-const STEPS = [
-  { title: 'Pick your mood',     desc: 'Movies, a series, dinner, something to do — choose what tonight is about.' },
-  { title: 'Invite your person', desc: 'Send one link. No sign-up on either side; you each swipe on your own phone.' },
-  { title: 'Swipe into a plan',  desc: 'When you both swipe right on the same thing, it’s a match. That’s the plan.' },
+  { to: '/create/movies',        label: 'Movies',        desc: "Find a film you'll both love",        emoji: '🍿', primary: true },
+  { to: '/create/series',        label: 'TV Series',     desc: 'Find your next binge-watch',          emoji: '📺', primary: true },
+  { to: '/create/activities',    label: 'Activities',    desc: 'Discover fun things to do nearby',    emoji: '🎯', tone: 'activities', beta: true },
+  { to: '/create/food',          label: 'Food & Drinks', desc: 'Find where to eat or grab a drink',   emoji: '🍽️', tone: 'food',       beta: true },
+  { to: '/create/conversations', label: 'Conversations', desc: 'Questions that spark a real talk',    emoji: '💬', tone: 'convo',      beta: true, wide: true },
 ]
 
 // Hero photograph slot. The design calls for a wide cinematic photo (home
@@ -105,7 +102,6 @@ export default function Landing() {
             <span>Swaip</span>
           </Link>
           <nav className="lp-nav" aria-label="Primary">
-            <a className="lp-nav-link" href="#how">How it works</a>
             <a className="lp-nav-link" href="#explore">Explore</a>
           </nav>
           <div className="lp-header-actions">
@@ -172,29 +168,23 @@ export default function Landing() {
             <p className="lp-eyebrow">Start here</p>
             <h2 id="lp-explore-title" className="lp-h2 lp-h2--sm">What are we deciding?</h2>
             <p className="lp-section-sub">Pick a category to open a room. You’ll set the details on the next screen.</p>
-            <nav className="lp-cats" aria-label="Categories">
+            <nav className="lp-catgrid" aria-label="Categories">
               {CATEGORIES.map(c => (
-                <Link key={c.to} to={c.to} className="lp-cat" onClick={() => cta(`category:${c.label}`)}>
-                  {c.label}
+                <Link
+                  key={c.to}
+                  to={c.to}
+                  className={`lp-catcard ${c.primary ? 'lp-catcard--primary' : ''} ${c.wide ? 'lp-catcard--wide' : ''}`}
+                  onClick={() => cta(`category:${c.label}`)}
+                >
+                  {c.beta && <span className="lp-catcard-beta">Beta</span>}
+                  <span className={`lp-catcard-emoji ${c.tone ? `lp-catcard-emoji--${c.tone}` : ''}`} aria-hidden="true">{c.emoji}</span>
+                  <span className="lp-catcard-text">
+                    <span className="lp-catcard-name">{c.label}</span>
+                    <span className="lp-catcard-desc">{c.desc}</span>
+                  </span>
                 </Link>
               ))}
             </nav>
-          </div>
-        </section>
-
-        {/* ── How it works ─────────────────────────────────────────────── */}
-        <section id="how" className="lp-how" aria-labelledby="lp-how-title">
-          <div className="lp-container">
-            <h2 id="lp-how-title" className="lp-h2">From ‘I don’t know’ to ‘let’s go’.</h2>
-            <ol className="lp-steps">
-              {STEPS.map((s, i) => (
-                <li key={s.title} className="lp-step">
-                  <span className="lp-step-num" aria-hidden="true">0{i + 1}</span>
-                  <h3>{s.title}</h3>
-                  <p>{s.desc}</p>
-                </li>
-              ))}
-            </ol>
           </div>
         </section>
 
