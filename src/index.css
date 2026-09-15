@@ -25,7 +25,7 @@
   --border-hover:  rgba(16,18,28,0.26);
 
   /* Brand accent */
-  --brand-ink:     #1A0F0E;
+  --brand-ink:     #FFFFFF;   /* text on the sunset gradient — was near-black, now consistent white */
   --accent-coral:  #FF5E62;
   --accent-orange: #FF8A47;
   --accent-peach:  #FFB347;
@@ -187,6 +187,7 @@ h1, h2, h3, h4 {
 .btn-primary {
   background: var(--gradient-primary);
   color: var(--brand-ink);
+  text-shadow: 0 1px 2px rgba(120, 30, 20, 0.22);
   box-shadow: 0 6px 18px rgba(255,122,74,0.30);
 }
 .btn-primary:hover:not(:disabled) {

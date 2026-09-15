@@ -423,6 +423,7 @@
   border: none;              /* a transparent border ring showed as a seam on the circle's edge */
   background-clip: padding-box;
   color: var(--brand-ink);
+  filter: drop-shadow(0 1px 1px rgba(120, 30, 20, 0.28));
   box-shadow: 0 8px 22px rgba(255, 122, 74, 0.32);
 }
 .like-btn:hover {

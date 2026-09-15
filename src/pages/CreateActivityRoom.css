@@ -150,6 +150,7 @@
   background: var(--gradient-primary);
   border-color: transparent;
   color: var(--brand-ink);
+  text-shadow: 0 1px 1px rgba(120, 30, 20, 0.25);
   box-shadow: 0 3px 12px rgba(255,107,107,0.28);
 }
 
