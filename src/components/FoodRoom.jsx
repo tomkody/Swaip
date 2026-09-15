@@ -343,7 +343,8 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
       const isAllDone = await recordSwipe(room.id, userToken.current, FOOD_CAT_DONE_NUMID, 'right', playerCount)
       if (isAllDone) {
         const allMatchIds = await fetchRoomMatches(room.id, userToken.current, playerCount)
-        const matchedCats = FOOD_CATS.filter(c => allMatchIds?.includes(c.numId))
+        if (allMatchIds === null) throw new Error('Could not read the picks — try confirming again')
+        const matchedCats = FOOD_CATS.filter(c => allMatchIds.includes(c.numId))
         await fetchAndTransitionToPlaces(matchedCats)
       }
     } catch (err) {

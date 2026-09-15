@@ -6,9 +6,9 @@ import { beforeEach, expect, it, vi } from 'vitest'
 const state = vi.hoisted(() => ({ tables: {} }))
 function builder(table) {
   const filters = []
-  let operation = 'select', payload
+  let operation = 'select', payload, countOnly = false
   const b = {
-    select() { return b }, order() { return b }, limit() { return b },
+    select(_cols, opts) { if (opts?.head) countOnly = true; return b }, order() { return b }, limit() { return b },
     eq(key, value) { filters.push(r => r[key] === value); return b },
     lt(key, value) { filters.push(r => r[key] < value); return b },
     in(key, values) { filters.push(r => values.includes(r[key])); return b },
@@ -20,7 +20,10 @@ function builder(table) {
         const rows = state.tables[table] ||= []
         if (operation === 'delete') state.tables[table] = rows.filter(r => !filters.every(f => f(r)))
         else if (operation !== 'select') rows.push(...(Array.isArray(payload) ? payload : [payload]))
-        return Promise.resolve({ data: rows.filter(r => filters.every(f => f(r))), error: null }).then(resolve, reject)
+        const matched = (state.tables[table] || []).filter(r => filters.every(f => f(r)))
+        // Like PostgREST: plain reads stop at 1000 rows; head+count reads return only the count.
+        if (countOnly) return Promise.resolve({ data: null, count: matched.length, error: null }).then(resolve, reject)
+        return Promise.resolve({ data: operation === 'select' ? matched.slice(0, 1000) : matched, error: null }).then(resolve, reject)
       } catch (e) { return Promise.reject(e).then(resolve, reject) }
     },
   }
@@ -34,7 +37,7 @@ vi.mock('../src/lib/analytics', () => ({ track: vi.fn() }))
 import { submitConversationSelections, getConversationMatches, fetchRoomPicks } from '../src/lib/room'
 import notify from '../api/notify'
 import places from '../api/places'
-import refreshMovies from '../api/refresh-movies'
+import refreshMovies, { writeCatalog } from '../api/refresh-movies'
 
 beforeEach(() => { state.tables = {}; vi.unstubAllEnvs(); vi.unstubAllGlobals() })
 
@@ -118,6 +121,16 @@ it('preserves the existing catalog when all TMDB detail requests fail', async ()
   expect(res.code).toBe(500)
   expect(state.tables.movie_catalog).toHaveLength(1)
   expect(state.tables.series_catalog).toHaveLength(1)
+})
+
+it('does not prune a catalog larger than the 1000-row read cap after a partial run', async () => {
+  const oldStamp = '2020-01-01T00:00:00Z'
+  state.tables.movie_catalog = Array.from({ length: 1500 }, (_, i) => ({ tmdb_id: 100000 + i, region: 'CZ', updated_at: oldStamp }))
+  const partial = Array.from({ length: 800 }, (_, i) => ({ tmdb_id: i + 1, region: 'CZ' }))   // 800 < 70% of 1500
+  const report = await writeCatalog((await import('@supabase/supabase-js')).createClient(), 'movie_catalog', partial, ['CZ'], '2026-09-16T04:00:00Z')
+  expect(report.before).toBe(1500)
+  expect(report.pruned).toBe(false)
+  expect(state.tables.movie_catalog.filter(r => r.updated_at === oldStamp)).toHaveLength(1500)
 })
 
 // Deferred, tracked: the room deck is rebuilt per player from the live

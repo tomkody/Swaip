@@ -13,11 +13,14 @@ const MIN_COMPLETE_RATIO = 0.7
 // Upsert rows into a catalog table, then prune rows in the refreshed regions
 // that this run didn't touch (titles that dropped out of the top list) — but
 // only when the run looks complete. Returns a small report for the response.
-async function writeCatalog(supabase, table, rows, regions, runStamp) {
-  const { data: existing, error: countErr } = await supabase
-    .from(table).select('tmdb_id').in('region', regions)
+export async function writeCatalog(supabase, table, rows, regions, runStamp) {
+  // Count, don't read: a plain select is capped at 1000 rows by the API, which
+  // made `before` ≤ 1000 on a ~6,000-row table and let a badly partial run
+  // count as complete and prune every other row.
+  const { count, error: countErr } = await supabase
+    .from(table).select('tmdb_id', { count: 'exact', head: true }).in('region', regions)
   if (countErr) throw countErr
-  const before = existing?.length ?? 0
+  const before = count ?? 0
   const complete = rows.length >= Math.max(1, Math.floor(before * MIN_COMPLETE_RATIO))
 
   const stamped = rows.map(r => ({ ...r, updated_at: runStamp }))

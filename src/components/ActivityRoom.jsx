@@ -355,7 +355,8 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       const isAllDone = await recordSwipe(room.id, userToken.current, ACT_CAT_DONE_NUMID, 'right', playerCount)
       if (isAllDone) {
         const allMatchIds = await fetchRoomMatches(room.id, userToken.current, playerCount)
-        const matchedCats = ACTIVITY_CATEGORIES.filter(c => allMatchIds?.includes(c.numId))
+        if (allMatchIds === null) throw new Error('Could not read the picks — try confirming again')
+        const matchedCats = ACTIVITY_CATEGORIES.filter(c => allMatchIds.includes(c.numId))
         await fetchAndTransitionToPlaces(matchedCats)
       }
     } catch (err) {

@@ -372,7 +372,9 @@ export async function fetchRoomMatches(roomId, userToken, playerCount = 2, senti
     .select(VOTE_COLUMNS)
     .eq('room_id', roomId)
 
-  if (error || !data) return []
+  // null = couldn't read (offline, 5xx). Callers keep what they have; an empty
+  // array would read as "no matches" and wipe the results and the top 3.
+  if (error || !data) return null
 
   // Count distinct users whose CURRENT vote is a like, and this user's own likes.
   const likersByItem = {}
