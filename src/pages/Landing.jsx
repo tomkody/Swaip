@@ -5,6 +5,7 @@ import SavedMatchesDrawer from '../components/SavedMatchesDrawer'
 import Footer from '../components/Footer'
 import { track } from '../lib/analytics'
 import { prefersReducedMotion } from '../lib/motion'
+import { getSavedDark, applyTheme, saveTheme } from '../lib/theme'
 import './Landing.css'
 
 // Category cards, same composition as the original homepage: the two
@@ -88,16 +89,11 @@ export default function Landing() {
   // new visitors to dark on its own, which meant the theme flipped the
   // moment you clicked through to create a room. Only persist when the user
   // actually toggles, so we never overwrite a choice they haven't made.
-  const [dark, setDark] = useState(() => {
-    const saved = localStorage.getItem('swaip-theme')
-    return saved === 'dark'
-  })
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
-  }, [dark])
+  const [dark, setDark] = useState(getSavedDark)
+  useEffect(() => { applyTheme(dark) }, [dark])
   const toggleDark = () => {
     const next = !dark
-    localStorage.setItem('swaip-theme', next ? 'dark' : 'light')
+    saveTheme(next)
     setDark(next)
   }
 
@@ -187,6 +183,9 @@ export default function Landing() {
                   const settled = demoStage === 'done' || demoStage === 'hide' || demoStage === 'refill'
                   const gone = settled || rel < 0
                   const top = rel === 0 && !settled
+                  // While the top card flies off, the next one already rises and
+                  // shows its poster, so there's never a blank card in the gap.
+                  const rising = rel === 1 && demoStage === 'out'
                   const cls = [
                     'lp-card',
                     gone ? 'is-gone' : '',
@@ -194,7 +193,7 @@ export default function Landing() {
                     top && (demoStage === 'stamp' || demoStage === 'out' || demoStatic) ? 'is-stamped' : '',
                     top && demoStage === 'out' ? (d.no ? 'is-out-left' : 'is-out') : '',
                     d.no ? 'lp-card--no' : '',
-                    rel > 0 ? `is-behind-${Math.min(rel, 2)}` : '',
+                    rising ? 'is-rising' : rel > 0 ? `is-behind-${Math.min(rel - (demoStage === 'out' ? 1 : 0), 2)}` : '',
                   ].join(' ')
                   return (
                     <div key={d.title} className={cls}>

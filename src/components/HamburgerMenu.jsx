@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { isAuthAvailable, getUser, onAuthChange, signInWithEmail, signOut } from '../lib/auth'
 import { track } from '../lib/analytics'
+import Icon from './Icon'
 import './HamburgerMenu.css'
 
 // Passwordless account section: enter an email, get a magic link. Signing in
@@ -34,19 +35,20 @@ function AccountSection() {
     return (
       <>
         <div className="hm-account">
-          <span className="hm-icon">👤</span>
+          <span className="hm-icon"><Icon name="users" size={17} /></span>
           <span className="hm-account-email">{user.email}</span>
         </div>
         <button className="hm-item" onClick={() => { signOut(); track('signed_out') }}>
-          <span className="hm-icon">🚪</span>
+          <span className="hm-icon"><Icon name="arrowRight" size={17} /></span>
           Sign out
         </button>
+        <div className="hm-divider" />
       </>
     )
   }
 
   if (status === 'sent') {
-    return <p className="hm-note">✉️ Check your inbox — we sent you a sign-in link.</p>
+    return <><p className="hm-note">Check your inbox, we sent you a sign-in link.</p><div className="hm-divider" /></>
   }
 
   return (
@@ -77,6 +79,7 @@ function AccountSection() {
         </button>
       </div>
       {status === 'error' && <p className="hm-signin-error">{errorMsg}</p>}
+      <div className="hm-divider" />
     </form>
   )
 }
@@ -136,26 +139,24 @@ export default function HamburgerMenu({ onSavedMatches, dark, onToggleDark }) {
         <div className="hm-panel" id="hm-panel">
           {/* Theme toggle */}
           <button className="hm-item" onClick={onToggleDark}>
-            <span className="hm-icon">{dark ? '☀️' : '🌙'}</span>
+            <span className="hm-icon"><Icon name={dark ? 'sun' : 'moon'} size={17} /></span>
             {dark ? 'Light mode' : 'Dark mode'}
           </button>
 
           {/* Saved matches */}
           <button className="hm-item" onClick={() => { setOpen(false); onSavedMatches(); }}>
-            <span className="hm-icon">🔖</span>
+            <span className="hm-icon"><Icon name="bookmark" size={17} /></span>
             Saved Matches
           </button>
 
           <div className="hm-divider" />
 
-          {/* Account */}
+          {/* Account (hidden until sign-in is enabled; brings its own divider) */}
           <AccountSection />
-
-          <div className="hm-divider" />
 
           {/* Contact */}
           <a className="hm-item" href="mailto:swaiptheapp@gmail.com">
-            <span className="hm-icon">✉️</span>
+            <span className="hm-icon"><Icon name="mail" size={17} /></span>
             swaiptheapp@gmail.com
           </a>
 
@@ -166,11 +167,7 @@ export default function HamburgerMenu({ onSavedMatches, dark, onToggleDark }) {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>
-              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-            </svg>
+            <span className="hm-icon"><Icon name="instagram" size={17} /></span>
             Follow us on Instagram
           </a>
         </div>

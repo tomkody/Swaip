@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import confetti from 'canvas-confetti'
 import { prefersReducedMotion } from '../lib/motion'
 import HomeLogo from './HomeLogo'
+import ThemeToggle from './ThemeToggle'
 import CategoryGrid from './CategoryGrid'
 import { seededShuffle } from '../lib/random'
 import { saveMatch } from '../lib/savedMatches'
@@ -719,7 +720,10 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
         <div className="act-header">
           <HomeLogo />
           <span className="act-phase-label">🍽️ What are you in the mood for?</span>
-          <span className="act-progress">{selectedCats.size} selected</span>
+          <div className="act-header-right">
+            <span className="act-progress">{selectedCats.size} selected</span>
+            <ThemeToggle />
+          </div>
         </div>
 
         <div className="act-grid-scroll">
@@ -769,6 +773,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
             ? likedPlaces.length > 0 && <span className="act-match-count">{likedPlaces.length} pick{likedPlaces.length !== 1 ? 's' : ''}</span>
             : matches.length > 0 && <span className="act-match-count">{matches.length} match{matches.length !== 1 ? 'es' : ''}</span>}
           <span className="act-progress">{currentIndex + 1} / {places.length}</span>
+          <ThemeToggle />
         </div>
       </div>
 

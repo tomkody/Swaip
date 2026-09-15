@@ -203,8 +203,8 @@ h1, h2, h3, h4 {
 .btn-secondary {
   background: var(--bg-card);
   color: var(--text);
-  border: none;
-  box-shadow: var(--shadow);
+  border: 1.5px solid var(--border);
+  box-shadow: var(--shadow-xs);
 }
 .btn-secondary:hover {
   background: var(--bg-card-hover);
@@ -224,29 +224,6 @@ h1, h2, h3, h4 {
 .btn-ghost:hover { opacity: 0.72; }
 
 /* ── Back button ─────────────────────────────────────────────────────────── */
-.back-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--bg-card);
-  border: none;
-  box-shadow: var(--shadow);
-  color: var(--text-muted);
-  margin: 0 0 20px 0;
-  padding: 0;
-  gap: 0;
-  font-size: 14px;
-  font-weight: 600;
-  transition: transform 0.15s cubic-bezier(0.4,0,0.2,1), box-shadow 0.15s;
-}
-.back-btn:active {
-  transform: scale(0.88);
-  box-shadow: var(--shadow-xs);
-}
-.back-btn:hover { box-shadow: var(--shadow-md); }
 
 /* ── Loader ──────────────────────────────────────────────────────────────── */
 .loader {
@@ -349,4 +326,16 @@ h1, h2, h3, h4 {
 @media (prefers-reduced-motion: reduce) {
   .celebrate-badge, .celebrate-badge--heart svg { animation: none; }
   .skeleton::after { animation: none; }
+}
+
+/* ── Streaming brand chips (see platformChipStyle in lib/platforms.js) ───── */
+.plat-chip {
+  --plat-c: var(--plat-color-light);
+  --plat-b: var(--plat-bg-light);
+  --plat-br: var(--plat-border-light);
+}
+[data-theme="dark"] .plat-chip {
+  --plat-c: var(--plat-color-dark);
+  --plat-b: var(--plat-bg-dark);
+  --plat-br: var(--plat-border-dark);
 }

@@ -1,4 +1,4 @@
-import { getPlatformMeta } from '../lib/platforms'
+import { getPlatformMeta, platformChipStyle } from '../lib/platforms'
 import './WhereToWatch.css'
 
 // Shows streaming availability for a movie/series.
@@ -19,8 +19,8 @@ export default function WhereToWatch({ platforms, title, className = '' }) {
           {metas.map(p => (
             <span
               key={p.id}
-              className="wtw-badge"
-              style={{ color: p.color, background: p.bg, borderColor: p.border }}
+              className="wtw-badge plat-chip"
+              style={platformChipStyle(p)}
             >
               {p.name}
             </span>

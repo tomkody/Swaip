@@ -127,26 +127,11 @@
   gap: 8px;
 }
 
-.match-share-btn {
-  width: 100%;
-  padding: 12px;
-  border-radius: var(--radius-pill);
-  font-size: 15px;
-  font-weight: 600;
-  background: var(--bg-surface);
-  border: none;
-  color: var(--text-muted);
-  transition: background 0.15s, color 0.15s;
-  letter-spacing: -0.1px;
+/* Secondary pair under the primary: equal weight, clearly buttons */
+.match-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
-.match-share-btn:hover:not(:disabled) {
-  background: var(--bg-secondary);
-  color: var(--text);
-}
-.match-share-btn:active:not(:disabled) {
-  transform: scale(0.97);
-}
-.match-share-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
+.match-actions-row .btn { font-size: 16px; }
+.match-actions-row .btn:disabled { opacity: 0.5; cursor: not-allowed; }

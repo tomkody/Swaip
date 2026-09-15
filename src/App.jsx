@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react'
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import Landing from './pages/Landing'
-import ThemeToggle from './components/ThemeToggle'
 import './App.css'
 
 // Route-level code-splitting: the landing page loads instantly from the main
@@ -27,12 +26,8 @@ function RouteFallback() {
 }
 
 export default function App() {
-  const location = useLocation()
-  const isLanding = location.pathname === '/'
-
   return (
     <div className="app">
-      {!isLanding && <ThemeToggle />}
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           <Route path="/" element={<Landing />} />

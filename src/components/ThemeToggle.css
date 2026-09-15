@@ -1,27 +1,21 @@
 .theme-toggle {
-  position: fixed;
-  top: 64px; /* below the header bookmark button — no overlap */
-  right: 16px;
-  z-index: 100;
+  flex-shrink: 0;
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: var(--bg-glass);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   color: var(--text-muted);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(12px);
-  transition: all 0.2s ease;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.1s ease;
 }
-
 .theme-toggle:hover {
   color: var(--text);
   border-color: var(--border-hover);
   background: var(--bg-card-hover);
 }
-
-.theme-toggle:active {
-  transform: scale(0.92);
-}
+.theme-toggle:active { transform: scale(0.92); }

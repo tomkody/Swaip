@@ -1,6 +1,6 @@
 .create-series {
   flex: 1;
-  padding: 24px 20px;
+  padding: 8px 20px 32px;
   max-width: 480px;
   margin: 0 auto;
   width: 100%;
@@ -114,7 +114,7 @@
   min-width: 0;
 }
 
-.create-series .filter-icon { font-size: 16px; flex-shrink: 0; }
+.create-series .filter-icon { display: inline-flex; flex-shrink: 0; color: var(--primary); }
 
 .create-series .filter-header-title {
   font-size: 14px;

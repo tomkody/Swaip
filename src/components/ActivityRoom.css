@@ -16,10 +16,11 @@
 /* Header */
 .act-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 12px 20px;
+  gap: 2px 12px;
+  padding: 8px 16px 10px;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -27,11 +28,13 @@
 }
 
 .act-phase-label {
+  order: 3;
+  flex-basis: 100%;
   font-size: 14px;
   font-weight: 700;
   color: var(--text);
   min-width: 0;
-  max-width: 60vw;
+  max-width: none;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

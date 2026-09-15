@@ -121,10 +121,13 @@
   margin-left: auto;
 }
 .lp-nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   font-size: 15px;
   font-weight: 500;
   color: var(--lp-muted);
-  padding: 8px 2px;
+  padding: 0 6px;
   transition: color 0.15s var(--lp-ease);
 }
 .lp-nav-link:hover { color: var(--lp-text); }
@@ -268,7 +271,7 @@
   background: var(--lp-bg-2);
   border-radius: 16px;
   padding: 0;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.42), 0 2px 6px rgba(0, 0, 0, 0.25);
   transform-origin: 50% 0;
   transition: transform 0.46s var(--lp-ease), opacity 0.46s var(--lp-ease);
 }
@@ -276,6 +279,19 @@
 .lp-card.is-top      { z-index: 3; }
 .lp-card.is-behind-1 { z-index: 2; transform: translateY(-9px) scale(0.95); }
 .lp-card.is-behind-2 { z-index: 1; transform: translateY(-18px) scale(0.9); }
+/* Cards waiting in the stack show as clean card edges, not slivers of the
+   next poster (the tops of posters read as a glitchy black/green strip).
+   The poster fades in as the card moves to the top. */
+.lp-card-poster { transition: opacity 0.3s var(--lp-ease); }
+.lp-card.is-behind-1,
+.lp-card.is-behind-2 {
+  background: var(--lp-bg-2);
+  border: 1px solid var(--lp-line-strong);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+.lp-card.is-behind-1 .lp-card-poster,
+.lp-card.is-behind-2 .lp-card-poster { opacity: 0; }
+.lp-card.is-rising { z-index: 3; }
 .lp-card.is-out  { z-index: 4; transform: translateX(120%) rotate(16deg); opacity: 0; }
 .lp-card.is-out-left { z-index: 4; transform: translateX(-120%) rotate(-16deg); opacity: 0; }
 .lp-card.is-gone { z-index: 0; transform: translateX(120%) rotate(16deg); opacity: 0; transition: none; }

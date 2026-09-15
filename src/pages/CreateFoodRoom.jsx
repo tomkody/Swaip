@@ -6,6 +6,7 @@ import { getBestPosition, accuracyLevel, formatAccuracy, accuracyAdvice, accurac
 import ModeToggle from '../components/ModeToggle'
 import { track } from '../lib/analytics'
 import './CreateActivityRoom.css'
+import AppHeader from '../components/AppHeader'
 
 const RADIUS_OPTIONS = [
   { label: '1 km', value: 1000 },
@@ -147,11 +148,7 @@ export default function CreateFoodRoom() {
 
   return (
     <div className="create-activity">
-      <button className="back-btn" onClick={() => navigate('/')} aria-label="Back to home">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
-        </svg>
-      </button>
+      <AppHeader onBack={() => navigate('/')} backLabel="Back to home" />
 
       <div className="create-activity-content">
         <div className="activity-hero-icon">🍽️</div>

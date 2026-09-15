@@ -4,6 +4,7 @@ import { saveMatch } from '../lib/savedMatches'
 import { useDialogFocus } from '../lib/useDialogFocus'
 import { prefersReducedMotion } from '../lib/motion'
 import WhereToWatch from './WhereToWatch'
+import Icon from './Icon'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import './MatchModal.css'
 
@@ -117,15 +118,18 @@ export default function MatchModal({ item, roomType, swipeCount = 0, matchCount 
         <div className="match-actions">
           {onContinue && (
             <button className="btn btn-primary" onClick={onContinue}>
-              Keep Swiping
+              Keep swiping
             </button>
           )}
-          <button className="btn btn-secondary" onClick={onDone}>
-            I'm Done
-          </button>
-          <button className="match-share-btn" onClick={handleShare} disabled={sharing}>
-            {sharing ? 'Generating…' : '📸 Share'}
-          </button>
+          <div className="match-actions-row">
+            <button className="btn btn-secondary" onClick={onDone}>
+              I'm done
+            </button>
+            <button className="btn btn-secondary" onClick={handleShare} disabled={sharing}>
+              <Icon name="image" size={17} />
+              {sharing ? 'Generating…' : 'Share'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

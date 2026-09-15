@@ -4,6 +4,7 @@ import { TOPICS } from '../lib/topics'
 import { createConversationRoom, getUserToken } from '../lib/room'
 import ModeToggle from '../components/ModeToggle'
 import './CreateConversationRoom.css'
+import AppHeader from '../components/AppHeader'
 
 export default function CreateConversationRoom() {
   const navigate = useNavigate()
@@ -42,13 +43,12 @@ export default function CreateConversationRoom() {
 
   return (
     <div className="create-conv">
-      <button className="back-btn" onClick={() => navigate('/')} aria-label="Back to home">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
-        </svg>
-      </button>
+      <AppHeader onBack={() => navigate('/')} backLabel="Back to home" />
 
-      <h1>Conversations</h1>
+      <div className="conv-hero">
+        <div className="conv-hero-icon" aria-hidden="true">💬</div>
+        <h1>Conversations</h1>
+      </div>
 
       <div style={{ maxWidth: 360, margin: '0 auto' }}>
         <ModeToggle solo={solo} onChange={setSolo} />

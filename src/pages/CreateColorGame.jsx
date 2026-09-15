@@ -4,6 +4,7 @@ import { createColorGameRoom, getUserToken } from '../lib/room'
 import ModeToggle from '../components/ModeToggle'
 import { ROUNDS_PER_GAME } from '../lib/colorGame'
 import './CreateColorGame.css'
+import AppHeader from '../components/AppHeader'
 
 export default function CreateColorGame() {
   const navigate = useNavigate()
@@ -26,11 +27,7 @@ export default function CreateColorGame() {
 
   return (
     <div className="create-cg">
-      <button className="back-btn" onClick={() => navigate('/')} aria-label="Back to home">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
-        </svg>
-      </button>
+      <AppHeader onBack={() => navigate('/')} backLabel="Back to home" />
 
       <div className="create-cg-hero" aria-hidden="true">🎨</div>
       <h1>Color Duel <span className="create-cg-beta">Beta</span></h1>

@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createMovieRoom, getUserToken } from '../lib/room'
-import { PLATFORMS } from '../lib/platforms'
+import { PLATFORMS, platformChipStyle } from '../lib/platforms'
 import ModeToggle from '../components/ModeToggle'
 import './CreateMovieRoom.css'
+import AppHeader from '../components/AppHeader'
+import Icon from '../components/Icon'
 
 const GENRE_OPTIONS = [
   'Action', 'Adventure', 'Animation', 'Biography',
@@ -86,11 +88,7 @@ export default function CreateMovieRoom() {
 
   return (
     <div className="create-movie">
-      <button className="back-btn" onClick={() => navigate('/')} aria-label="Back to home">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
-        </svg>
-      </button>
+      <AppHeader onBack={() => navigate('/')} backLabel="Back to home" />
 
       <div className="create-movie-content">
         <div className="movie-hero-icon">🎬</div>
@@ -108,7 +106,7 @@ export default function CreateMovieRoom() {
         <div className="filter-section" ref={platformRef}>
           <button className="filter-header" onClick={() => setPlatformOpen(o => !o)}>
             <span className="filter-header-left">
-              <span className="filter-icon">📡</span>
+              <span className="filter-icon"><Icon name="tv" size={17} /></span>
               <span className="filter-header-title">Streaming Platforms</span>
               <span className="filter-badge">{platformLabel}</span>
             </span>
@@ -136,8 +134,8 @@ export default function CreateMovieRoom() {
                   return (
                     <button
                       key={p.id}
-                      className={`filter-btn ${active ? 'active' : ''}`}
-                      style={active ? { background: p.bg, borderColor: p.border, color: p.color } : {}}
+                      className={`filter-btn ${active ? 'active plat-chip' : ''}`}
+                      style={active ? platformChipStyle(p) : {}}
                       onClick={() => togglePlatform(p.id)}
                     >
                       {active && <span className="filter-check">✓</span>}
@@ -154,7 +152,7 @@ export default function CreateMovieRoom() {
         <div className="filter-section" ref={genreRef}>
           <button className="filter-header" onClick={() => setGenreOpen(o => !o)}>
             <span className="filter-header-left">
-              <span className="filter-icon">🎭</span>
+              <span className="filter-icon"><Icon name="tag" size={17} /></span>
               <span className="filter-header-title">Genres</span>
               <span className="filter-badge">{genreLabel}</span>
             </span>

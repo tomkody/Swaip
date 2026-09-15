@@ -1,10 +1,10 @@
-import { Link } from 'react-router-dom'
+import AppHeader from '../components/AppHeader'
 import './Legal.css'
 
 export default function Terms() {
   return (
     <div className="legal-page">
-      <Link to="/" className="legal-back">← Back to Swaip</Link>
+      <AppHeader />
       <h1>Terms of Use</h1>
       <p className="legal-updated">Last updated: 23 August 2026</p>
 
@@ -44,12 +44,7 @@ export default function Terms() {
       <p>We may update these terms; continued use after changes means you accept them.</p>
 
       <h2>Contact</h2>
-      <p>Questions? Email <a href="mailto:hello@swaip.app">hello@swaip.app</a>.</p>
-
-      <p className="legal-note">
-        These terms are provided as a general template and are not legal advice. Please have them
-        reviewed before relying on them.
-      </p>
+      <p>Questions? Email <a href="mailto:swaiptheapp@gmail.com">swaiptheapp@gmail.com</a>.</p>
     </div>
   )
 }

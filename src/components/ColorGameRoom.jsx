@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import confetti from 'canvas-confetti'
 import HomeLogo from './HomeLogo'
+import ThemeToggle from './ThemeToggle'
 import { getUserToken, recordSwipe, fetchRoomPicks, subscribeToRoomPicks } from '../lib/room'
 import { puzzlesForRoom, hslToHex, scoreGuess, scoreVerdict, encodeGuess, decodeGuess, ROUNDS_PER_GAME } from '../lib/colorGame'
 import { track } from '../lib/analytics'
@@ -120,7 +121,7 @@ export default function ColorGameRoom({ room, onDone, isSolo = false }) {
     const tie = totals.mine === totals.theirs
     return (
       <div className="cg-room">
-        <div className="cg-header"><HomeLogo /><span className="cg-title">🎨 Color Duel</span><span /></div>
+        <div className="cg-header"><HomeLogo /><span className="cg-title">🎨 Color Duel</span><ThemeToggle /></div>
         <div className="cg-final">
           <div className="cg-final-emoji">{isSolo ? '🎨' : tie ? '🤝' : won ? '🏆' : '💐'}</div>
           <h2>{isSolo ? `${totals.mine} / ${puzzles.length * 100}` : tie ? "It's a tie!" : won ? 'You win!' : 'Partner wins!'}</h2>
@@ -156,7 +157,10 @@ export default function ColorGameRoom({ room, onDone, isSolo = false }) {
       <div className="cg-header">
         <HomeLogo />
         <span className="cg-title">🎨 Color Duel</span>
-        <span className="cg-progress">{round + 1} / {puzzles.length}</span>
+        <span className="cg-header-right">
+          <span className="cg-progress">{round + 1} / {puzzles.length}</span>
+          <ThemeToggle />
+        </span>
       </div>
 
       <div className="cg-body">

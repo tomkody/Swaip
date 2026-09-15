@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { Link } from 'react-router-dom'
 import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches, subscribeToSwipes, fetchRoomPicks, subscribeToRoomPicks, MOVIE_SENTINELS } from '../lib/room'
-import { getPlatformMeta, getWatchUrl } from '../lib/platforms'
+import { getPlatformMeta, getWatchUrl, platformChipStyle } from '../lib/platforms'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import { track } from '../lib/analytics'
+import AppHeader from './AppHeader'
+import Icon from './Icon'
 import './RankingView.css'
 
 // "Decide for us" — a little roulette over the matches for the moment nobody
@@ -52,7 +53,8 @@ function DecideForUs({ matches, emoji, onRolled }) {
         </div>
       )}
       <button className="rv-dice-btn" onClick={roll} disabled={spinning}>
-        {spinning ? '🎲 Rolling…' : spinIndex == null ? "🎲 Can't choose? Decide for us" : '🎲 Roll again'}
+        <Icon name="shuffle" size={17} />
+        {spinning ? 'Rolling…' : spinIndex == null ? "Can't choose? Decide for us" : 'Roll again'}
       </button>
     </div>
   )
@@ -72,8 +74,8 @@ function PlatformBadges({ platforms, title, roomType }) {
       {metas.map(p => title ? (
         <a
           key={p.id}
-          className="rv-plat"
-          style={{ color: p.color, background: p.bg, borderColor: p.border }}
+          className="rv-plat plat-chip"
+          style={platformChipStyle(p)}
           href={getWatchUrl(p.id, title)}
           target="_blank"
           rel="noopener noreferrer"
@@ -82,7 +84,7 @@ function PlatformBadges({ platforms, title, roomType }) {
           {p.name}
         </a>
       ) : (
-        <span key={p.id} className="rv-plat" style={{ color: p.color, background: p.bg, borderColor: p.border }}>
+        <span key={p.id} className="rv-plat plat-chip" style={platformChipStyle(p)}>
           {p.name}
         </span>
       ))}
@@ -335,7 +337,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
 
     return (
       <div className="rv-page">
-        <Link to="/" className="rv-brand" aria-label="Back to home"><span className="rv-brand-name">Swaip</span><span className="rv-brand-tld">.app</span></Link>
+        <div className="rv-header"><AppHeader /></div>
 
         {/* Hero */}
         <div className="rv-results-hero">
@@ -497,11 +499,9 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   className={`rv-refresh ${refreshing ? 'is-busy' : ''}`}
                   onClick={refreshAll}
                   disabled={refreshing}
-                  aria-label="Refresh partner top 3"
+                  aria-label="Refresh partner picks"
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 12a9 9 0 1 1-2.64-6.36" /><polyline points="21 3 21 9 15 9" />
-                  </svg>
+                  <Icon name="refresh" size={15} strokeWidth={2.4} />
                   {refreshing ? 'Refreshing' : 'Refresh'}
                 </button>
               </div>
@@ -601,10 +601,13 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
         {/* What the partner / group picked — live, with manual refresh */}
         {!isSolo && (() => {
           const mutual = new Set(picks?.mutualIds || [])
-          const partnerItems = (picks?.partnerIds || [])
+          const matchIds = new Set(matches.map(m => m.id))
+          const allPartnerItems = (picks?.partnerIds || [])
             .map(id => movies.find(m => m.id === id))
             .filter(Boolean)
-            .sort((a, b) => (mutual.has(b.id) ? 1 : 0) - (mutual.has(a.id) ? 1 : 0))
+          // Matches are already listed above — show only what they liked on their own.
+          const partnerItems = allPartnerItems.filter(m => !mutual.has(m.id) && !matchIds.has(m.id))
+          const hiddenMatches = allPartnerItems.length - partnerItems.length
           const groupWord = playerCount > 2 ? 'the group' : 'your partner'
           const othersDone = picks?.othersDone || 0
           const status = picks == null
@@ -619,29 +622,31 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
             <div className="rv-match-list rv-partner-block">
               <div className="rv-partner-head">
                 <div className="rv-partner-headtext">
-                  <p className="rv-label rv-label--tight">What {groupWord} picked</p>
+                  <p className="rv-label rv-label--tight">{playerCount > 2 ? 'Also liked by the group' : 'Also liked by your partner'}</p>
                   <p className="rv-partner-status">
                     {status}{agoLabel ? ` · ${agoLabel}` : ''}
                   </p>
                 </div>
-                <button
-                  className={`rv-refresh ${refreshing ? 'is-busy' : ''}`}
-                  onClick={refreshAll}
-                  disabled={refreshing}
-                  aria-label="Refresh partner picks"
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 12a9 9 0 1 1-2.64-6.36" /><polyline points="21 3 21 9 15 9" />
-                  </svg>
-                  {refreshing ? 'Refreshing' : 'Refresh'}
-                </button>
+                {rankingsOff && (
+                  <button
+                    className={`rv-refresh ${refreshing ? 'is-busy' : ''}`}
+                    onClick={refreshAll}
+                    disabled={refreshing}
+                    aria-label="Refresh partner picks"
+                  >
+                    <Icon name="refresh" size={15} strokeWidth={2.4} />
+                    {refreshing ? 'Refreshing' : 'Refresh'}
+                  </button>
+                )}
               </div>
 
               {partnerItems.length === 0 ? (
                 <p className="rv-empty">
-                  {othersDone > 0
-                    ? `${playerCount > 2 ? 'Nobody' : 'They'} picked anything this time.`
-                    : `Nothing yet — you'll see picks here as ${groupWord} swipes.`}
+                  {hiddenMatches > 0
+                    ? `Everything ${groupWord} liked is already in your matches.`
+                    : othersDone > 0
+                      ? `${playerCount > 2 ? 'Nobody' : 'They'} picked anything this time.`
+                      : `Nothing yet. You'll see picks here as ${groupWord} swipes.`}
                 </p>
               ) : (
                 partnerItems.map(m => {
@@ -679,7 +684,8 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
             onClick={handleShare}
             disabled={sharing || matches.length === 0}
           >
-            {sharing ? '⏳ Generating…' : '📸 Share Results'}
+            <Icon name="image" size={17} />
+            {sharing ? 'Generating…' : 'Share results'}
           </button>
           <button className="btn btn-primary rv-submit" onClick={onDone}>
             Start New Room
@@ -692,10 +698,12 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
   // ── RANKING ───────────────────────────────────────────────────────
   const maxPicks = Math.min(matches.length, 3)
   const isInTop3 = id => top3.some(m => m.id === id)
+  const likedOnly = liked.filter(m => !matches.some(x => x.id === m.id))
   const rankOf = id => top3.findIndex(m => m.id === id) + 1
 
   return (
     <div className="rv-page">
+      <div className="rv-header"><AppHeader /></div>
       <div className="rv-ranking-header">
         <h2>Pick Your Top {maxPicks > 0 ? maxPicks : ''}</h2>
         <p>{matches.length} {isSolo ? (matches.length === 1 ? 'pick' : 'picks') : (matches.length === 1 ? 'match' : 'matches')} · tap to rank · drag to reorder</p>
@@ -764,11 +772,11 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
       </div>
 
       {/* My full selection — all movies I swiped right on (together mode only) */}
-      {liked.length > 0 && !isSolo && (
+      {!isSolo && likedOnly.length > 0 && (
         <div className="rv-match-list rv-my-selection">
-          <p className="rv-label">👤 My Selection ({liked.length})</p>
-          <p className="rv-selection-note">Everything you liked — waiting to see what your partner picked too.</p>
-          {liked.map(m => {
+          <p className="rv-label">Only you liked ({likedOnly.length})</p>
+          <p className="rv-selection-note">Not a match yet. These turn into matches if {playerCount > 2 ? 'everyone else' : 'your partner'} likes them too.</p>
+          {likedOnly.map(m => {
             const isMatch = matches.some(x => x.id === m.id)
             return (
               <div key={m.id} className={`rv-match-item rv-selection-item ${isMatch ? 'rv-selection-matched' : ''}`}>
@@ -789,7 +797,8 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
 
       <div className="rv-footer">
         <button className="btn btn-primary rv-submit" onClick={handleSubmit} disabled={submitting}>
-          {submitting ? 'Saving…' : top3.length > 0 ? `Lock In My Top ${top3.length} 🔒` : 'Skip & See Results'}
+          {top3.length > 0 && !submitting && <Icon name="lock" size={17} strokeWidth={2.4} />}
+          {submitting ? 'Saving…' : top3.length > 0 ? `Lock in my top ${top3.length}` : 'Skip & see results'}
         </button>
       </div>
     </div>

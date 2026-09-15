@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { getSavedMatches, removeMatch, syncSavedMatches } from '../lib/savedMatches'
 import { useDialogFocus } from '../lib/useDialogFocus'
+import Icon from './Icon'
 import './SavedMatchesDrawer.css'
 
 const CATEGORY_LABELS = {
@@ -60,7 +61,7 @@ export default function SavedMatchesDrawer({ open, onClose }) {
         <div className="drawer-header">
           <div className="drawer-title-row">
             <span className="drawer-title">Saved Matches</span>
-            <span className="drawer-count">{matches.length}</span>
+            {matches.length > 0 && <span className="drawer-count">{matches.length}</span>}
           </div>
           <button className="drawer-close" onClick={onClose} aria-label="Close">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -72,9 +73,9 @@ export default function SavedMatchesDrawer({ open, onClose }) {
         <div className="drawer-body">
           {matches.length === 0 ? (
             <div className="drawer-empty">
-              <div className="drawer-empty-icon">🔖</div>
+              <div className="drawer-empty-icon" aria-hidden="true"><Icon name="bookmark" size={30} /></div>
               <p>No saved matches yet.</p>
-              <p className="drawer-empty-hint">Matches are saved automatically every time you and your partner agree on something!</p>
+              <p className="drawer-empty-hint">Every time you and your partner agree on something, it lands here automatically.</p>
             </div>
           ) : (
             categories.map(cat => {
@@ -106,7 +107,7 @@ export default function SavedMatchesDrawer({ open, onClose }) {
                         <button
                           className="drawer-remove"
                           onClick={() => handleRemove(m.id, m.category)}
-                          aria-label="Remove"
+                          aria-label={`Remove ${m.title}`}
                           title="Remove"
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">

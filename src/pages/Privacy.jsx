@@ -1,10 +1,10 @@
-import { Link } from 'react-router-dom'
+import AppHeader from '../components/AppHeader'
 import './Legal.css'
 
 export default function Privacy() {
   return (
     <div className="legal-page">
-      <Link to="/" className="legal-back">← Back to Swaip</Link>
+      <AppHeader />
       <h1>Privacy Policy</h1>
       <p className="legal-updated">Last updated: 23 August 2026</p>
 
@@ -74,12 +74,7 @@ export default function Privacy() {
       <p>We may update this policy; we'll revise the date above when we do.</p>
 
       <h2>Contact</h2>
-      <p>Questions? Email <a href="mailto:hello@swaip.app">hello@swaip.app</a>.</p>
-
-      <p className="legal-note">
-        This policy is provided as a general template and is not legal advice. Please have it
-        reviewed against your specific setup and applicable laws before relying on it.
-      </p>
+      <p>Questions? Email <a href="mailto:swaiptheapp@gmail.com">swaiptheapp@gmail.com</a>.</p>
     </div>
   )
 }

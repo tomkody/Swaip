@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import QRCode from 'qrcode'
 import { track } from '../lib/analytics'
+import Icon from './Icon'
 import './InvitePanel.css'
 
 // Per-type invite copy — the message that lands in the partner's DM/text.
@@ -48,20 +49,24 @@ export default function InvitePanel({ roomId, type = 'movies', onInteract }) {
   return (
     <div className="invite">
       <button className="btn btn-primary invite-primary" onClick={handleShare}>
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-        </svg>
+        <Icon name="share" size={17} strokeWidth={2.4} />
         Send invite
       </button>
 
-      <button className="invite-link" onClick={handleCopy}>
-        {copied ? '✓ Link copied' : 'Copy link instead'}
-      </button>
-
-      <button className="invite-qr-toggle" onClick={() => { setShowQr(v => !v); onInteract?.() }}>
-        {showQr ? 'Hide QR code' : 'Show QR code'}
-      </button>
+      <div className="invite-row">
+        <button className="invite-secondary" onClick={handleCopy}>
+          <Icon name={copied ? 'check' : 'link'} size={16} />
+          {copied ? 'Link copied' : 'Copy link'}
+        </button>
+        <button
+          className="invite-secondary"
+          onClick={() => { setShowQr(v => !v); onInteract?.() }}
+          aria-expanded={showQr}
+        >
+          <Icon name="qr" size={16} />
+          {showQr ? 'Hide QR' : 'QR code'}
+        </button>
+      </div>
 
       {showQr && qr && (
         <div className="invite-qr">

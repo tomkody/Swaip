@@ -17,8 +17,9 @@
 }
 
 /* Header */
+.rv-header { padding: 8px 20px 0; }
 .rv-ranking-header {
-  padding: 20px 20px 12px;
+  padding: 8px 20px 12px;
   text-align: center;
 }
 .rv-ranking-header h2 {
@@ -423,7 +424,7 @@
 /* Results hero */
 .rv-results-hero {
   text-align: center;
-  padding: 28px 20px 16px;
+  padding: 12px 20px 16px;
 }
 .rv-results-hero h2 {
   font-size: 26px;
@@ -477,21 +478,6 @@ a.rv-plat:hover { filter: brightness(1.08); }
 a.rv-plat:active { transform: scale(0.96); }
 
 /* swaip.app wordmark on the results screen */
-.rv-brand {
-  display: block;
-  text-align: center;
-  padding: 20px 0 0;
-  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  letter-spacing: -0.4px;
-  text-decoration: none;
-  cursor: pointer;
-}
-.rv-brand:hover { opacity: 0.75; }
-.rv-brand-name { color: var(--text); }
-.rv-brand-tld { color: var(--text-muted); }
 .rv-result-both {
   border-color: rgba(74, 222, 128, 0.4);
   background: rgba(74, 222, 128, 0.04);
@@ -852,6 +838,10 @@ a.rv-plat:active { transform: scale(0.96); }
   margin: 0 auto 18px;
 }
 .rv-dice-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
   font-size: 14px;
   font-weight: 700;
   color: var(--text);

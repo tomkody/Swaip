@@ -232,3 +232,5 @@
 .cg-final-round-title { flex: 1; text-align: left; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cg-final-pts { font-weight: 700; color: var(--text-muted); min-width: 28px; text-align: right; }
 .cg-attrib { font-size: 11px; color: var(--text-muted); opacity: 0.6; margin: 0; }
+
+.cg-header-right { display: flex; align-items: center; gap: 8px; }

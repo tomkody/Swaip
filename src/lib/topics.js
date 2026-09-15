@@ -203,7 +203,7 @@ export const TOPICS = [
   {
     id: 'the-unknown',
     name: 'The Unknown',
-    emoji: '🌌',
+    emoji: '🔮',
     subtopics: [
       { id: 'god-belief', name: 'God & Belief', emoji: '🙏', desc: 'Faith, doubt, and meaning.', questions: [
         'Would you actually want there to be a God who sees everything you do?',

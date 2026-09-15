@@ -3,6 +3,12 @@
   <head>
     <meta charset="UTF-8" />
 
+    <!-- Apply the saved colour theme before first paint (no light flash for
+         people who chose dark). New visitors get light. -->
+    <script>
+      try { document.documentElement.setAttribute('data-theme', localStorage.getItem('swaip-theme') === 'dark' ? 'dark' : 'light') } catch (e) {}
+    </script>
+
     <!-- Viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 

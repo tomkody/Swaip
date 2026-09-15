@@ -1,11 +1,29 @@
 export const PLATFORMS = [
-  { id: 'netflix',   name: 'Netflix',      color: '#E50914', bg: 'rgba(229,9,20,0.15)',   border: 'rgba(229,9,20,0.4)' },
-  { id: 'disney',    name: 'Disney+',      color: '#0063E5', bg: 'rgba(0,99,229,0.15)',   border: 'rgba(0,99,229,0.4)' },
-  { id: 'max',       name: 'HBO Max',       color: '#731CF8', bg: 'rgba(115,28,248,0.15)', border: 'rgba(115,28,248,0.4)' },
-  { id: 'prime',     name: 'Prime Video',  color: '#00A8E0', bg: 'rgba(0,168,224,0.15)',  border: 'rgba(0,168,224,0.4)' },
-  { id: 'apple',     name: 'Apple TV+',    color: '#ffffff', bg: 'rgba(0,0,0,0.85)',      border: 'rgba(0,0,0,0.9)' },
-  { id: 'paramount', name: 'Paramount+',   color: '#0064FF', bg: 'rgba(0,100,255,0.15)',  border: 'rgba(0,100,255,0.4)' },
+  { id: 'netflix',   name: 'Netflix',      color: '#E50914', bg: 'rgba(229,9,20,0.15)',   border: 'rgba(229,9,20,0.4)',
+    dark: { color: '#FF6B72', bg: 'rgba(229,9,20,0.22)',     border: 'rgba(255,107,114,0.45)' } },
+  { id: 'disney',    name: 'Disney+',      color: '#0063E5', bg: 'rgba(0,99,229,0.15)',   border: 'rgba(0,99,229,0.4)',
+    dark: { color: '#8DB8FF', bg: 'rgba(0,99,229,0.24)',     border: 'rgba(141,184,255,0.45)' } },
+  { id: 'max',       name: 'HBO Max',       color: '#731CF8', bg: 'rgba(115,28,248,0.15)', border: 'rgba(115,28,248,0.4)',
+    dark: { color: '#C7A8FF', bg: 'rgba(115,28,248,0.26)',   border: 'rgba(199,168,255,0.45)' } },
+  { id: 'prime',     name: 'Prime Video',  color: '#00A8E0', bg: 'rgba(0,168,224,0.15)',  border: 'rgba(0,168,224,0.4)',
+    dark: { color: '#6FD8F7', bg: 'rgba(0,168,224,0.20)',    border: 'rgba(111,216,247,0.42)' } },
+  { id: 'apple',     name: 'Apple TV+',    color: '#ffffff', bg: 'rgba(0,0,0,0.85)',      border: 'rgba(0,0,0,0.9)',
+    dark: { color: '#FFFFFF', bg: 'rgba(255,255,255,0.10)',  border: 'rgba(255,255,255,0.30)' } },
+  { id: 'paramount', name: 'Paramount+',   color: '#0064FF', bg: 'rgba(0,100,255,0.15)',  border: 'rgba(0,100,255,0.4)',
+    dark: { color: '#8FB6FF', bg: 'rgba(0,100,255,0.24)',    border: 'rgba(143,182,255,0.45)' } },
 ]
+
+// Inline style for a brand chip that reads in both themes. The brand colours
+// are passed as custom properties and `.plat-chip` (index.css) picks the light
+// or dark set; brand blue text on a dark surface was nearly unreadable.
+export function platformChipStyle(p) {
+  const d = p.dark || {}
+  return {
+    '--plat-color-light': p.color, '--plat-bg-light': p.bg, '--plat-border-light': p.border,
+    '--plat-color-dark': d.color || p.color, '--plat-bg-dark': d.bg || p.bg, '--plat-border-dark': d.border || p.border,
+    color: 'var(--plat-c)', background: 'var(--plat-b)', borderColor: 'var(--plat-br)',
+  }
+}
 
 // Look up display metadata (name, colors) for a platform id.
 const PLATFORM_BY_ID = Object.fromEntries(PLATFORMS.map(p => [p.id, p]))

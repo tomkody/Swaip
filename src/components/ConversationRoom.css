@@ -408,9 +408,11 @@
 .conv-results-topbar {
   width: 100%;
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
   padding: 8px 0 16px;
 }
+.conv-swipe-topbar-right { display: flex; align-items: center; gap: 8px; }
 
 .conv-results-actions {
   display: flex;

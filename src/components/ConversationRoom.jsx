@@ -10,6 +10,8 @@ import {
 } from '../lib/room'
 import SwipeCard from './SwipeCard'
 import HomeLogo from './HomeLogo'
+import ThemeToggle from './ThemeToggle'
+import Icon from './Icon'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import { track } from '../lib/analytics'
 import { seededShuffle } from '../lib/random'
@@ -158,7 +160,7 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
 
     return (
       <div className="conv-results-page">
-        <div className="conv-results-topbar"><HomeLogo /></div>
+        <div className="conv-results-topbar"><HomeLogo /><ThemeToggle /></div>
         <div className="conv-results">
           {matchedCards.length > 0 ? (
             <>
@@ -204,7 +206,8 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
           <div className="conv-results-actions">
             {matchedCards.length > 0 && (
               <button className="btn conv-share-btn" onClick={handleShare} disabled={sharing}>
-                {sharing ? '⏳ Generating…' : '📸 Share'}
+                <Icon name="image" size={17} />
+                {sharing ? 'Generating…' : 'Share'}
               </button>
             )}
             <button className="btn btn-primary results-btn" onClick={onDone}>
@@ -261,7 +264,10 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
     <div className="conv-swipe-page">
       <div className="conv-swipe-topbar">
         <HomeLogo />
-        <span className="conv-swipe-progress">{currentIndex + 1} / {cards.length}</span>
+        <div className="conv-swipe-topbar-right">
+          <span className="conv-swipe-progress">{currentIndex + 1} / {cards.length}</span>
+          <ThemeToggle />
+        </div>
       </div>
       <div className="conv-swipe-header">
         <p className="conv-swipe-label">{isSolo ? 'Swipe right on topics you want to explore' : 'Swipe right on topics you want to talk about'}</p>

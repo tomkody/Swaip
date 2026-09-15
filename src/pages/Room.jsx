@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, subscribeToRoomActive, subscribeToRoomPicks, fetchRoomPicks, fetchPartnerSwipeCount, markRoomActive, fetchRoomMatches, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID, MOVIE_SENTINELS } from '../lib/room'
 import { PLATFORMS } from '../lib/platforms'
 import { fetchTopRatedMovies } from '../lib/tmdb'
@@ -13,9 +13,32 @@ import FoodRoom from '../components/FoodRoom'
 import ColorGameRoom from '../components/ColorGameRoom'
 import RankingView from '../components/RankingView'
 import InvitePanel from '../components/InvitePanel'
+import AppHeader from '../components/AppHeader'
+import Icon from '../components/Icon'
 import { track } from '../lib/analytics'
 import { isPushSupported, enablePushForRoom, notifyRoom } from '../lib/push'
 import './Room.css'
+
+// Centred room states (join, waiting, transitions, errors) share one shell:
+// the app header on top, the content centred in the remaining height.
+function RoomShell({ children, className = '' }) {
+  return (
+    <div className="room-page">
+      <AppHeader />
+      <div className={`room-center ${className}`}>{children}</div>
+    </div>
+  )
+}
+
+// What the invited person is about to do, in plain words.
+const JOIN_COPY = {
+  movies:        { emoji: '🎬', label: 'Movies',        title: 'Pick a movie together',        desc: 'Swipe right on anything you’d watch tonight. Swaip only shows you the titles you both liked.', cta: 'Start swiping' },
+  series:        { emoji: '📺', label: 'TV Series',     title: 'Pick your next show together', desc: 'Swipe right on shows you’d binge. Swaip only shows you the ones you both liked.', cta: 'Start swiping' },
+  food:          { emoji: '🍽️', label: 'Food & Drinks', title: 'Decide where to eat',          desc: 'Pick the cuisines you fancy, then swipe on real places nearby. You’ll see the ones you both want.', cta: 'See the options' },
+  activities:    { emoji: '🎯', label: 'Activities',    title: 'Find something to do',         desc: 'Pick what you’re up for, then swipe on real places nearby. You’ll see the ones you both want.', cta: 'See the options' },
+  conversations: { emoji: '💬', label: 'Conversations', title: 'Find something to talk about', desc: 'Pick the topics you’d love to talk about. You’ll only see the ones you both chose.', cta: 'See the topics' },
+  colorgame:     { emoji: '🎨', label: 'Color Duel',    title: 'Play Color Duel',              desc: 'Posters with the colour drained. Mix the shade you remember, closest guess wins the round.', cta: 'Start guessing' },
+}
 
 function parseRoomFilters(raw) {
   const none = { platforms: [], genres: [], region: undefined, prefs: normalizePrefs() }
@@ -287,103 +310,123 @@ export default function Room() {
 
   if (error) {
     return (
-      <div className="room-center">
+      <RoomShell>
         <p className="error-text">{error}</p>
         <button className="btn btn-primary" onClick={() => navigate('/')}>
           Go Home
         </button>
-      </div>
+      </RoomShell>
     )
   }
 
-  // Joiner welcome screen
+  // Joiner welcome screen — the first thing an invited person ever sees of
+  // Swaip, so it says what the app is, what happens next, and shows the deck.
   if (!isCreator && !hasJoined) {
-    const typeInfo = {
-      movies:        { emoji: '🎬', label: 'Movies',        desc: 'Swipe right on movies you want to watch. When you both like the same one — it\'s a match!' },
-      series:        { emoji: '📺', label: 'TV Series',     desc: 'Swipe right on shows you want to binge. When you both like the same one — it\'s a match!' },
-      conversations: { emoji: '💬', label: 'Conversations', desc: 'Pick the topics you\'d love to talk about. You\'ll only see topics you both chose.' },
-      activities:    { emoji: '🎯', label: 'Activities',    desc: 'Pick activities you\'re up for. You\'ll see which ones you both want to do.' },
-      food:          { emoji: '🍽️', label: 'Food & Drinks', desc: 'Swipe on cuisines first, then on real restaurants nearby. Time to eat!' },
-      colorgame:     { emoji: '🎨', label: 'Color Duel',    desc: 'Posters with the colour drained — mix the shade you remember. Closest guess wins the round!' },
-    }
-    const info = typeInfo[room.type] || typeInfo.movies
+    const info = JOIN_COPY[room.type] || JOIN_COPY.movies
+    const group = getRoomPlayerCount(room) > 2
+    const teaser = (room.type === 'movies' || room.type === 'series')
+      ? movies.slice(0, 3).filter(m => m.poster)
+      : []
+    const join = () => { markRoomActive(roomId); notifyRoom(roomId, 'joined', { from: userToken.current }); track('joined', { type: room.type }); setHasJoined(true) }
 
     return (
-      <div className="room-center">
+      <RoomShell className="join-center">
         <div className="join-screen">
-          <div className="join-icon">{info.emoji}</div>
-          <p className="join-invited">{getRoomPlayerCount(room) > 2 ? `You've been invited to a group!` : `Your friend invited you!`}</p>
-          <h2 className="join-title">{info.label} Room</h2>
+          {teaser.length === 3 ? (
+            <div className="join-posters" aria-hidden="true">
+              {teaser.map((m, i) => (
+                <img key={m.id} src={m.poster} alt="" className={`join-poster join-poster--${i}`} width="120" height="180" />
+              ))}
+            </div>
+          ) : (
+            <div className="join-icon" aria-hidden="true">{info.emoji}</div>
+          )}
+          <p className="join-invited">{group ? 'You’ve been invited to a group' : 'Your friend invited you'}</p>
+          <h1 className="join-title">{info.title}</h1>
           <p className="join-desc">{info.desc}</p>
+          <ol className="join-steps">
+            <li><span>1</span>You swipe on your phone</li>
+            <li><span>2</span>{group ? 'Everyone swipes on theirs' : 'They swipe on theirs'}</li>
+            <li><span>3</span>You see what you agree on</li>
+          </ol>
           {othersProgress > 0 && (
             <p className="join-progress">
-              {getRoomPlayerCount(room) > 2 ? 'The group has' : 'Your friend has'} already made <strong>{othersProgress}</strong> {othersProgress === 1 ? 'pick' : 'picks'} — jump in!
+              {group ? 'The group has' : 'Your friend has'} already made <strong>{othersProgress}</strong> {othersProgress === 1 ? 'pick' : 'picks'}
             </p>
           )}
-          <button className="btn btn-primary join-btn" onClick={() => { markRoomActive(roomId); notifyRoom(roomId, 'joined', { from: userToken.current }); track('joined', { type: room.type }); setHasJoined(true) }}>
-            {room.type === 'movies' || room.type === 'series' ? 'Start Swiping 👆' : room.type === 'colorgame' ? 'Start Guessing 👆' : 'See the options 👆'}
+          <button className="btn btn-primary join-btn" onClick={join}>
+            {info.cta} <Icon name="arrowRight" size={18} strokeWidth={2.4} />
           </button>
+          <p className="join-fine">Free · No sign-up · About two minutes</p>
         </div>
-      </div>
+      </RoomShell>
     )
   }
 
   // Partner just joined — show transition screen to creator
   if (partnerJustJoined) {
     return (
-      <div className="room-center">
+      <RoomShell>
         <div className="partner-joined">
           <div className="partner-joined-icon">🎉</div>
           <h2>Your friend joined!</h2>
           <p>Starting now…</p>
           <div className="partner-joined-bar"><div className="partner-joined-fill" /></div>
         </div>
-      </div>
+      </RoomShell>
     )
   }
 
-  // Creator waiting for partner
+  // Creator waiting for partner — one primary action (send the invite), two
+  // equal secondary ones inside InvitePanel, then quiet text options.
   if (isCreator && !partnerJoined) {
     const pc = getRoomPlayerCount(room)
+    const category = room.type === 'movies' ? '🎬 Movies' : room.type === 'series' ? '📺 TV Series' : room.type === 'activities' ? '🎯 Activities' : room.type === 'food' ? '🍽️ Food & Drinks' : room.type === 'colorgame' ? '🎨 Color Duel' : `💬 ${room.topic_name}`
     return (
-      <div className="room-center">
-        <div className="waiting-category">
-          {room.type === 'movies' ? '🎬 Movies' : room.type === 'series' ? '📺 TV Series' : room.type === 'activities' ? '🎯 Activities' : room.type === 'food' ? '🍽️ Food & Drinks' : room.type === 'colorgame' ? '🎨 Color Duel' : `💬 ${room.topic_name}`}
-        </div>
+      <RoomShell>
         <div className="waiting">
+          <div className="waiting-category">{category}</div>
           <div className="waiting-pulse" aria-hidden="true"><span></span><span></span><span></span></div>
-          <h2>{pc > 2 ? `Waiting for your group` : `Waiting for your partner`}</h2>
+          <h1 className="waiting-title">{pc > 2 ? 'Waiting for your group' : 'Waiting for your partner'}</h1>
+          <p className="waiting-sub">
+            {pc > 2 ? 'Send everyone the link. You all swipe the same deck.' : 'Send them the link. You both swipe the same deck.'}
+          </p>
           <InvitePanel roomId={roomId} type={room.type} onInteract={() => setInvited(true)} />
-          {isPushSupported() && pushState !== 'enabled' && (
+
+          <div className="waiting-quiet">
+            {isPushSupported() && pushState !== 'enabled' && (
+              <button
+                className="waiting-text-btn"
+                onClick={async () => {
+                  const result = await enablePushForRoom(roomId, userToken.current)
+                  setPushState(result === 'enabled' ? 'enabled' : result)
+                  if (result === 'enabled') track('push_enabled', { type: room.type })
+                }}
+              >
+                <Icon name="bell" size={16} />
+                {pushState === 'denied' ? 'Notifications are blocked in your browser' : 'Notify me when they join'}
+              </button>
+            )}
+            {pushState === 'enabled' && (
+              <p className="push-enabled-note"><Icon name="check" size={15} /> We’ll ping you, feel free to close this tab.</p>
+            )}
+            {remindSolo && !invited && (
+              <p className="skip-wait-reminder">Don’t forget to send the link to your partner.</p>
+            )}
             <button
-              className="push-enable-btn"
-              onClick={async () => {
-                const result = await enablePushForRoom(roomId, userToken.current)
-                setPushState(result === 'enabled' ? 'enabled' : result)
-                if (result === 'enabled') track('push_enabled', { type: room.type })
+              className="waiting-text-btn"
+              onClick={() => {
+                // First tap without ever sharing → gently remind, don't start yet.
+                if (!invited && !remindSolo) { setRemindSolo(true); return }
+                setPartnerJoined(true)
               }}
             >
-              {pushState === 'denied' ? 'Notifications blocked in browser settings' : '🔔 Notify me when they join'}
+              {remindSolo && !invited ? 'Start solo anyway' : 'Start swiping on my own'}
+              <Icon name="arrowRight" size={16} />
             </button>
-          )}
-          {pushState === 'enabled' && (
-            <p className="push-enabled-note">🔔 We'll ping you — feel free to close this tab.</p>
-          )}
-          {remindSolo && !invited && (
-            <p className="skip-wait-reminder">Don't forget to send a link to your partner 🙂</p>
-          )}
-          <button
-            className="btn skip-wait"
-            onClick={() => {
-              // First tap without ever sharing → gently remind, don't start yet.
-              if (!invited && !remindSolo) { setRemindSolo(true); return }
-              setPartnerJoined(true)
-            }}
-          >
-            {remindSolo && !invited ? 'Start solo anyway' : 'You can start swiping solo'}
-          </button>
+          </div>
         </div>
-      </div>
+      </RoomShell>
     )
   }
 
@@ -410,10 +453,10 @@ export default function Room() {
   // Movie/Series mode — done (all swiped or clicked "I'm done")
   if (fetchingDone) {
     return (
-      <div className="room-center">
+      <RoomShell>
         <div className="loader" />
         <p style={{ color: 'var(--text-muted)', marginTop: 12 }}>Finding your matches…</p>
-      </div>
+      </RoomShell>
     )
   }
 
@@ -429,28 +472,22 @@ export default function Room() {
 
   return (
     <div className="room">
-      <div className="room-header">
-        <div className="room-header-side" />
-        <Link to="/" className="room-home-link" aria-label="Home">
-          <span className="room-logo-text">Swaip</span>
-        </Link>
-        <div className="room-header-side room-header-right">
-          {isSolo ? (
-            liked.length > 0 && (
-              <span className="room-matches">
-                {liked.length} pick{liked.length !== 1 ? 's' : ''}
-              </span>
-            )
-          ) : (
-            matches.length > 0 && (
-              <span className="room-matches">
-                {matches.length} match{matches.length !== 1 ? 'es' : ''}
-              </span>
-            )
-          )}
-          <span className="room-progress">{currentIndex + 1} / {movies.length}</span>
-        </div>
-      </div>
+      <AppHeader className="room-app-header">
+        {isSolo ? (
+          liked.length > 0 && (
+            <span className="room-matches">
+              {liked.length} pick{liked.length !== 1 ? 's' : ''}
+            </span>
+          )
+        ) : (
+          matches.length > 0 && (
+            <span className="room-matches">
+              {matches.length} match{matches.length !== 1 ? 'es' : ''}
+            </span>
+          )
+        )}
+        <span className="room-progress">{currentIndex + 1} / {movies.length}</span>
+      </AppHeader>
 
       <div className="room-cards">
         <SwipeCard

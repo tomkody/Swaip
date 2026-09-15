@@ -22,7 +22,7 @@ test('two players match on the first card', async ({ browser }) => {
   await expect(a.getByText('Waiting for your partner')).toBeVisible()
 
   await b.goto(url)
-  await b.getByRole('button', { name: /Start Swiping/ }).click()
+  await b.getByRole('button', { name: /Start swiping/i }).click()
 
   // Creator sees the join, then both land on the same first card.
   await expect(a.getByText('Your friend joined!')).toBeVisible()

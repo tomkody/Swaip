@@ -1,15 +1,22 @@
 .home-logo {
-  display: inline-block;
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -0.6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
   text-decoration: none;
-  background: var(--gradient-warm);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  cursor: pointer;
-  transition: opacity 0.2s;
+  color: var(--text);
   flex-shrink: 0;
+  transition: opacity 0.2s;
 }
-.home-logo:hover { opacity: 0.75; }
+.home-logo:hover { opacity: 0.8; }
+.home-logo-icon { display: block; width: 28px; height: 28px; }
+.home-logo-icon--dark { display: none; }
+[data-theme="dark"] .home-logo-icon--light { display: none; }
+[data-theme="dark"] .home-logo-icon--dark { display: block; }
+.home-logo-word {
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
