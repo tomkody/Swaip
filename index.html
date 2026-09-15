@@ -17,8 +17,13 @@
     <!-- Canonical -->
     <link rel="canonical" href="https://swaip.app/" />
 
-    <!-- Favicon -->
+    <!-- Favicon. The .ico covers browsers/tools that probe /favicon.ico
+         directly regardless of these <link> tags — without a real file there,
+         our SPA rewrite served index.html for that request (200, text/html),
+         which looks like "no icon" to them and can fall back to a generated
+         placeholder (a coloured square with the site's first letter). -->
     <link rel="icon" type="image/png" href="/favicon-v2.png" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 
     <!-- PWA -->
