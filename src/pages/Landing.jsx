@@ -30,21 +30,24 @@ const HERO_IMAGE = null
 // is visible in a few seconds without a big interactive card. Posters come
 // from the bundled catalog; the two place photos are local files.
 const DEMO = [
-  { title: 'Forrest Gump',        meta: 'Film · Drama · 1994',          stamp: 'Want to watch', poster: 'https://m.media-amazon.com/images/M/MV5BNDYwNzVjMTItZmU5YS00YjQ5LTljYjgtMjY2NDVmYWMyNWFmXkEyXkFqcGc@._V1_QL75_UX500' },
-  { title: 'Breaking Bad',        meta: 'Series · Drama · 2008',        stamp: 'Want to watch', poster: 'https://m.media-amazon.com/images/M/MV5BMzU5ZGYzNmQtMTdhYy00OGRiLTg0NmQtYjVjNzliZTg1ZGE4XkEyXkFqcGc@._V1_QL75_UX500.jpg' },
+  { title: 'Forrest Gump',        meta: 'Film · Drama · 1994',          stamp: 'Want to watch',       poster: 'https://m.media-amazon.com/images/M/MV5BNDYwNzVjMTItZmU5YS00YjQ5LTljYjgtMjY2NDVmYWMyNWFmXkEyXkFqcGc@._V1_QL75_UX500' },
+  { title: 'Breaking Bad',        meta: 'Series · Drama · 2008',        stamp: 'Want to watch',       poster: 'https://m.media-amazon.com/images/M/MV5BMzU5ZGYzNmQtMTdhYy00OGRiLTg0NmQtYjVjNzliZTg1ZGE4XkEyXkFqcGc@._V1_QL75_UX500.jpg' },
+  // One pass so the demo shows both directions: Dexter goes left with the
+  // red NOPE-style stamp the app uses.
+  { title: 'Dexter',              meta: 'Series · Crime · 2006',        stamp: "Don't want to watch", no: true, poster: 'https://m.media-amazon.com/images/M/MV5BNTE5ZGI2N2UtYmFiMi00ZGIxLWI1ZTMtYWJkZDYxNDZiOTQwXkEyXkFqcGc@._V1_QL75_UX500.jpg' },
   // Local photo slots — drop the files at these paths in public/landing/.
   // Until a file exists the card shows a tinted tile with the emoji.
-  { title: 'Restaurant U Prince', meta: 'Place · Restaurant · Prague', stamp: 'Want to visit', poster: '/landing/u-prince.jpg',      emoji: '🍽️', focus: '50% 55%' },
-  { title: 'Prague Castle',       meta: 'Place · Landmark · Prague',   stamp: 'Want to visit', poster: '/landing/prague-castle.jpg', emoji: '🏰', focus: '35% 35%' },
+  { title: 'Restaurant U Prince', meta: 'Place · Restaurant · Prague', stamp: 'Want to visit',       poster: '/landing/u-prince.jpg',      emoji: '🍽️', focus: '50% 55%' },
+  { title: 'Prague Castle',       meta: 'Place · Landmark · Prague',   stamp: 'Want to visit',       poster: '/landing/prague-castle.jpg', emoji: '🏰', focus: '35% 35%' },
 ]
 
 // Timeline per card (ms): card settles → stamp pops → card flies off → next.
 // After the last card an "It's a match" pill shows and the deck refills. On
-// phones (stacked layout) it plays DEMO_PLAYS times, then the block collapses
+// phones (stacked layout) it plays DEMO_PLAYS time(s), then the block collapses
 // and unmounts so it doesn't linger under the CTA. On wide screens it sits
 // beside the copy and simply loops.
 const DEMO_T = { stamp: 1100, out: 1000, next: 480, done: 1800, refill: 700, hide: 650 }
-const DEMO_PLAYS = 2
+const DEMO_PLAYS = 1
 
 // Demo poster; if the image can't load (e.g. the local slot is still empty)
 // the card shows a tinted tile with the item's emoji instead of a broken image.
@@ -126,6 +129,8 @@ export default function Landing() {
     return () => clearTimeout(t)
   }, [demoActive, demoStage, demoPlays, demoLoop, demoStatic])
 
+  const demoPressed = demoStage === 'stamp' || demoStage === 'out'
+
   const cta = where => track('landing_cta', { where })
 
   return (
@@ -148,7 +153,7 @@ export default function Landing() {
 
       <main>
         {/* ── Hero ─────────────────────────────────────────────────────── */}
-        <section className="lp-hero" aria-labelledby="lp-hero-title">
+        <section className={`lp-hero ${demoStage === 'removed' ? 'lp-hero--no-demo' : ''}`} aria-labelledby="lp-hero-title">
           <div className="lp-hero-media" aria-hidden="true">
             <div className="lp-hero-fallback" />
             {HERO_IMAGE && (
@@ -185,7 +190,8 @@ export default function Landing() {
                     gone ? 'is-gone' : '',
                     top ? 'is-top' : '',
                     top && (demoStage === 'stamp' || demoStage === 'out' || demoStatic) ? 'is-stamped' : '',
-                    top && demoStage === 'out' ? 'is-out' : '',
+                    top && demoStage === 'out' ? (d.no ? 'is-out-left' : 'is-out') : '',
+                    d.no ? 'lp-card--no' : '',
                     rel > 0 ? `is-behind-${Math.min(rel, 2)}` : '',
                   ].join(' ')
                   return (
@@ -196,7 +202,9 @@ export default function Landing() {
                           <p className="lp-card-title">{d.title}</p>
                           <p className="lp-card-meta">{d.meta}</p>
                         </div>
-                        <span className="lp-card-stamp"><span className="lp-card-stamp-heart">❤️</span> {d.stamp}</span>
+                        <span className={`lp-card-stamp ${d.no ? 'lp-card-stamp--no' : ''}`}>
+                          <span className="lp-card-stamp-heart">{d.no ? '❌' : '❤️'}</span> {d.stamp}
+                        </span>
                       </div>
                     </div>
                   )
@@ -209,12 +217,12 @@ export default function Landing() {
                 </div>
               </div>
               <div className="lp-card-actions">
-                <span className="lp-card-btn lp-card-btn--no">
+                <span className={`lp-card-btn lp-card-btn--no ${demoPressed && DEMO[demoActive]?.no ? 'is-pressed' : ''}`}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
                 </span>
-                <span className={`lp-card-btn lp-card-btn--yes ${demoStage === 'stamp' || demoStage === 'out' ? 'is-pressed' : ''}`}>
+                <span className={`lp-card-btn lp-card-btn--yes ${demoPressed && !DEMO[demoActive]?.no ? 'is-pressed' : ''}`}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                   </svg>

@@ -238,7 +238,9 @@
 }
 .lp-demo-wrap > .lp-demo { min-height: 0; }
 .lp-demo-wrap.is-hidden { grid-template-rows: 0fr; opacity: 0; }
-.lp-demo-wrap.is-hidden > .lp-demo { overflow: hidden; }
+.lp-demo-wrap.is-hidden > .lp-demo { overflow: hidden; margin-top: 0; padding-bottom: 0; }
+.lp-demo { transition: margin 0.6s var(--lp-ease), padding 0.6s var(--lp-ease); }
+.lp-hero--no-demo { padding-bottom: 8px; }
 .lp-demo {
   --lp-card-w: min(200px, 54vw);
   width: var(--lp-card-w);
@@ -265,6 +267,7 @@
 .lp-card.is-behind-1 { z-index: 2; transform: translateY(-9px) scale(0.95); }
 .lp-card.is-behind-2 { z-index: 1; transform: translateY(-18px) scale(0.9); }
 .lp-card.is-out  { z-index: 4; transform: translateX(120%) rotate(16deg); opacity: 0; }
+.lp-card.is-out-left { z-index: 4; transform: translateX(-120%) rotate(-16deg); opacity: 0; }
 .lp-card.is-gone { z-index: 0; transform: translateX(120%) rotate(16deg); opacity: 0; transition: none; }
 .lp-demo.is-refill .lp-card.is-gone { transform: translateY(28px) scale(0.96); }
 .lp-card-poster {
@@ -327,6 +330,21 @@
   transition: transform 0.28s cubic-bezier(0.2, 1.4, 0.4, 1), opacity 0.2s var(--lp-ease);
 }
 .lp-card-stamp-heart { font-size: 12px; text-shadow: none; }
+/* Left swipe: the app's NOPE red, stamped on the right and tilted the other way */
+.lp-card-stamp--no {
+  left: auto;
+  right: 10px;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  border-color: #ff5c6a;
+  background: rgba(255, 92, 106, 0.14);
+  color: #ff5c6a;
+  text-shadow: 0 0 16px rgba(255, 92, 106, 0.4);
+  box-shadow: 0 0 20px rgba(255, 92, 106, 0.2);
+  transform: rotate(12deg) scale(1.6);
+}
+.lp-card.is-stamped .lp-card-stamp--no { transform: rotate(12deg) scale(1); }
 .lp-card.is-stamped .lp-card-stamp { transform: rotate(-12deg) scale(1); opacity: 1; }
 /* Shown once the whole stack has been swiped */
 .lp-match-pill {
@@ -376,6 +394,7 @@
 .lp--light .lp-card-btn--no { background: #FFFFFF; color: #15171F; }
 .lp-card-btn--yes { background: var(--lp-accent); color: var(--lp-accent-ink); }
 .lp-card-btn--yes.is-pressed { transform: scale(0.9); background: var(--lp-accent-hi); }
+.lp-card-btn--no.is-pressed { transform: scale(0.9); border-color: #ff5c6a; color: #ff5c6a; }
 .lp-visually-hidden {
   position: absolute;
   width: 1px;
