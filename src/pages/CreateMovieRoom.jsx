@@ -31,21 +31,21 @@ export default function CreateMovieRoom() {
   const [era, setEra] = useState('any')
   const [platformOpen, setPlatformOpen] = useState(false)
   const [genreOpen, setGenreOpen] = useState(false)
-  const [tonightOpen, setTonightOpen] = useState(false)
+  const [timeOpen, setTimeOpen] = useState(false)
   const [pool, setPool] = useState(null)   // catalog for the live count; loaded on first open
   const platformRef = useRef(null)
   const genreRef = useRef(null)
-  const tonightRef = useRef(null)
+  const timeRef = useRef(null)
 
   // Length/era are soft preferences (matching titles come first, the deck
   // never runs dry). The live count tells the pair how many close matches
   // lead the deck, so they can see when they've narrowed too far.
   useEffect(() => {
-    if (!tonightOpen || pool) return
+    if (!timeOpen || pool) return
     let active = true
     loadMoviePool().then(p => { if (active) setPool(p) }).catch(() => {})
     return () => { active = false }
-  }, [tonightOpen, pool])
+  }, [timeOpen, pool])
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -56,8 +56,8 @@ export default function CreateMovieRoom() {
       if (genreOpen && genreRef.current && !genreRef.current.contains(e.target)) {
         setGenreOpen(false)
       }
-      if (tonightOpen && tonightRef.current && !tonightRef.current.contains(e.target)) {
-        setTonightOpen(false)
+      if (timeOpen && timeRef.current && !timeRef.current.contains(e.target)) {
+        setTimeOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -66,7 +66,7 @@ export default function CreateMovieRoom() {
       document.removeEventListener('mousedown', handleClickOutside)
       document.removeEventListener('touchstart', handleClickOutside)
     }
-  }, [platformOpen, genreOpen, tonightOpen])
+  }, [platformOpen, genreOpen, timeOpen])
 
   function togglePlatform(id) {
     setPlatforms(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])
@@ -221,24 +221,24 @@ export default function CreateMovieRoom() {
           )}
         </div>
 
-        {/* Tonight: length + era (soft preferences) */}
-        <div className="filter-section" ref={tonightRef}>
-          <button className="filter-header" onClick={() => setTonightOpen(o => !o)} aria-expanded={tonightOpen}>
+        {/* Time: length + era (soft preferences) */}
+        <div className="filter-section" ref={timeRef}>
+          <button className="filter-header" onClick={() => setTimeOpen(o => !o)} aria-expanded={timeOpen}>
             <span className="filter-header-left">
               <span className="filter-icon">⏱️</span>
-              <span className="filter-header-title">Tonight</span>
+              <span className="filter-header-title">Time</span>
               <span className="filter-badge">{prefsLabel(prefs)}</span>
             </span>
             <svg
               width="16" height="16" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
-              className={`filter-arrow ${tonightOpen ? 'open' : ''}`}
+              className={`filter-arrow ${timeOpen ? 'open' : ''}`}
             >
               <polyline points="6 9 12 15 18 9" />
             </svg>
           </button>
 
-          {tonightOpen && (
+          {timeOpen && (
             <div className="filter-body">
               <fieldset className="pref-group">
                 <legend className="pref-legend">Length</legend>

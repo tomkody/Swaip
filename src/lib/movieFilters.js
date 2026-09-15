@@ -1,4 +1,4 @@
-// "Tonight" preferences for movie rooms: runtime and release era.
+// "Time" preferences for movie rooms: runtime and release era.
 //
 // These are soft filters on purpose. A pair that picks "Under 90 min" wants
 // short films FIRST, not a deck that runs dry after 9 cards and leaves them
