@@ -36,7 +36,7 @@
 }
 
 .lp--light {
-  --lp-bg:         #FFF6EE;
+  --lp-bg:         #F7F7F9;
   --lp-bg-2:       #FFFFFF;
   --lp-surface:    rgba(16, 18, 28, 0.04);
   --lp-line:       rgba(16, 18, 28, 0.10);
@@ -180,16 +180,16 @@
 }
 .lp--light .lp-hero-shade {
   background: linear-gradient(180deg,
-    rgba(251, 247, 242, 0.94) 0%,
-    rgba(251, 247, 242, 0.80) 30%,
-    rgba(251, 247, 242, 0.70) 55%,
+    rgba(247, 247, 249, 0.94) 0%,
+    rgba(247, 247, 249, 0.82) 30%,
+    rgba(247, 247, 249, 0.72) 55%,
     var(--lp-bg) 100%);
 }
 .lp--light .lp-hero-fallback {
   background:
-    radial-gradient(55% 60% at 14% 70%, rgba(255, 170, 90, 0.45), transparent 65%),
-    radial-gradient(50% 55% at 86% 66%, rgba(255, 128, 88, 0.38), transparent 65%),
-    linear-gradient(180deg, #F3E9DF 0%, #FBF7F2 100%);
+    radial-gradient(55% 60% at 14% 70%, rgba(255, 170, 90, 0.22), transparent 65%),
+    radial-gradient(50% 55% at 86% 66%, rgba(255, 128, 88, 0.18), transparent 65%),
+    linear-gradient(180deg, #EEEFF3 0%, #F7F7F9 100%);
 }
 
 .lp-hero-inner { position: relative; }
