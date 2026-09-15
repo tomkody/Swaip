@@ -37,9 +37,10 @@ const DEMO = [
 ]
 
 // Timeline per card (ms): card settles → stamp pops → card flies off → next.
-// After the last card an "It's a match" pill shows; the deck refills and
-// plays DEMO_PLAYS times in total (someone reading the headline gets a second
-// look), then the whole block collapses and unmounts so it doesn't linger.
+// After the last card an "It's a match" pill shows and the deck refills. On
+// phones (stacked layout) it plays DEMO_PLAYS times, then the block collapses
+// and unmounts so it doesn't linger under the CTA. On wide screens it sits
+// beside the copy and simply loops.
 const DEMO_T = { stamp: 1100, out: 1000, next: 480, done: 1800, refill: 700, hide: 650 }
 const DEMO_PLAYS = 2
 
@@ -85,6 +86,7 @@ export default function Landing() {
   const [demoActive, setDemoActive] = useState(0)
   const [demoStage, setDemoStage] = useState('in')
   const [demoPlays, setDemoPlays] = useState(1)
+  const [demoLoop] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.('(min-width: 1024px)').matches)
   const [demoStatic] = useState(() => prefersReducedMotion())   // static stack, stamp visible, nothing moves
   useEffect(() => {
     if (demoStatic) return
@@ -98,14 +100,14 @@ export default function Landing() {
         else setDemoStage('done')
       }
       else if (demoStage === 'done') {
-        if (demoPlays < DEMO_PLAYS) { setDemoPlays(n => n + 1); setDemoActive(0); setDemoStage('refill') }
+        if (demoLoop || demoPlays < DEMO_PLAYS) { setDemoPlays(n => n + 1); setDemoActive(0); setDemoStage('refill') }
         else setDemoStage('hide')
       }
       else if (demoStage === 'refill') setDemoStage('in')
       else setDemoStage('removed')
     }, wait)
     return () => clearTimeout(t)
-  }, [demoActive, demoStage, demoPlays, demoStatic])
+  }, [demoActive, demoStage, demoPlays, demoLoop, demoStatic])
 
   const cta = where => track('landing_cta', { where })
 
@@ -142,12 +144,14 @@ export default function Landing() {
           </div>
 
           <div className="lp-container lp-hero-inner">
+            <div className="lp-hero-copy">
             <p className="lp-eyebrow">Good plans. Better company.</p>
             <h1 id="lp-hero-title" className="lp-h1">Make tonight <br />a shared <em>yes.</em></h1>
             <p className="lp-sub">A film worth watching. A table worth sharing. Find something you both want to do.</p>
             <div className="lp-hero-cta">
               <a className="lp-btn lp-btn--lg" href="#explore" onClick={() => cta('hero')}>Find our plan <Arrow /></a>
               <p className="lp-fineprint">No sign-up. Send a link. Start swiping.</p>
+            </div>
             </div>
 
             {demoStage !== 'removed' && (
