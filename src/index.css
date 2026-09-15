@@ -7,12 +7,12 @@
    visual system without touching each component. */
 :root {
   /* Surfaces */
-  --bg:            #FBF7F2;
+  --bg:            #FFF6EE;
   --bg-card:       #FFFFFF;
-  --bg-card-hover: #FFF8F3;
+  --bg-card-hover: #FFF3EA;
   --bg-surface:    rgba(16,18,28,0.05);
-  --bg-secondary:  #F3EDE6;
-  --bg-glass:      rgba(251,247,242,0.92);
+  --bg-secondary:  #F8ECE1;
+  --bg-glass:      rgba(255,246,238,0.92);
 
   /* Semantic labels */
   --text:          #15171F;
@@ -26,15 +26,15 @@
 
   /* Brand accent */
   --brand-ink:     #1A0F0E;
-  --accent-coral:  #FF6B6B;
-  --accent-orange: #FF8A6A;
-  --accent-peach:  #FFB15E;
-  --accent-soft:   rgba(255,116,110,0.12);
+  --accent-coral:  #FF5E62;
+  --accent-orange: #FF8A47;
+  --accent-peach:  #FFB347;
+  --accent-soft:   rgba(255,122,74,0.14);
 
   /* Gradients — near-flat coral; the landing uses a solid pill, the app a
      hint of warmth on the same hue so both read as one button. */
-  --gradient-primary: linear-gradient(135deg, #FF746E 0%, #FF8A6A 100%);
-  --gradient-warm:    linear-gradient(135deg, #FF746E 0%, #FF8A6A 100%);
+  --gradient-primary: linear-gradient(135deg, #FF5E62 0%, #FF8A47 60%, #FFB347 100%);
+  --gradient-warm:    linear-gradient(135deg, #FF5E62 0%, #FF8A47 60%, #FFB347 100%);
 
   /* Segmented control tokens */
   --seg-tray:   rgba(16,18,28,0.06);
@@ -55,9 +55,9 @@
   --radius-pill: 999px;
 
   /* Legacy compat aliases */
-  --primary:      #FF6B6B;
-  --primary-glow: rgba(255,107,107,0.20);
-  --accent:       #FFB15E;
+  --primary:      #FF6A4F;
+  --primary-glow: rgba(255,106,79,0.22);
+  --accent:       #FFB347;
   --success:      #34C759;
   --danger:       #FF3B30;
   --shadow-glow:  0 0 32px rgba(255,107,107,0.18);
@@ -81,9 +81,9 @@
   --separator:     rgba(255,255,255,0.12);
   --border:        rgba(255,255,255,0.10);
   --border-hover:  rgba(255,255,255,0.22);
-  --accent-soft:   rgba(255,116,110,0.14);
-  --primary:       #FF746E;
-  --primary-glow:  rgba(255,116,110,0.22);
+  --accent-soft:   rgba(255,122,74,0.16);
+  --primary:       #FF7A57;
+  --primary-glow:  rgba(255,122,87,0.24);
 
   --seg-tray:   rgba(255,255,255,0.06);
   --seg-active: #262B37;
@@ -187,10 +187,10 @@ h1, h2, h3, h4 {
 .btn-primary {
   background: var(--gradient-primary);
   color: var(--brand-ink);
-  box-shadow: 0 6px 18px rgba(255,116,110,0.26);
+  box-shadow: 0 6px 18px rgba(255,122,74,0.30);
 }
 .btn-primary:hover:not(:disabled) {
-  box-shadow: 0 8px 24px rgba(255,116,110,0.34);
+  box-shadow: 0 8px 24px rgba(255,122,74,0.38);
 }
 .btn-primary:disabled {
   opacity: 0.40;

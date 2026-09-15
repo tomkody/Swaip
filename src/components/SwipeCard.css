@@ -419,13 +419,13 @@
 }
 
 .like-btn {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: var(--gradient-primary);
+  border-color: transparent;
   color: var(--brand-ink);
-  box-shadow: 0 8px 22px rgba(255, 116, 110, 0.30);
+  box-shadow: 0 8px 22px rgba(255, 122, 74, 0.32);
 }
 .like-btn:hover {
-  box-shadow: 0 10px 28px rgba(255, 116, 110, 0.40);
+  box-shadow: 0 10px 28px rgba(255, 122, 74, 0.42);
   filter: brightness(1.05);
 }
 
