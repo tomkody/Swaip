@@ -461,13 +461,20 @@
   margin-top: 7px;
 }
 .rv-plat {
+  display: inline-block;
   font-size: 11px;
   font-weight: 600;
   padding: 3px 9px;
   border-radius: var(--radius-pill);
   border: 1px solid;
   white-space: nowrap;
+  text-decoration: none;
+  transition: filter 0.15s ease, transform 0.1s ease;
 }
+/* Only <a> chips (a title was passed in) are actionable — spans (the
+   ranking picker) get no hover affordance since they don't link anywhere. */
+a.rv-plat:hover { filter: brightness(1.08); }
+a.rv-plat:active { transform: scale(0.96); }
 
 /* swaip.app wordmark on the results screen */
 .rv-brand {

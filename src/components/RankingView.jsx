@@ -59,13 +59,29 @@ function DecideForUs({ matches, emoji, onRolled }) {
 }
 
 // "Where to watch" brand chips for a movie/series result (nothing for places).
-function PlatformBadges({ platforms }) {
+// With a title, each chip is a real link straight to that platform's search
+// for the title (tap Netflix, land on Netflix already searching for it).
+// Without one (the ranking picker, where the chip sits inside a <button> and
+// a nested link would be invalid markup) it stays a plain, non-interactive span.
+function PlatformBadges({ platforms, title, roomType }) {
   if (!platforms || platforms.length === 0) return null
   const metas = platforms.map(getPlatformMeta).filter(Boolean)
   if (metas.length === 0) return null
   return (
     <div className="rv-plats">
-      {metas.map(p => (
+      {metas.map(p => title ? (
+        <a
+          key={p.id}
+          className="rv-plat"
+          style={{ color: p.color, background: p.bg, borderColor: p.border }}
+          href={getWatchUrl(p.id, title)}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={e => { e.stopPropagation(); track('watch_clicked', { type: roomType, platform: p.id, from: 'badge' }) }}
+        >
+          {p.name}
+        </a>
+      ) : (
         <span key={p.id} className="rv-plat" style={{ color: p.color, background: p.bg, borderColor: p.border }}>
           {p.name}
         </span>
@@ -377,7 +393,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   <strong>{m.title}</strong>
                   <span className="rv-reco-meta">{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
                   <span className="rv-reco-why">{why}</span>
-                  <PlatformBadges platforms={m.platforms} />
+                  <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
                 </div>
               </div>
 
@@ -442,7 +458,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   <div className="rv-result-info">
                     <strong>{m.title}</strong>
                     <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
-                    <PlatformBadges platforms={m.platforms} />
+                    <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
                     {m.isOpen != null && (
                       <span className={`rv-hours ${m.isOpen ? 'rv-hours--open' : 'rv-hours--closed'}`}>
                         {m.isOpen ? '● Open' : '● Closed'}
@@ -509,7 +525,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                         <div className="rv-result-info">
                           <strong>{m.title}</strong>
                           <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
-                          <PlatformBadges platforms={m.platforms} />
+                          <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
                         </div>
                         {isMutual && <span className="rv-partner-tag rv-partner-tag--match">✓ Both</span>}
                       </div>
@@ -534,7 +550,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   <div className="rv-result-info">
                     <strong>{m.title}</strong>
                     <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
-                    <PlatformBadges platforms={m.platforms} />
+                    <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
                     {playerCount > 2 && voteCounts[m.id] && (
                       <span className="rv-vote-count">{voteCounts[m.id]}/{playerCount} voted</span>
                     )}
@@ -564,7 +580,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   <div className="rv-result-info">
                     <strong>{m.title}</strong>
                     <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
-                    <PlatformBadges platforms={m.platforms} />
+                    <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
                     {playerCount > 2 && voteCounts[m.id] && (
                       <span className="rv-vote-count">{voteCounts[m.id]}/{playerCount} voted</span>
                     )}
@@ -640,7 +656,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                         <div className="rv-result-info">
                           <strong>{m.title}</strong>
                           <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
-                          <PlatformBadges platforms={m.platforms} />
+                          <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
                         </div>
                         {isMutual
                           ? <span className="rv-partner-tag rv-partner-tag--match">✓ Both</span>
@@ -730,7 +746,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
               <div className="rv-match-info">
                 <strong>{m.title}</strong>
                 <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
-                    <PlatformBadges platforms={m.platforms} />
+                <PlatformBadges platforms={m.platforms} />
                 {m.isOpen != null && (
                   <span className={`rv-hours ${m.isOpen ? 'rv-hours--open' : 'rv-hours--closed'}`}>
                     {m.isOpen ? '● Open' : '● Closed'}
@@ -762,7 +778,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                 <div className="rv-match-info">
                   <strong>{m.title}</strong>
                   <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
-                    <PlatformBadges platforms={m.platforms} />
+                    <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
                 </div>
                 {isMatch && <span className="rv-selection-match-badge">✓ Match</span>}
               </div>
