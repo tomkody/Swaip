@@ -271,7 +271,7 @@ export default function Landing() {
                 Set the room up once — together or solo, the platforms you actually have, the genres you’re in the mood for. Then send the link and swipe apart. Swaip only shows you what you both said yes to.
               </p>
               <p className="lp-visually-hidden">
-                Preview of the room setup: choose Together or Solo, pick platforms and genres, then share your link.
+                Preview of the room setup: choose Together or Solo, then pick platforms and genres.
               </p>
               <Link to="/create/movies" className="lp-btn lp-btn--lg" onClick={() => cta('explain')}>Create your room <Arrow /></Link>
             </div>
@@ -292,11 +292,6 @@ export default function Landing() {
                 <span className="lp-filter">🍿 Comedy <Chevron /></span>
                 <span className="lp-filter">🎬 Adventure <Chevron /></span>
                 <span className="lp-filter">📺 Netflix <Chevron /></span>
-              </div>
-              <p className="lp-panel-label lp-panel-label--mt">Then · your invite</p>
-              <div className="lp-invite">
-                <span className="lp-invite-url">swaip.app/room/<span className="lp-invite-id">your-room</span></span>
-                <span className="lp-invite-tag">Link ready once you create a room</span>
               </div>
             </div>
           </div>
