@@ -37,9 +37,11 @@ const DEMO = [
 ]
 
 // Timeline per card (ms): card settles → stamp pops → card flies off → next.
-// After the last card an "It's a match" pill shows, then the whole block
-// collapses and unmounts so it doesn't linger under the CTA.
-const DEMO_T = { stamp: 1100, out: 1000, next: 480, done: 1800, hide: 650 }
+// After the last card an "It's a match" pill shows; the deck refills and
+// plays DEMO_PLAYS times in total (someone reading the headline gets a second
+// look), then the whole block collapses and unmounts so it doesn't linger.
+const DEMO_T = { stamp: 1100, out: 1000, next: 480, done: 1800, refill: 700, hide: 650 }
+const DEMO_PLAYS = 2
 
 function Arrow() {
   return (
@@ -78,14 +80,16 @@ export default function Landing() {
 
   // ── Hero demo (self-playing, decorative) ────────────────────────────────
   // stage: 'in' → 'stamp' → 'out' per card; 'done' after the last card;
-  // 'hide' collapses the block; 'removed' takes it out of the DOM. Plays once.
+  // 'refill' brings the stack back for another play; 'hide' collapses the
+  // block; 'removed' takes it out of the DOM.
   const [demoActive, setDemoActive] = useState(0)
   const [demoStage, setDemoStage] = useState('in')
+  const [demoPlays, setDemoPlays] = useState(1)
   const [demoStatic] = useState(() => prefersReducedMotion())   // static stack, stamp visible, nothing moves
   useEffect(() => {
     if (demoStatic) return
     if (demoStage === 'removed') return
-    const wait = { in: DEMO_T.stamp, stamp: DEMO_T.out, out: DEMO_T.next, done: DEMO_T.done, hide: DEMO_T.hide }[demoStage]
+    const wait = { in: DEMO_T.stamp, stamp: DEMO_T.out, out: DEMO_T.next, done: DEMO_T.done, refill: DEMO_T.refill, hide: DEMO_T.hide }[demoStage]
     const t = setTimeout(() => {
       if (demoStage === 'in') setDemoStage('stamp')
       else if (demoStage === 'stamp') setDemoStage('out')
@@ -93,11 +97,15 @@ export default function Landing() {
         if (demoActive + 1 < DEMO.length) { setDemoActive(a => a + 1); setDemoStage('in') }
         else setDemoStage('done')
       }
-      else if (demoStage === 'done') setDemoStage('hide')
+      else if (demoStage === 'done') {
+        if (demoPlays < DEMO_PLAYS) { setDemoPlays(n => n + 1); setDemoActive(0); setDemoStage('refill') }
+        else setDemoStage('hide')
+      }
+      else if (demoStage === 'refill') setDemoStage('in')
       else setDemoStage('removed')
     }, wait)
     return () => clearTimeout(t)
-  }, [demoActive, demoStage, demoStatic])
+  }, [demoActive, demoStage, demoPlays, demoStatic])
 
   const cta = where => track('landing_cta', { where })
 
@@ -106,7 +114,7 @@ export default function Landing() {
       <header className="lp-header">
         <div className="lp-container lp-header-inner">
           <Link to="/" className="lp-brand" aria-label="Swaip — home">
-            <img src="/swaip-icon-transparent.png" alt="" width="34" height="34" />
+            <img src={dark ? '/swaip-icon-dark.png' : '/swaip-icon-transparent.png'} alt="" width="34" height="34" />
             <span>Swaip</span>
           </Link>
           <nav className="lp-nav" aria-label="Primary">
@@ -144,16 +152,16 @@ export default function Landing() {
 
             {demoStage !== 'removed' && (
             <div className={`lp-demo-wrap ${demoStage === 'hide' ? 'is-hidden' : ''}`}>
-            <div className={`lp-demo ${demoStage === 'done' || demoStage === 'hide' ? 'is-done' : ''}`} aria-hidden="true">
+            <div className={`lp-demo ${demoStage === 'done' || demoStage === 'hide' ? 'is-done' : ''} ${demoStage === 'refill' ? 'is-refill' : ''}`} aria-hidden="true">
               <div className="lp-stack">
                 {DEMO.map((d, i) => {
                   const rel = i - demoActive
-                  const gone = rel < 0
-                  const top = rel === 0 && demoStage !== 'done' && demoStage !== 'hide'
+                  const settled = demoStage === 'done' || demoStage === 'hide' || demoStage === 'refill'
+                  const gone = settled || rel < 0
+                  const top = rel === 0 && !settled
                   const cls = [
                     'lp-card',
                     gone ? 'is-gone' : '',
-                    demoStage === 'done' || demoStage === 'hide' ? 'is-gone' : '',
                     top ? 'is-top' : '',
                     top && (demoStage === 'stamp' || demoStage === 'out' || demoStatic) ? 'is-stamped' : '',
                     top && demoStage === 'out' ? 'is-out' : '',
@@ -268,7 +276,8 @@ export default function Landing() {
         {/* ── Final CTA ────────────────────────────────────────────────── */}
         <section className="lp-final" aria-labelledby="lp-final-title">
           <div className="lp-container">
-            <h2 id="lp-final-title" className="lp-h2">Good company. Great choice.</h2>
+            <h2 id="lp-final-title" className="lp-h2">“I don’t mind, you pick.”<br />Never again.</h2>
+            <p className="lp-final-sub">Forty minutes of scrolling, or forty seconds of swiping. Your call.</p>
             <a className="lp-btn lp-btn--lg" href="#explore" onClick={() => cta('final')}>Start swiping <Arrow /></a>
           </div>
         </section>
@@ -277,7 +286,7 @@ export default function Landing() {
       <div className="lp-footer">
         <div className="lp-container">
           <div className="lp-footer-brand">
-            <img src="/swaip-icon-transparent.png" alt="" width="26" height="26" />
+            <img src={dark ? '/swaip-icon-dark.png' : '/swaip-icon-transparent.png'} alt="" width="26" height="26" />
             <span>Swaip</span>
           </div>
           <Footer />

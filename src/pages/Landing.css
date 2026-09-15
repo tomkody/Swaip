@@ -252,10 +252,9 @@
 .lp-card {
   position: absolute;
   inset: 0;
-  background: var(--lp-card);
-  border: 1px solid var(--lp-line);
-  border-radius: 18px;
-  padding: 8px;
+  background: var(--lp-bg-2);
+  border-radius: 16px;
+  padding: 0;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
   transform-origin: 50% 0;
   transition: transform 0.46s var(--lp-ease), opacity 0.46s var(--lp-ease);
@@ -266,10 +265,11 @@
 .lp-card.is-behind-2 { z-index: 1; transform: translateY(-18px) scale(0.9); }
 .lp-card.is-out  { z-index: 4; transform: translateX(120%) rotate(16deg); opacity: 0; }
 .lp-card.is-gone { z-index: 0; transform: translateX(120%) rotate(16deg); opacity: 0; transition: none; }
+.lp-demo.is-refill .lp-card.is-gone { transform: translateY(28px) scale(0.96); }
 .lp-card-poster {
   position: relative;
   height: 100%;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
   background: var(--lp-bg-2);
 }
@@ -374,6 +374,14 @@
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+.lp-final-sub {
+  margin: 16px auto 0;
+  max-width: 34ch;
+  font-size: clamp(16px, 1.6vw, 19px);
+  line-height: 1.5;
+  color: var(--lp-muted);
 }
 
 /* ── Section basics ──────────────────────────────────────────────────────── */
