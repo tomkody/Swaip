@@ -31,9 +31,12 @@ const HERO_IMAGE = null
 // from the bundled catalog; the castle photo is CC0 (Wikimedia Commons,
 // "Prague Castle at Night viewed from Charles Bridge" by Lucas Garron).
 const DEMO = [
-  { title: 'The Grand Budapest Hotel', meta: 'Film · Comedy · 2014',      stamp: 'Want to watch', poster: 'https://m.media-amazon.com/images/M/MV5BMzM5NjUxOTEyMl5BMl5BanBnXkFtZTgwNjEyMDM0MDE@._V1_QL75_UX500' },
-  { title: 'Breaking Bad',             meta: 'Series · Drama · 2008',      stamp: 'Want to watch', poster: 'https://m.media-amazon.com/images/M/MV5BMzU5ZGYzNmQtMTdhYy00OGRiLTg0NmQtYjVjNzliZTg1ZGE4XkEyXkFqcGc@._V1_QL75_UX500.jpg' },
-  { title: 'Prague Castle',            meta: 'Place · Landmark · Prague',  stamp: 'Want to visit', poster: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Prague_Castle_at_Night_viewed_from_Charles_Bridge.jpg/960px-Prague_Castle_at_Night_viewed_from_Charles_Bridge.jpg', focus: '50% 30%' },
+  { title: 'Forrest Gump',   meta: 'Film · Drama · 1994',           stamp: 'Want to watch', poster: 'https://m.media-amazon.com/images/M/MV5BNDYwNzVjMTItZmU5YS00YjQ5LTljYjgtMjY2NDVmYWMyNWFmXkEyXkFqcGc@._V1_QL75_UX500' },
+  { title: 'Breaking Bad',   meta: 'Series · Drama · 2008',         stamp: 'Want to watch', poster: 'https://m.media-amazon.com/images/M/MV5BMzU5ZGYzNmQtMTdhYy00OGRiLTg0NmQtYjVjNzliZTg1ZGE4XkEyXkFqcGc@._V1_QL75_UX500.jpg' },
+  // Local photo slot: drop the restaurant photo at public/landing/420-restaurant.jpg
+  // (portrait or square works best). Until it exists the card shows the emoji tile.
+  { title: '420 Restaurant', meta: 'Place · Restaurant · Prague',  stamp: 'Want to visit', poster: '/landing/420-restaurant.jpg', emoji: '🍽️', focus: '50% 60%' },
+  { title: 'Prague Castle',  meta: 'Place · Landmark · Prague',    stamp: 'Want to visit', poster: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Prague_Castle_at_Night_viewed_from_Charles_Bridge.jpg/960px-Prague_Castle_at_Night_viewed_from_Charles_Bridge.jpg', focus: '50% 30%' },
 ]
 
 // Timeline per card (ms): card settles → stamp pops → card flies off → next.
@@ -43,6 +46,21 @@ const DEMO = [
 // beside the copy and simply loops.
 const DEMO_T = { stamp: 1100, out: 1000, next: 480, done: 1800, refill: 700, hide: 650 }
 const DEMO_PLAYS = 2
+
+// Demo poster; if the image can't load (e.g. the local slot is still empty)
+// the card shows a tinted tile with the item's emoji instead of a broken image.
+function DemoPoster({ item, eager }) {
+  const [failed, setFailed] = useState(false)
+  if (failed) return <div className="lp-card-noimg" aria-hidden="true">{item.emoji || '🎬'}</div>
+  return (
+    <img
+      src={item.poster} alt="" width="200" height="300"
+      loading={eager ? 'eager' : 'lazy'} decoding="async"
+      style={item.focus ? { objectPosition: item.focus } : undefined}
+      onError={() => setFailed(true)}
+    />
+  )
+}
 
 function Arrow() {
   return (
@@ -174,7 +192,7 @@ export default function Landing() {
                   return (
                     <div key={d.title} className={cls}>
                       <div className="lp-card-poster">
-                        <img src={d.poster} alt="" width="200" height="300" loading={i === 0 ? 'eager' : 'lazy'} decoding="async" style={d.focus ? { objectPosition: d.focus } : undefined} />
+                        <DemoPoster item={d} eager={i === 0} />
                         <div className="lp-card-caption">
                           <p className="lp-card-title">{d.title}</p>
                           <p className="lp-card-meta">{d.meta}</p>
