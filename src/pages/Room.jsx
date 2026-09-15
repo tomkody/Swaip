@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, subscribeToRoomActive, subscribeToRoomPicks, fetchRoomPicks, fetchPartnerSwipeCount, markRoomActive, fetchRoomMatches, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID, MOVIE_SENTINELS } from '../lib/room'
+import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, subscribeToRoomActive, subscribeToRoomPicks, fetchRoomPicks, fetchPartnerSwipeCount, markRoomActive, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID, MOVIE_SENTINELS } from '../lib/room'
 import { PLATFORMS } from '../lib/platforms'
 import { fetchTopRatedMovies } from '../lib/tmdb'
 import { normalizePrefs } from '../lib/movieFilters'
@@ -15,6 +15,9 @@ import RankingView from '../components/RankingView'
 import InvitePanel from '../components/InvitePanel'
 import AppHeader from '../components/AppHeader'
 import Icon from '../components/Icon'
+import { seededShuffle } from '../lib/random'
+import { ACTIVITY_CATEGORIES } from '../lib/activities'
+import { FOOD_CATEGORIES } from '../lib/foodCategories'
 import { track } from '../lib/analytics'
 import { isPushSupported, enablePushForRoom, notifyRoom } from '../lib/push'
 import './Room.css'
@@ -32,10 +35,10 @@ function RoomShell({ children, className = '' }) {
 
 // What the invited person is about to do, in plain words.
 const JOIN_COPY = {
-  movies:        { emoji: '🎬', label: 'Movies',        title: 'Pick a movie together',        desc: 'Swipe right on anything you’d watch tonight. Swaip only shows you the titles you both liked.', cta: 'Start swiping' },
-  series:        { emoji: '📺', label: 'TV Series',     title: 'Pick your next show together', desc: 'Swipe right on shows you’d binge. Swaip only shows you the ones you both liked.', cta: 'Start swiping' },
-  food:          { emoji: '🍽️', label: 'Food & Drinks', title: 'Decide where to eat',          desc: 'Pick the cuisines you fancy, then swipe on real places nearby. You’ll see the ones you both want.', cta: 'See the options' },
-  activities:    { emoji: '🎯', label: 'Activities',    title: 'Find something to do',         desc: 'Pick what you’re up for, then swipe on real places nearby. You’ll see the ones you both want.', cta: 'See the options' },
+  movies:        { emoji: '🎬', label: 'Movies',        title: 'Pick a movie together',        desc: 'Say yes to every film you’d happily watch. When you both say yes, it’s a match.', cta: 'Start swiping' },
+  series:        { emoji: '📺', label: 'TV Series',     title: 'Pick your next show together', desc: 'Say yes to every show you’d happily binge. When you both say yes, it’s a match.', cta: 'Start swiping' },
+  food:          { emoji: '🍽️', label: 'Food & Drinks', title: 'Decide where to eat',          desc: 'Pick what you’re craving, then swipe through real places nearby. When you both say yes, it’s a match.', cta: 'See the options' },
+  activities:    { emoji: '🎯', label: 'Activities',    title: 'Find something to do',         desc: 'Pick what you’re in the mood for, then swipe through real places nearby. When you both say yes, it’s a match.', cta: 'See the options' },
   conversations: { emoji: '💬', label: 'Conversations', title: 'Find something to talk about', desc: 'Pick the topics you’d love to talk about. You’ll only see the ones you both chose.', cta: 'See the topics' },
   colorgame:     { emoji: '🎨', label: 'Color Duel',    title: 'Play Color Duel',              desc: 'Posters with the colour drained. Mix the shade you remember, closest guess wins the round.', cta: 'Start guessing' },
 }
@@ -83,9 +86,11 @@ export default function Room() {
   const [partnerStop, setPartnerStop] = useState(Infinity)  // partner's last-swiped deck position
   const [liked, setLiked] = useState([])
   const [isDone, setIsDone] = useState(false)
-  const [doneMatches, setDoneMatches] = useState(null)
   const isDoneRef = useRef(false)
-  const [fetchingDone, setFetchingDone] = useState(false)
+  // Undo: this session's swipes, newest last. Each entry keeps its insert
+  // promise so a take-back is always written after the vote it replaces.
+  const historyRef = useRef([])
+  const [canUndo, setCanUndo] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [partnerJoined, setPartnerJoined] = useState(!isCreator || (location.state?.isSolo || false) || Boolean(saved?.started))
@@ -182,6 +187,8 @@ export default function Room() {
   // Keep refs in sync so subscription callbacks always see current values
   useEffect(() => { isDoneRef.current = isDone }, [isDone])
   useEffect(() => { moviesRef.current = movies }, [movies])
+  const matchesRef = useRef([])
+  useEffect(() => { matchesRef.current = matches }, [matches])
 
   useEffect(() => {
     if (!room || (room.type !== 'movies' && room.type !== 'series') || isSolo) return
@@ -189,20 +196,22 @@ export default function Room() {
     const unsubSwipes = subscribeToSwipes(roomId, userToken.current, (itemId) => {
       const matched = moviesRef.current.find((m) => m.id === itemId)
       if (matched) {
-        // Always update real-time matches list (deduped)
+        // Always update real-time matches list (deduped). RankingView also
+        // listens and polls, so a match landing after "I'm done" still shows.
         setMatches((prev) => prev.find(m => m.id === matched.id) ? prev : [...prev, matched])
-        // If already done, update doneMatches so RankingView gets the new match
-        setDoneMatches((prev) => {
-          if (prev === null) return null
-          if (prev.find(m => m.id === matched.id)) return prev
-          return [...prev, matched]
-        })
         // Only show match-modal overlay while still actively swiping
         if (!isDoneRef.current) {
           track('match', { type: room.type })
           setMatchItem(matched)
         }
       }
+    }, 2, {
+      // Partner took back a like with undo: the match is gone for us too.
+      isMatched: id => matchesRef.current.some(m => m.id === id),
+      onUnmatch: id => {
+        setMatches(prev => prev.filter(m => m.id !== id))
+        setMatchItem(cur => (cur && cur.id === id ? null : cur))
+      },
     })
 
     return () => unsubSwipes()
@@ -247,11 +256,15 @@ export default function Room() {
       // Advance immediately — the next card shouldn't wait on the network, and
       // leaving the old card up until the insert returns invited double swipes.
       setCurrentIndex((i) => i + 1)
+      const entry = { index: currentIndex, movie, direction, pending: null, undone: false }
+      historyRef.current.push(entry)
+      setCanUndo(true)
 
       if (!isSolo) {
         try {
-          const isMatch = await recordSwipe(roomId, userToken.current, movie.id, direction)
-          if (isMatch) {
+          entry.pending = recordSwipe(roomId, userToken.current, movie.id, direction)
+          const isMatch = await entry.pending
+          if (isMatch && !entry.undone) {
             track('match', { type: room.type })
             notifyRoom(roomId, 'match', { from: userToken.current, itemId: movie.id })
             setMatchItem(movie)
@@ -264,6 +277,27 @@ export default function Room() {
     },
     [movies, currentIndex, roomId, isSolo, room?.type]
   )
+
+  // Step back one card. Taking back a like writes a newer 'left' vote (swipes
+  // are append-only), so a match that like created disappears for both.
+  const handleUndo = useCallback(async () => {
+    const last = historyRef.current.pop()
+    setCanUndo(historyRef.current.length > 0)
+    if (!last) return
+    last.undone = true
+    setCurrentIndex(last.index)
+    track('swipe_undo', { type: room?.type || 'movies', direction: last.direction })
+    if (last.direction !== 'right') return
+    setLiked(prev => prev.filter(m => m.id !== last.movie.id))
+    setMatches(prev => prev.filter(m => m.id !== last.movie.id))
+    if (isSolo) return
+    try {
+      await last.pending?.catch(() => {})
+      await recordSwipe(roomId, userToken.current, last.movie.id, 'left')
+    } catch (err) {
+      console.error('Failed to take back a like:', err)
+    }
+  }, [isSolo, roomId, room?.type])
 
   // Tell the room this user finished swiping (sentinel row, ignored as a pick).
   // Lets the partner's results screen show "finished" vs "still swiping".
@@ -327,6 +361,11 @@ export default function Room() {
     const teaser = (room.type === 'movies' || room.type === 'series')
       ? movies.slice(0, 3).filter(m => m.poster)
       : []
+    const tiles = room.type === 'food'
+      ? seededShuffle(FOOD_CATEGORIES, room.id).slice(0, 3)
+      : room.type === 'activities'
+        ? seededShuffle(ACTIVITY_CATEGORIES, room.id).slice(0, 3)
+        : []
     const join = () => { markRoomActive(roomId); notifyRoom(roomId, 'joined', { from: userToken.current }); track('joined', { type: room.type }); setHasJoined(true) }
 
     return (
@@ -336,6 +375,15 @@ export default function Room() {
             <div className="join-posters" aria-hidden="true">
               {teaser.map((m, i) => (
                 <img key={m.id} src={m.poster} alt="" className={`join-poster join-poster--${i}`} width="120" height="180" />
+              ))}
+            </div>
+          ) : tiles.length === 3 ? (
+            <div className="join-posters" aria-hidden="true">
+              {tiles.map((c, i) => (
+                <div key={c.id} className={`join-poster join-tile join-poster--${i}`} style={{ background: c.gradient }}>
+                  <span className="join-tile-emoji">{c.emoji}</span>
+                  <span className="join-tile-label">{c.label}</span>
+                </div>
               ))}
             </div>
           ) : (
@@ -450,20 +498,10 @@ export default function Room() {
     return <ColorGameRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} />
   }
 
-  // Movie/Series mode — done (all swiped or clicked "I'm done")
-  if (fetchingDone) {
-    return (
-      <RoomShell>
-        <div className="loader" />
-        <p style={{ color: 'var(--text-muted)', marginTop: 12 }}>Finding your matches…</p>
-      </RoomShell>
-    )
-  }
-
   if (isDone || currentIndex >= movies.length) {
-    const matchesToShow = isSolo
-      ? liked
-      : (doneMatches !== null && doneMatches.length >= matches.length) ? doneMatches : matches
+    // Show the ranking straight away with what we already know; RankingView
+    // reconciles with the database in the background.
+    const matchesToShow = isSolo ? liked : matches
     return <RankingView matches={matchesToShow} liked={liked} room={room} movies={movies} onDone={() => navigate('/')} isSolo={isSolo} />
   }
 
@@ -489,31 +527,30 @@ export default function Room() {
         <span className="room-progress">{currentIndex + 1} / {movies.length}</span>
       </AppHeader>
 
+      {partnerDone && !isSolo && currentIndex >= partnerStop && (
+        <div className="room-banner">
+          <div className="partner-done-banner">
+            <span className="partner-done-dot" aria-hidden="true" />
+            Your partner finished swiping
+          </div>
+        </div>
+      )}
+
       <div className="room-cards">
         <SwipeCard
           key={currentMovie.id}
           item={currentMovie}
           onSwipe={handleSwipe}
+          onUndo={handleUndo}
+          canUndo={canUndo}
           active
         />
       </div>
 
       <div className="room-footer">
-        {partnerDone && !isSolo && currentIndex >= partnerStop && (
-          <div className="partner-done-banner">
-            <span className="partner-done-dot" aria-hidden="true" />
-            Your partner finished swiping
-          </div>
-        )}
-        <button className="done-early-btn" onClick={async () => {
-          if (isSolo) { setIsDone(true); return }
-          setFetchingDone(true)
-          await signalDone()
-          const ids = await fetchRoomMatches(roomId, userToken.current, 2, MOVIE_SENTINELS)
-          if (ids !== null) {
-            setDoneMatches(movies.filter(m => ids.includes(m.id)))
-          }
-          setFetchingDone(false)
+        <button className="done-early-btn" onClick={() => {
+          // Results open immediately; the "done" marker is written in the background.
+          if (!isSolo) signalDone()
           setIsDone(true)
         }}>
           {isSolo
@@ -529,13 +566,9 @@ export default function Room() {
           swipeCount={currentIndex}
           matchCount={matches.length}
           onContinue={() => setMatchItem(null)}
-          onDone={async () => {
+          onDone={() => {
             setMatchItem(null)
-            setFetchingDone(true)
-            await signalDone()
-            const ids = await fetchRoomMatches(roomId, userToken.current, 2, MOVIE_SENTINELS)
-            if (ids !== null) setDoneMatches(movies.filter(m => ids.includes(m.id)))
-            setFetchingDone(false)
+            signalDone()
             setIsDone(true)
           }}
         />

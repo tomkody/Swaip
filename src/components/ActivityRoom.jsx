@@ -3,6 +3,8 @@ import confetti from 'canvas-confetti'
 import { prefersReducedMotion } from '../lib/motion'
 import HomeLogo from './HomeLogo'
 import ThemeToggle from './ThemeToggle'
+import AppHeader from './AppHeader'
+import InvitePanel from './InvitePanel'
 import CategoryGrid from './CategoryGrid'
 import { seededShuffle } from '../lib/random'
 import { saveMatch } from '../lib/savedMatches'
@@ -81,6 +83,8 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedCats, setSelectedCats] = useState(new Set())
   const [matches, setMatches] = useState([])
+  const matchesRef = useRef([])
+  useEffect(() => { matchesRef.current = matches }, [matches])
   const [likedPlaces, setLikedPlaces] = useState([])
   const [matchItem, setMatchItem] = useState(null)
   const [isDone, setIsDone] = useState(false)
@@ -92,13 +96,14 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   const [fetchingPlaces, setFetchingPlaces] = useState(false)
   const [placesError, setPlacesError] = useState(null)
   const [waitingForPartner, setWaitingForPartner] = useState(false)
-  const [waitedLong, setWaitedLong] = useState(false)
 
   const isDoneRef = useRef(false)
   const placesTransitionFiredRef = useRef(false)
   const pendingSwipesRef = useRef([])
   const likedCatIdsRef = useRef(new Set())
   const rejectedBrandsRef = useRef(new Set())
+  const historyRef = useRef([])            // this session's place swipes, newest last (undo)
+  const [canUndo, setCanUndo] = useState(false)
   const donePlacesSignalledRef = useRef(false)
 
   useEffect(() => { isDoneRef.current = isDone }, [isDone])
@@ -116,14 +121,6 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   useEffect(() => {
     if (matchItem) saveMatch({ id: matchItem.id, title: matchItem.title, category: room.type, image: matchItem.poster || null, rating: matchItem.rating || null })
   }, [matchItem, room.type])
-
-  // Escape hatch: if a partner never taps "done", surface a "Continue" option
-  // after a wait so the user isn't stuck on the categories screen forever.
-  useEffect(() => {
-    if (!waitingForPartner) return
-    const t = setTimeout(() => setWaitedLong(true), 20000)
-    return () => clearTimeout(t)
-  }, [waitingForPartner])
 
   // Solo: auto-complete when all places swiped
   useEffect(() => {
@@ -207,7 +204,14 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
           }
         }
       }
-    }, playerCount)
+    }, playerCount, {
+      // A partner took back a like with undo — drop that match here too.
+      isMatched: id => matchesRef.current.some(m => m.numId === id),
+      onUnmatch: id => {
+        setMatches(prev => prev.filter(m => m.numId !== id))
+        setMatchItem(cur => (cur && cur.numId === id ? null : cur))
+      },
+    })
     return unsub
   }, [isSolo, room.id, phase, places]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -432,9 +436,14 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     const place = places[currentIndex]
     if (!place) return
 
-    if (direction === 'left') {
-      rejectedBrandsRef.current.add(getBrandKey(place.title))
+    const brand = getBrandKey(place.title)
+    const entry = { index: currentIndex, place, direction, addedBrand: false, pending: null, undone: false }
+    if (direction === 'left' && !rejectedBrandsRef.current.has(brand)) {
+      rejectedBrandsRef.current.add(brand)
+      entry.addedBrand = true
     }
+    historyRef.current.push(entry)
+    setCanUndo(true)
 
     let nextIndex = currentIndex + 1
     while (nextIndex < places.length && rejectedBrandsRef.current.has(getBrandKey(places[nextIndex].title))) {
@@ -448,8 +457,9 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
 
     if (!isSolo) {
       try {
-        const isMatch = await recordSwipe(room.id, userToken.current, place.numId, direction, playerCount)
-        if (isMatch) {
+        entry.pending = recordSwipe(room.id, userToken.current, place.numId, direction, playerCount)
+        const isMatch = await entry.pending
+        if (isMatch && !entry.undone) {
           notifyRoom(room.id, 'match', { from: userToken.current, itemId: place.numId })
           setMatchItem(place)
           setMatches(prev => prev.find(m => m.id === place.id) ? prev : [...prev, place])
@@ -460,6 +470,27 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       }
     }
   }, [isSolo, places, currentIndex, room.id, playerCount])
+
+  // Step back one place. A skipped brand comes back into the deck; a taken-back
+  // like is written as a newer 'left' vote so its match disappears too.
+  const handlePlaceUndo = useCallback(async () => {
+    const last = historyRef.current.pop()
+    setCanUndo(historyRef.current.length > 0)
+    if (!last) return
+    last.undone = true
+    if (last.addedBrand) rejectedBrandsRef.current.delete(getBrandKey(last.place.title))
+    setCurrentIndex(last.index)
+    if (last.direction !== 'right') return
+    setLikedPlaces(prev => prev.filter(p => p.id !== last.place.id))
+    setMatches(prev => prev.filter(p => p.id !== last.place.id))
+    if (isSolo) return
+    try {
+      await last.pending?.catch(() => {})
+      await recordSwipe(room.id, userToken.current, last.place.numId, 'left', playerCount)
+    } catch (err) {
+      console.error('Failed to take back a like:', err)
+    }
+  }, [isSolo, room.id, playerCount])
 
   // ── Place match modal (together mode only) ────────────────────────────────
   if (matchItem && !isSolo) {
@@ -548,7 +579,8 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     const likedCats = ACTIVITY_CATEGORIES.filter(c => selectedCats.has(c.numId))
     const othersNeeded = playerCount - 1
     return (
-      <div className="act-center">
+      <div className="act-center has-app-header">
+        <AppHeader className="center-app-header" />
         <div className="act-waiting">
           <div className="act-waiting-icon">⏳</div>
           <h2>{playerCount > 2 ? `Waiting for the group…` : `Waiting for your partner…`}</h2>
@@ -569,20 +601,17 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
               Your picks: {likedCats.map(c => `${c.emoji} ${c.label}`).join(', ')}
             </p>
           )}
-          <div className="loader" style={{ margin: '16px auto' }} />
-          {waitedLong && (
-            <button
-              className="btn btn-primary"
-              style={{ width: '100%', marginTop: 8 }}
-              onClick={async () => {
-                const ids = await fetchRoomMatches(room.id, userToken.current, playerCount)
-                let cats = ACTIVITY_CATEGORIES.filter(c => ids?.includes(c.numId))
-                if (cats.length === 0) cats = likedCats
-                await fetchAndTransitionToPlaces(cats)
-              }}
-            >
-              Continue without waiting
-            </button>
+          {participantCount < playerCount ? (
+            <div className="act-waiting-invite">
+              <p className="act-waiting-text">
+                {playerCount > 2
+                  ? `Invite the others. Everyone picks their own activities on their phone, then you all swipe through places you agree on.`
+                  : `Invite your partner. They pick their own activities on their phone, then you both swipe through places you agree on.`}
+              </p>
+              <InvitePanel roomId={room.id} type={room.type} />
+            </div>
+          ) : (
+            <div className="loader" style={{ margin: '16px auto' }} />
           )}
         </div>
       </div>
@@ -592,7 +621,8 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   // ── Transition screen ─────────────────────────────────────────────────────
   if (transitioning) {
     return (
-      <div className="act-center">
+      <div className="act-center has-app-header">
+        <AppHeader className="center-app-header" />
         <div className="act-transition">
           {fetchingPlaces ? (
             <>
@@ -635,7 +665,8 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
 
   if (phase === 'places' && placesError) {
     return (
-      <div className="act-center">
+      <div className="act-center has-app-header">
+        <AppHeader className="center-app-header" />
         <div className="act-error">
           <div className="act-error-icon">😕</div>
           <h2>Couldn't load places</h2>
@@ -654,7 +685,8 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   // ── Place swipe (no places available) ─────────────────────────────────────
   if (phase === 'places' && places.length === 0) {
     return (
-      <div className="act-center">
+      <div className="act-center has-app-header">
+        <AppHeader className="center-app-header" />
         <div className="act-error">
           <div className="act-error-icon">{matchedCategories[0]?.emoji || '📍'}</div>
           <h2>No places found</h2>
@@ -672,7 +704,8 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   // ── Waiting for group to finish swiping places ───────────────────────────
   if (finishedSwiping) {
     return (
-      <div className="act-center">
+      <div className="act-center has-app-header">
+        <AppHeader className="center-app-header" />
         <div className="act-waiting">
           <div className="act-waiting-icon">⏳</div>
           <h2>{playerCount > 2 ? 'Waiting for the group…' : 'Waiting for your partner…'}</h2>
@@ -778,22 +811,27 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
         </div>
       </div>
 
+      {partnerDone && !isSolo && (
+        <div className="act-banner">
+          <div className="partner-done-banner">
+            <span className="partner-done-dot" aria-hidden="true" />
+            {playerCount > 2 ? 'Someone finished swiping' : 'Your partner finished swiping'}
+          </div>
+        </div>
+      )}
+
       <div className="act-cards">
         <SwipeCard
           key={currentPlace.id}
           item={currentPlace}
           onSwipe={handlePlaceSwipe}
+          onUndo={handlePlaceUndo}
+          canUndo={canUndo}
           active
         />
       </div>
 
       <div className="act-footer">
-        {partnerDone && !isSolo && (
-          <div className="partner-done-banner">
-            <span className="partner-done-dot" aria-hidden="true" />
-            {playerCount > 2 ? 'Someone finished swiping' : 'Your partner finished swiping'}
-          </div>
-        )}
         <button className="done-early-btn" onClick={() => setIsDone(true)}>
           {isSolo
             ? `I'm done · ${likedPlaces.length} pick${likedPlaces.length !== 1 ? 's' : ''}`

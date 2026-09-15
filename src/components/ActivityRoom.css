@@ -567,3 +567,21 @@
   .act-grid-hint { padding: 16px 68px 0 20px; text-align: left; }
 }
 .act-confirm-btn { width: 100%; }
+
+/* "Partner finished" nudge above the place card, not in the footer */
+.act-banner {
+  display: flex;
+  justify-content: center;
+  padding: 10px 16px 0;
+  flex-shrink: 0;
+}
+/* Invite while waiting for the partner to pick their categories */
+.act-waiting-invite {
+  width: 100%;
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.act-waiting-invite .act-waiting-text { margin: 0; }

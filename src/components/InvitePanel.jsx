@@ -31,7 +31,10 @@ export default function InvitePanel({ roomId, type = 'movies', onInteract }) {
     track('invite_shared', { type })
     onInteract?.()
     if (navigator.share) {
-      navigator.share({ title: 'Swaip', text: `${message} →`, url }).catch(() => {})
+      // Message first, link after. Passing `url` separately let WhatsApp and
+      // iMessage put the link on top and the text underneath, so the link
+      // goes inside the text instead.
+      navigator.share({ title: 'Swaip', text: `${message}\n${url}` }).catch(() => {})
     } else {
       handleCopy()
     }

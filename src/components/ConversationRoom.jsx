@@ -11,6 +11,7 @@ import {
 import SwipeCard from './SwipeCard'
 import HomeLogo from './HomeLogo'
 import ThemeToggle from './ThemeToggle'
+import AppHeader from './AppHeader'
 import Icon from './Icon'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import { track } from '../lib/analytics'
@@ -222,7 +223,8 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
   // ── Waiting for partner ─────────────────────────────────────────────
   if (submitted) {
     return (
-      <div className="conv-center">
+      <div className="conv-center has-app-header">
+        <AppHeader className="center-app-header" />
         <div className="conv-waiting">
           <div className="waiting-icon">⏳</div>
           <h2>All done!</h2>
@@ -238,7 +240,8 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
   // ── Loading (auto-submit in progress) ──────────────────────────────
   if (loading) {
     return (
-      <div className="conv-center">
+      <div className="conv-center has-app-header">
+        <AppHeader className="center-app-header" />
         <div className="conv-waiting">
           <div className="loader" />
           <p style={{ color: 'var(--text-muted)', marginTop: 12 }}>Submitting…</p>
@@ -254,7 +257,8 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
   if (done) {
     // Shouldn't normally show — handleSwipe triggers submit — but just in case
     return (
-      <div className="conv-center">
+      <div className="conv-center has-app-header">
+        <AppHeader className="center-app-header" />
         <div className="loader" />
       </div>
     )

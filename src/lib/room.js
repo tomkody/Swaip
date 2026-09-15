@@ -9,6 +9,25 @@ import { track } from './analytics'
 export const DONE_ITEM_ID = 9999999
 const DONE_SENTINELS = new Set([1999, 2999, DONE_ITEM_ID])
 
+// Swipes are append-only: the public key may insert rows but not update or
+// delete them. A changed mind is therefore a NEWER row for the same player and
+// item, and a player's current vote is their latest row. This is what makes
+// "undo" work — taking back a like inserts a newer 'left' row. Rows without a
+// created_at (local demo mode, tests) fall back to array order.
+export function currentVotes(rows) {
+  const latest = new Map()
+  ;(rows || []).forEach((r, i) => {
+    const key = `${r.user_token}|${Number(r.item_id)}`
+    const t = r.created_at ? Date.parse(r.created_at) : NaN
+    const prev = latest.get(key)
+    const newer = !prev || (Number.isFinite(t) && Number.isFinite(prev.t) ? t >= prev.t : i >= prev.i)
+    if (newer) latest.set(key, { r, t, i })
+  })
+  return [...latest.values()].map(v => v.r)
+}
+const currentLikes = rows => currentVotes(rows).filter(r => r.direction === 'right')
+const VOTE_COLUMNS = 'user_token, item_id, direction, created_at'
+
 // Movie/series rooms must only treat DONE_ITEM_ID as a sentinel: 1999 and 2999
 // are valid TMDB ids, so filtering them out there would silently make those two
 // titles unmatchable. Callers in movie/series context pass this set to
@@ -64,8 +83,7 @@ export async function fetchVoteCounts(roomId) {
     const key = `swaip_swipes_${roomId}`
     const swipes = JSON.parse(localStorage.getItem(key) || '[]')
     const byItem = {}
-    for (const s of swipes) {
-      if (s.direction !== 'right') continue
+    for (const s of currentLikes(swipes)) {
       const id = Number(s.item_id)
       if (!byItem[id]) byItem[id] = new Set()
       byItem[id].add(s.user_token)
@@ -73,11 +91,11 @@ export async function fetchVoteCounts(roomId) {
     return Object.fromEntries(Object.entries(byItem).map(([id, set]) => [id, set.size]))
   }
   const { data, error } = await supabase
-    .from('swipes').select('user_token, item_id')
-    .eq('room_id', roomId).eq('direction', 'right')
+    .from('swipes').select(VOTE_COLUMNS)
+    .eq('room_id', roomId)
   if (error || !data) return {}
   const byItem = {}
-  for (const s of data) {
+  for (const s of currentLikes(data)) {
     const id = Number(s.item_id)
     if (!byItem[id]) byItem[id] = new Set()
     byItem[id].add(s.user_token)
@@ -197,7 +215,7 @@ export async function checkMutualSwipesByIds(roomId, userToken, itemIds, playerC
     const key = `swaip_swipes_${roomId}`
     const swipes = JSON.parse(localStorage.getItem(key) || '[]')
     const idSet = new Set(itemIds.map(Number))
-    const rightSwipes = swipes.filter(s => s.direction === 'right' && idSet.has(Number(s.item_id)))
+    const rightSwipes = currentLikes(swipes).filter(s => idSet.has(Number(s.item_id)))
     const byItem = {}
     for (const s of rightSwipes) {
       const id = Number(s.item_id)
@@ -212,13 +230,12 @@ export async function checkMutualSwipesByIds(roomId, userToken, itemIds, playerC
 
   const { data, error } = await supabase
     .from('swipes')
-    .select('user_token, item_id')
+    .select(VOTE_COLUMNS)
     .eq('room_id', roomId)
-    .eq('direction', 'right')
     .in('item_id', itemIds)
   if (error || !data) return null
   const byItem = {}
-  for (const s of data) {
+  for (const s of currentLikes(data)) {
     if (!byItem[s.item_id]) byItem[s.item_id] = new Set()
     byItem[s.item_id].add(s.user_token)
   }
@@ -352,16 +369,15 @@ export async function fetchRoomMatches(roomId, userToken, playerCount = 2, senti
 
   const { data, error } = await supabase
     .from('swipes')
-    .select('user_token, item_id')
+    .select(VOTE_COLUMNS)
     .eq('room_id', roomId)
-    .eq('direction', 'right')
 
   if (error || !data) return []
 
-  // Count distinct users who liked each item, and track this user's own likes.
+  // Count distinct users whose CURRENT vote is a like, and this user's own likes.
   const likersByItem = {}
   const myLikes = new Set()
-  for (const row of data) {
+  for (const row of currentLikes(data)) {
     const id = Number(row.item_id)
     if (sentinels.has(id)) continue   // "I'm done" marker, not a pick
     if (!likersByItem[id]) likersByItem[id] = new Set()
@@ -432,15 +448,15 @@ export async function fetchPartnerSwipeCount(roomId, userToken, minItemId = 0, s
   const { data, error } = await supabase
     .from('swipes').select('user_token, item_id').eq('room_id', roomId)
   if (error || !data) return 0
-  const counts = {}
+  const seen = {}
   for (const r of data) {
     if (r.user_token === userToken) continue
     const id = Number(r.item_id)
     if (sentinels.has(id) || id < minItemId) continue
-    counts[r.user_token] = (counts[r.user_token] || 0) + 1
+    ;(seen[r.user_token] ||= new Set()).add(id)
   }
   let max = 0
-  for (const c of Object.values(counts)) if (c > max) max = c
+  for (const set of Object.values(seen)) if (set.size > max) max = set.size
   return max
 }
 
@@ -455,9 +471,8 @@ export async function recordSwipe(roomId, userToken, itemId, direction, playerCo
   }
 
   // The card has already advanced on screen, so a lost insert silently costs a
-  // vote (and possibly the match). Retry transient failures; a duplicate-key
-  // error means an earlier attempt did land (or this is a re-vote after a
-  // reload) and counts as success.
+  // vote (and possibly the match). Retry transient failures. Re-votes for the
+  // same card (undo) are new rows by design — see currentVotes.
   const row = { room_id: roomId, user_token: userToken, item_id: itemId, direction }
   let lastError = null
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -468,15 +483,17 @@ export async function recordSwipe(roomId, userToken, itemId, direction, playerCo
   }
   if (lastError) throw lastError
 
-  if (direction === 'right') {
-    const { data: matchSwipes } = await supabase
+  // The "I'm done" marker is never a pick, so skip the match lookup for it
+  // (it used to add a query to every tap on "I'm done"). The category-phase
+  // markers 1999/2999 still need it: their result says "everyone is done".
+  if (direction === 'right' && Number(itemId) !== DONE_ITEM_ID) {
+    const { data: itemSwipes } = await supabase
       .from('swipes')
-      .select('user_token')
+      .select(VOTE_COLUMNS)
       .eq('room_id', roomId)
       .eq('item_id', itemId)
-      .eq('direction', 'right')
 
-    const uniqueTokens = new Set(matchSwipes?.map(s => s.user_token) || [])
+    const uniqueTokens = new Set(currentLikes(itemSwipes).map(s => s.user_token))
     return uniqueTokens.size >= playerCount
   }
 
@@ -488,7 +505,7 @@ function checkLocalMatch(roomId, itemId, userToken, direction, playerCount = 2) 
   const key = `swaip_swipes_${roomId}`
   const swipes = JSON.parse(localStorage.getItem(key) || '[]')
   const tokens = new Set(
-    swipes.filter(s => s.item_id === itemId && s.direction === 'right').map(s => s.user_token)
+    currentLikes(swipes.filter(s => s.item_id === itemId)).map(s => s.user_token)
   )
   return tokens.size >= playerCount
 }
@@ -560,7 +577,10 @@ export async function getConversationMatches(roomId, userToken) {
 }
 
 // Subscribe to swipes (movies)
-export function subscribeToSwipes(roomId, userToken, onMatch, playerCount = 2) {
+// `onUnmatch` (optional) fires when another player takes back a like that was
+// part of a match THIS user already has — `isMatched(itemId)` says which items
+// those are, so ordinary passes don't cost a query.
+export function subscribeToSwipes(roomId, userToken, onMatch, playerCount = 2, { onUnmatch, isMatched } = {}) {
   if (!supabase) return () => {}
 
   const channel = supabase
@@ -575,16 +595,25 @@ export function subscribeToSwipes(roomId, userToken, onMatch, playerCount = 2) {
       },
       async (payload) => {
         const swipe = payload.new
+        if (swipe.user_token !== userToken && swipe.direction === 'left' && onUnmatch && isMatched?.(Number(swipe.item_id))) {
+          const { data } = await supabase
+            .from('swipes')
+            .select(VOTE_COLUMNS)
+            .eq('room_id', roomId)
+            .eq('item_id', swipe.item_id)
+          const likers = new Set(currentLikes(data).map(s => s.user_token))
+          if (likers.size < playerCount) onUnmatch(Number(swipe.item_id))
+          return
+        }
         if (swipe.user_token !== userToken && swipe.direction === 'right') {
           // Fire match when all playerCount distinct users have liked this item
           const { data } = await supabase
             .from('swipes')
-            .select('user_token')
+            .select(VOTE_COLUMNS)
             .eq('room_id', roomId)
             .eq('item_id', swipe.item_id)
-            .eq('direction', 'right')
 
-          const uniqueTokens = new Set(data?.map(s => s.user_token) || [])
+          const uniqueTokens = new Set(currentLikes(data).map(s => s.user_token))
           // Only notify THIS user when they are actually part of the match.
           // Without the has(userToken) check, a match between other people in
           // the room would wrongly pop "It's a Match!" for someone who never
@@ -701,16 +730,14 @@ export function subscribeToRankings(roomId, userToken, onPartnerSubmitted) {
 export async function fetchRoomPicks(roomId, userToken, sentinels = DONE_SENTINELS) {
   let rows = []
   if (!supabase) {
-    rows = JSON.parse(localStorage.getItem(`swaip_swipes_${roomId}`) || '[]')
-      .filter(s => s.direction === 'right')
+    rows = currentLikes(JSON.parse(localStorage.getItem(`swaip_swipes_${roomId}`) || '[]'))
   } else {
     const { data, error } = await supabase
       .from('swipes')
-      .select('user_token, item_id')
+      .select(VOTE_COLUMNS)
       .eq('room_id', roomId)
-      .eq('direction', 'right')
     if (error || !data) return null
-    rows = data
+    rows = currentLikes(data)
   }
 
   const countsById = {}

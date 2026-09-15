@@ -418,6 +418,16 @@
   border-color: var(--border-hover);
 }
 
+/* Undo: smaller and quieter than Nope/Like, sits between them */
+.undo-btn {
+  width: 46px;
+  height: 46px;
+  color: var(--text-muted);
+}
+.undo-btn:hover:not(:disabled) { color: var(--text); border-color: var(--border-hover); }
+.undo-btn:disabled { opacity: 0.35; cursor: default; box-shadow: none; }
+.undo-btn:disabled:active { transform: none; }
+
 .like-btn {
   background: var(--gradient-primary);
   border: none;              /* a transparent border ring showed as a seam on the circle's edge */

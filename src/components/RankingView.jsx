@@ -104,7 +104,6 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
   const [rankingsOff, setRankingsOff] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [sharing, setSharing] = useState(false)
-  const dragFrom = useRef(null)
 
   // Funnel: results screen reached (once per mount)
   useEffect(() => {
@@ -117,8 +116,16 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
   const [refreshedAt, setRefreshedAt] = useState(null)
   const [tick, setTick] = useState(0)          // re-renders the "updated Xm ago" label
 
+  // Realtime fires once per partner swipe, and the poll below overlaps with it,
+  // which used to send the same two queries several times per second. One
+  // refresh runs at a time; anything requested meanwhile collapses into a
+  // single follow-up.
+  const refreshBusyRef = useRef(false)
+  const refreshQueuedRef = useRef(false)
   const refreshPicks = useCallback(async () => {
     if (isSolo) return
+    if (refreshBusyRef.current) { refreshQueuedRef.current = true; return }
+    refreshBusyRef.current = true
     setRefreshing(true)
     try {
       const [p, ids] = await Promise.all([
@@ -126,17 +133,31 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
         fetchRoomMatches(room.id, userToken.current, playerCount, sentinels),
       ])
       if (p) setPicks(p)
-      if (ids && ids.length > 0 && movies.length > 0) {
+      if (ids && movies.length > 0) {
         const fresh = movies.filter(m => ids.includes(m.id))
-        if (fresh.length > 0) setMatches(fresh)
+        // In a pair an empty answer is real (a like was taken back). Group place
+        // rooms may be showing best-voted fallbacks, so only replace with news.
+        if (fresh.length > 0 || playerCount <= 2) setMatches(fresh)
       }
       setRefreshedAt(Date.now())
     } catch (e) {
       console.error('Failed to refresh partner picks:', e)
     } finally {
       setRefreshing(false)
+      refreshBusyRef.current = false
+      if (refreshQueuedRef.current) {
+        refreshQueuedRef.current = false
+        setTimeout(() => refreshPicksRef.current?.(), 250)
+      }
     }
   }, [isSolo, room.id, playerCount, movies, sentinels])
+  // A match that disappears (taken back) can't stay in the top 3 either.
+  useEffect(() => {
+    const ids = new Set(matches.map(m => m.id))
+    setTop3(prev => (prev.every(m => ids.has(m.id)) ? prev : prev.filter(m => ids.has(m.id))))
+  }, [matches])
+  const refreshPicksRef = useRef(null)
+  useEffect(() => { refreshPicksRef.current = refreshPicks }, [refreshPicks])
 
   // Load once, then live-update whenever anyone else swipes.
   useEffect(() => {
@@ -232,17 +253,17 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
     return unsub
   }, [isSolo, room.id, movies, playerCount])
 
-  // Poll for new matches — together mode only
+  // Poll for new matches — together mode only (solo has nothing to reconcile;
+  // the first fetch happens in refreshPicks on mount)
   useEffect(() => {
     if (isSolo) return
     const poll = async () => {
       const ids = await fetchRoomMatches(room.id, userToken.current, playerCount, sentinels)
-      if (ids !== null && ids.length > 0 && movies.length > 0) {
+      if (ids !== null && movies.length > 0) {
         const fresh = movies.filter(m => ids.includes(m.id))
-        if (fresh.length > 0) setMatches(fresh)
+        if (fresh.length > 0 || playerCount <= 2) setMatches(fresh)
       }
     }
-    poll()
     const interval = setInterval(poll, 12000)
     return () => clearInterval(interval)
   }, [isSolo, room.id, movies, playerCount, sentinels])
@@ -270,23 +291,46 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
     }
   }
 
-  // Drag-to-reorder within top 3
-  function onDragStart(e, idx) {
-    dragFrom.current = idx
-    e.dataTransfer.effectAllowed = 'move'
+  // Drag-to-reorder within the top 3 — pointer events, so it works with a
+  // finger on phones (HTML5 drag-and-drop never fires on touch screens).
+  // Press a filled tile, move it over another slot, let go: they swap.
+  const slotRefs = useRef([])
+  const dragRef = useRef(null)            // { from, pointerId, x0, y0, moved }
+  const [drag, setDrag] = useState(null)  // { from, dx, dy, over } while moving
+  const slotAt = (x, y) => slotRefs.current.findIndex(el => {
+    if (!el) return false
+    const r = el.getBoundingClientRect()
+    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom
+  })
+  function onTilePointerDown(e, idx) {
+    if (!top3[idx] || e.button > 0 || e.target.closest('.rv-slot-remove')) return
+    dragRef.current = { from: idx, pointerId: e.pointerId, x0: e.clientX, y0: e.clientY, moved: false }
+    e.currentTarget.setPointerCapture?.(e.pointerId)
   }
-  function onDragOver(e) { e.preventDefault() }
-  function onDrop(e, idx) {
-    e.preventDefault()
-    const from = dragFrom.current
-    if (from === null || from === idx) return
+  function onTilePointerMove(e) {
+    const d = dragRef.current
+    if (!d || d.pointerId !== e.pointerId) return
+    const dx = e.clientX - d.x0, dy = e.clientY - d.y0
+    if (!d.moved && Math.hypot(dx, dy) < 6) return
+    d.moved = true
+    const over = slotAt(e.clientX, e.clientY)
+    setDrag({ from: d.from, dx, dy, over })
+  }
+  function onTilePointerEnd(e) {
+    const d = dragRef.current
+    if (!d || d.pointerId !== e.pointerId) return
+    dragRef.current = null
+    setDrag(null)
+    if (!d.moved) return
+    const over = slotAt(e.clientX, e.clientY)
+    if (over < 0 || over === d.from) return
     setTop3(prev => {
       const arr = [...prev]
-      const [item] = arr.splice(from, 1)
-      arr.splice(idx, 0, item)
+      const to = Math.min(over, arr.length - 1)
+      ;[arr[d.from], arr[to]] = [arr[to], arr[d.from]]
       return arr
     })
-    dragFrom.current = null
+    track('top3_reordered', { type: room.type })
   }
 
   async function handleShare() {
@@ -706,32 +750,42 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
       <div className="rv-header"><AppHeader /></div>
       <div className="rv-ranking-header">
         <h2>Pick Your Top {maxPicks > 0 ? maxPicks : ''}</h2>
-        <p>{matches.length} {isSolo ? (matches.length === 1 ? 'pick' : 'picks') : (matches.length === 1 ? 'match' : 'matches')} · tap to rank · drag to reorder</p>
+        <p>{matches.length} {isSolo ? (matches.length === 1 ? 'pick' : 'picks') : (matches.length === 1 ? 'match' : 'matches')} · tap to rank{top3.length > 1 ? ' · drag tiles to reorder' : ''}</p>
       </div>
 
       {/* Top 3 slots */}
       <div className="rv-slots">
-        {[0, 1, 2].map(i => (
-          <div
-            key={i}
-            className={`rv-slot ${top3[i] ? 'rv-slot-filled' : 'rv-slot-empty'}`}
-            onDragOver={onDragOver}
-            onDrop={e => onDrop(e, i)}
-          >
-            <span className="rv-slot-num">#{i + 1}</span>
-            {top3[i] ? (
-              <div className="rv-slot-content" draggable onDragStart={e => onDragStart(e, i)}>
-                {top3[i].poster
-                  ? <img src={top3[i].poster} alt={top3[i].title} className="rv-slot-poster" />
-                  : <div className="rv-slot-poster rv-slot-poster-empty">{emoji}</div>}
-                <p className="rv-slot-title">{top3[i].title}</p>
-                <button className="rv-slot-remove" onClick={() => toggleItem(top3[i])}>✕</button>
-              </div>
-            ) : (
-              <div className="rv-slot-placeholder">+</div>
-            )}
-          </div>
-        ))}
+        {[0, 1, 2].map(i => {
+          const dragging = drag?.from === i
+          const target = drag && drag.over === i && drag.from !== i && top3[i]
+          return (
+            <div
+              key={i}
+              ref={el => { slotRefs.current[i] = el }}
+              className={`rv-slot ${top3[i] ? 'rv-slot-filled' : 'rv-slot-empty'} ${target ? 'is-drop-target' : ''}`}
+            >
+              <span className="rv-slot-num">#{i + 1}</span>
+              {top3[i] ? (
+                <div
+                  className={`rv-slot-content ${dragging ? 'is-dragging' : ''}`}
+                  style={dragging ? { transform: `translate(${drag.dx}px, ${drag.dy}px) scale(1.06)` } : undefined}
+                  onPointerDown={e => onTilePointerDown(e, i)}
+                  onPointerMove={onTilePointerMove}
+                  onPointerUp={onTilePointerEnd}
+                  onPointerCancel={onTilePointerEnd}
+                >
+                  {top3[i].poster
+                    ? <img src={top3[i].poster} alt={top3[i].title} className="rv-slot-poster" draggable={false} />
+                    : <div className="rv-slot-poster rv-slot-poster-empty">{emoji}</div>}
+                  <p className="rv-slot-title">{top3[i].title}</p>
+                  <button className="rv-slot-remove" onClick={() => toggleItem(top3[i])} aria-label={`Remove ${top3[i].title} from your top 3`}>✕</button>
+                </div>
+              ) : (
+                <div className="rv-slot-placeholder">+</div>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {/* Matches / picks list */}

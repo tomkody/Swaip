@@ -22,10 +22,11 @@ vi.mock('../supabase', () => ({
   supabase: { from: (table) => makeBuilder(table) },
 }))
 
-const { fetchRoomMatches, fetchRoomPicks, fetchPartnerSwipeCount, MOVIE_SENTINELS, DONE_ITEM_ID } =
+const { fetchRoomMatches, fetchRoomPicks, fetchPartnerSwipeCount, currentVotes, MOVIE_SENTINELS, DONE_ITEM_ID } =
   await import('../room')
 
 const right = (user, item) => ({ user_token: user, item_id: item, direction: 'right' })
+const left = (user, item) => ({ user_token: user, item_id: item, direction: 'left' })
 
 beforeEach(() => { tables.swipes = [] })
 
@@ -109,5 +110,34 @@ describe('fetchPartnerSwipeCount', () => {
   it('minItemId isolates the places phase from category swipes', async () => {
     tables.swipes = [right('p', 1002), right('p', 1005), right('p', 2000001), right('p', 2000002), right('p', 2000003)]
     expect(await fetchPartnerSwipeCount('r', 'me', 2000000)).toBe(3)
+  })
+})
+
+// ── Undo: latest vote wins ────────────────────────────────────────────────────
+describe('currentVotes (undo support)', () => {
+  it('a newer left row takes back an earlier like', async () => {
+    tables.swipes = [right('me', 10), right('them', 10), left('me', 10)]
+    expect(await fetchRoomMatches('r', 'me', 2)).toEqual([])
+    const picks = await fetchRoomPicks('r', 'me')
+    expect(picks.myIds).toEqual([])
+    expect(picks.mutualIds).toEqual([])
+  })
+
+  it('changing a pass into a like after undo counts as a like', async () => {
+    tables.swipes = [left('me', 10), right('them', 10), right('me', 10)]
+    expect(await fetchRoomMatches('r', 'me', 2)).toEqual([10])
+  })
+
+  it('orders by created_at when present, not by array position', () => {
+    const rows = [
+      { ...left('me', 7), created_at: '2026-09-15T10:00:02Z' },
+      { ...right('me', 7), created_at: '2026-09-15T10:00:01Z' },
+    ]
+    expect(currentVotes(rows).map(r => r.direction)).toEqual(['left'])
+  })
+
+  it('counts a re-voted card once for the partner position', async () => {
+    tables.swipes = [left('them', 1), left('them', 1), right('them', 2)]
+    expect(await fetchPartnerSwipeCount('r', 'me')).toBe(2)
   })
 })

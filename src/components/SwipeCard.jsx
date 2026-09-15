@@ -1,12 +1,13 @@
 import { useRef, useState, useEffect } from 'react'
 import WhereToWatch from './WhereToWatch'
+import Icon from './Icon'
 import './SwipeCard.css'
 
 const SWIPE_THRESHOLD = 100
 const ROTATION_FACTOR = 0.15
 const DRAG_MIN_MOVE = 30  // px — below this the card never moves (pure tap zone)
 
-export default function SwipeCard({ item, onSwipe, active }) {
+export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = false }) {
   const cardRef = useRef(null)
   const startPos = useRef({ x: 0, y: 0 })
   const isDraggingRef = useRef(false)
@@ -275,6 +276,17 @@ export default function SwipeCard({ item, onSwipe, active }) {
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
+          {onUndo && (
+            <button
+              className="swipe-btn undo-btn"
+              onClick={onUndo}
+              disabled={!canUndo}
+              aria-label="Undo last swipe"
+              title="Undo last swipe"
+            >
+              <Icon name="undo" size={20} strokeWidth={2.4} />
+            </button>
+          )}
           <button className="swipe-btn like-btn" onClick={() => swipeVia('right')} aria-label="Like">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />

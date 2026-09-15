@@ -58,7 +58,14 @@
   gap: 10px;
 }
 
-/* "Partner finished swiping" nudge — compact single-line pill above the done button */
+/* "Partner finished swiping" nudge — sits under the header, above the card,
+   so it never runs into the card text or the done button on small phones */
+.room-banner {
+  display: flex;
+  justify-content: center;
+  margin: -2px 0 8px;
+  flex-shrink: 0;
+}
 .partner-done-banner {
   display: inline-flex;
   align-items: center;
@@ -231,6 +238,26 @@
   border: 2px solid var(--bg-card);
   background: var(--bg-secondary);
   box-shadow: 0 14px 30px rgba(16, 18, 28, 0.22);
+}
+/* Food & activity rooms: category tiles instead of posters */
+.join-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 8px;
+  text-align: center;
+  color: #fff;
+}
+.join-tile-emoji { font-size: 40px; line-height: 1; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25)); }
+.join-tile-label {
+  font-family: 'Manrope', -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 .join-poster--0 { left: 4px;  transform: rotate(-9deg); transform-origin: 100% 100%; }
 .join-poster--1 { left: 64px; top: 0; z-index: 2; }
