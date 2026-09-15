@@ -543,10 +543,10 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   className={`rv-refresh ${refreshing ? 'is-busy' : ''}`}
                   onClick={refreshAll}
                   disabled={refreshing}
-                  aria-label="Refresh partner picks"
+                  aria-label="Update your partner's status"
                 >
                   <Icon name="refresh" size={15} strokeWidth={2.4} />
-                  {refreshing ? 'Refreshing' : 'Refresh'}
+                  {refreshing ? 'Updating…' : 'Update'}
                 </button>
               </div>
 
@@ -554,7 +554,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                 <p className="rv-empty">
                   {submitted
                     ? `${playerCount > 2 ? 'The group' : 'They'} didn't rank anything.`
-                    : `Nothing yet — tap Refresh once ${playerCount > 2 ? 'they' : 'your partner'} finishes ranking.`}
+                    : `Nothing yet. Tap Update once ${playerCount > 2 ? 'they finish' : 'your partner finishes'} ranking.`}
                 </p>
               ) : (
                 rankItems.map((m, i) => {
@@ -676,10 +676,10 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                     className={`rv-refresh ${refreshing ? 'is-busy' : ''}`}
                     onClick={refreshAll}
                     disabled={refreshing}
-                    aria-label="Refresh partner picks"
+                    aria-label="Update your partner's status"
                   >
                     <Icon name="refresh" size={15} strokeWidth={2.4} />
-                    {refreshing ? 'Refreshing' : 'Refresh'}
+                    {refreshing ? 'Updating…' : 'Update'}
                   </button>
                 )}
               </div>
