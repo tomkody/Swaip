@@ -22,7 +22,7 @@ vi.mock('../supabase', () => ({
   supabase: { from: (table) => makeBuilder(table) },
 }))
 
-const { fetchRoomMatches, fetchRoomPicks, fetchPartnerSwipeCount, currentVotes, MOVIE_SENTINELS, DONE_ITEM_ID } =
+const { fetchRoomMatches, fetchRoomPicks, fetchPartnerSwipeCount, countItemLikers, currentVotes, MOVIE_SENTINELS, DONE_ITEM_ID } =
   await import('../room')
 
 const right = (user, item) => ({ user_token: user, item_id: item, direction: 'right' })
@@ -139,5 +139,24 @@ describe('currentVotes (undo support)', () => {
   it('counts a re-voted card once for the partner position', async () => {
     tables.swipes = [left('them', 1), left('them', 1), right('them', 2)]
     expect(await fetchPartnerSwipeCount('r', 'me')).toBe(2)
+  })
+})
+
+// ── countItemLikers ───────────────────────────────────────────────────────────
+// Drives the category-phase takeover: "has everyone confirmed?" must be
+// answerable by any client, not only the one whose insert happened to be last.
+describe('countItemLikers', () => {
+  it('counts distinct players whose current vote on the item is a like', async () => {
+    tables.swipes = [right('a', 1999), right('b', 1999), right('b', 1999)]
+    expect(await countItemLikers('r', 1999)).toBe(2)
+  })
+
+  it('does not count a player who took their confirmation back', async () => {
+    tables.swipes = [
+      { ...right('a', 1999), created_at: '2026-01-01T10:00:00Z' },
+      { ...right('b', 1999), created_at: '2026-01-01T10:00:01Z' },
+      { ...left('b', 1999), created_at: '2026-01-01T10:00:02Z' },
+    ]
+    expect(await countItemLikers('r', 1999)).toBe(1)
   })
 })

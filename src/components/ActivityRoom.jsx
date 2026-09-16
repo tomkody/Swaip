@@ -23,6 +23,7 @@ import {
   subscribeToRoomChanges,
   getRoom,
   fetchRoomMatches,
+  countItemLikers,
   DONE_ITEM_ID,
 } from '../lib/room'
 import SwipeCard from './SwipeCard'
@@ -61,8 +62,12 @@ function parseRoomActivityData(room) {
   }
 
   const playerCount = topicData.playerCount || 2
+  // Bumped by "try different" so every client starts a fresh round together
+  // (and so the previous round's done-marker no longer counts).
+  const round = topicData._round || 0
+  const compromise = topicData._compromise === true
 
-  return { phase, matchedCategories, places, playerCount }
+  return { phase, matchedCategories, places, playerCount, round, compromise }
 }
 
 
@@ -78,6 +83,10 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   const [phase, setPhase] = useState(initialData.phase)
   const [matchedCategories, setMatchedCategories] = useState(initialData.matchedCategories)
   const [places, setPlaces] = useState(initialData.places)
+  const [round, setRound] = useState(initialData.round)
+  const roundRef = useRef(initialData.round)
+  useEffect(() => { roundRef.current = round }, [round])
+  const [isCompromise, setIsCompromise] = useState(initialData.compromise)
   const playerCount = isSolo ? 1 : (initialData.playerCount || getRoomPlayerCount(room))
 
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -99,6 +108,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
 
   const isDoneRef = useRef(false)
   const placesTransitionFiredRef = useRef(false)
+  const waitStartRef = useRef(0)
   const pendingSwipesRef = useRef([])
   const likedCatIdsRef = useRef(new Set())
   const rejectedBrandsRef = useRef(new Set())
@@ -247,10 +257,11 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   }, [isSolo, room.id])
 
   // ── fetchAndTransitionToPlaces ────────────────────────────────────────────
-  const fetchAndTransitionToPlaces = useCallback(async (matchedCats) => {
+  const fetchAndTransitionToPlaces = useCallback(async (matchedCats, { compromise = false } = {}) => {
     if (placesTransitionFiredRef.current) return
     placesTransitionFiredRef.current = true
     setMatchedCategories(matchedCats)
+    setIsCompromise(compromise)
     setTransitioning(true)
     setFetchingPlaces(true)
 
@@ -263,6 +274,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       if (data && data.places.length > 0) {
         setPlaces(data.places)
         setMatchedCategories(data.matchedCategories.length ? data.matchedCategories : matchedCats)
+        setIsCompromise(data.compromise)
         setFetchingPlaces(false)
         setPhase('places')
         setCurrentIndex(0)
@@ -319,7 +331,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     }
 
     try {
-      await updateActivityRoomPhase(room.id, { phase: 'places', matched_categories: matchedCats, places: allPlaces, locationData: location })
+      await updateActivityRoomPhase(room.id, { phase: 'places', matched_categories: matchedCats, places: allPlaces, locationData: location, compromise, round: roundRef.current })
     } catch (err) { console.error('[ActivityRoom] updateActivityRoomPhase error:', err) }
 
     // Read canonical places from DB
@@ -338,6 +350,45 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     setWaitingForPartner(false)
   }, [location, room.id])  
 
+  // The done-marker is per round: `base` for the first pass, base-1 for the
+  // next, and so on. Without that, a second round would count everyone's old
+  // marker and transition the moment the first person confirmed.
+  const catDoneId = ACT_CAT_DONE_NUMID - round
+
+  // What the room should search for. Normally the categories everyone liked; if
+  // nobody agreed on a single one, the most-voted ones instead — an empty list
+  // used to write a places phase with no places and strand the room.
+  const resolveMatchedCategories = useCallback(async () => {
+    const allMatchIds = await fetchRoomMatches(room.id, userToken.current, playerCount)
+    if (allMatchIds === null) throw new Error('Could not read the picks — try confirming again')
+    const matched = ACTIVITY_CATEGORIES.filter(c => allMatchIds.includes(c.numId))
+    if (matched.length > 0) return { cats: matched, compromise: false }
+    const counts = await fetchVoteCounts(room.id)
+    const scored = ACTIVITY_CATEGORIES
+      .map(c => ({ c, n: counts[c.numId] || 0 }))
+      .filter(x => x.n > 0)
+      .sort((a, b) => b.n - a.n)
+    return { cats: scored.slice(0, 3).map(x => x.c), compromise: scored.length > 0 }
+  }, [room.id, playerCount, ACTIVITY_CATEGORIES])
+
+  // Everyone drops back to the picker together after a "try different" — the
+  // room row carries the round number, and each client resets when it sees a
+  // higher one than its own.
+  const startNewRound = useCallback((nextRound) => {
+    placesTransitionFiredRef.current = false
+    likedCatIdsRef.current = new Set()
+    setRound(nextRound)
+    setSelectedCats(new Set())
+    setPhase('categories')
+    setPlaces([])
+    setMatchedCategories([])
+    setIsCompromise(false)
+    setCurrentIndex(0)
+    setPlacesError(null)
+    setWaitingForPartner(false)
+    setTransitioning(false)
+  }, [])
+
   // ── handleCategoriesDone ──────────────────────────────────────────────────
   const handleCategoriesDone = useCallback(async () => {
     if (isSolo) {
@@ -347,23 +398,22 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       await fetchAndTransitionToPlaces(catsToUse)
       return
     }
+    waitStartRef.current = Date.now()
     setWaitingForPartner(true)
     try {
       await Promise.all(pendingSwipesRef.current)
       pendingSwipesRef.current = []
 
-      const isAllDone = await recordSwipe(room.id, userToken.current, ACT_CAT_DONE_NUMID, 'right', playerCount)
+      const isAllDone = await recordSwipe(room.id, userToken.current, catDoneId, 'right', playerCount)
       if (isAllDone) {
-        const allMatchIds = await fetchRoomMatches(room.id, userToken.current, playerCount)
-        if (allMatchIds === null) throw new Error('Could not read the picks — try confirming again')
-        const matchedCats = ACTIVITY_CATEGORIES.filter(c => allMatchIds.includes(c.numId))
-        await fetchAndTransitionToPlaces(matchedCats)
+        const resolved = await resolveMatchedCategories()
+        await fetchAndTransitionToPlaces(resolved.cats, { compromise: resolved.compromise })
       }
     } catch (err) {
       console.error('[ActivityRoom] handleCategoriesDone error:', err)
       setWaitingForPartner(false)
     }
-  }, [isSolo, room.id, playerCount, ACTIVITY_CATEGORIES, fetchAndTransitionToPlaces])  
+  }, [isSolo, room.id, playerCount, catDoneId, ACTIVITY_CATEGORIES, resolveMatchedCategories, fetchAndTransitionToPlaces])  
 
   // ── Category multi-select (grid) ───────────────────────────────────────────
   const toggleCategory = useCallback((numId) => {
@@ -392,10 +442,13 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     if (isSolo) return
     const unsub = subscribeToRoomChanges(room.id, (updatedRoom) => {
       const data = parseRoomActivityData(updatedRoom)
+      // Someone hit "try different …" — everyone goes back to the picker.
+      if (data.round > roundRef.current) { startNewRound(data.round); return }
       if (data.phase === 'places' && phase === 'categories') {
         if (placesTransitionFiredRef.current) return
         placesTransitionFiredRef.current = true
         setMatchedCategories(data.matchedCategories)
+        setIsCompromise(data.compromise)
         setTransitioning(true)
         // Brief celebration, then show places
         setTimeout(() => {
@@ -407,30 +460,57 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
         }, 2200)
       }
     })
-    return unsub
-  }, [isSolo, room.id, phase])  
+    // Realtime can be missed (backgrounded phone). The empty-places screen is a
+    // dead end until someone starts a new round, so poll for that while it shows.
+    const poll = (phase === 'places' && places.length === 0)
+      ? setInterval(() => {
+          getRoom(room.id)
+            .then(r => { if (r && parseRoomActivityData(r).round > roundRef.current) startNewRound(parseRoomActivityData(r).round) })
+            .catch(() => {})
+        }, 4000)
+      : null
+    return () => { unsub(); if (poll) clearInterval(poll) }
+  }, [isSolo, room.id, phase, places.length, startNewRound])  
 
   // ── Polling fallback: check room every 3s while waiting for partner ────────
   useEffect(() => {
     if (phase !== 'categories' || isSolo) return
+    // Spread out across clients so two people don't both take over (and both
+    // pay for a Google search) in the same second.
+    const takeoverAfter = 9000 + (parseInt(userToken.current.slice(0, 2), 16) % 6) * 1500
     const interval = setInterval(async () => {
       try {
         const latest = await getRoom(room.id)
         if (!latest) return
         const data = parseRoomActivityData(latest)
+        if (data.round > roundRef.current) { startNewRound(data.round); return }
+        if (data.round < roundRef.current) return          // stale row, ignore
         if (data.phase === 'places' && !placesTransitionFiredRef.current) {
           placesTransitionFiredRef.current = true
           setMatchedCategories(data.matchedCategories)
+          setIsCompromise(data.compromise)
           setPlaces(data.places)
           setPhase('places')
           setCurrentIndex(0)
           setWaitingForPartner(false)
           setTransitioning(false)
+          return
         }
-      } catch { /* non-fatal */ }
+        // Takeover: everyone has confirmed, but nobody wrote the places phase —
+        // the last confirmer closed the app or their Places call died. Whoever
+        // is still waiting finishes the job instead of waiting forever.
+        if (waitingForPartner && !placesTransitionFiredRef.current &&
+            Date.now() - waitStartRef.current > takeoverAfter) {
+          const likers = await countItemLikers(room.id, catDoneId)
+          if (likers != null && likers >= playerCount) {
+            const resolved = await resolveMatchedCategories()
+            await fetchAndTransitionToPlaces(resolved.cats, { compromise: resolved.compromise })
+          }
+        }
+      } catch (err) { console.error('[ActivityRoom] categories poll:', err) }
     }, 3000)
     return () => clearInterval(interval)
-  }, [isSolo, room.id, phase])  
+  }, [isSolo, room.id, phase, waitingForPartner, playerCount, catDoneId, startNewRound, resolveMatchedCategories, fetchAndTransitionToPlaces])  
 
   // ── Place swipe handler ───────────────────────────────────────────────────
   const handlePlaceSwipe = useCallback(async (direction) => {
@@ -636,9 +716,18 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
             </>
           ) : matchedCategories.length > 0 ? (
             <>
-              <div className="act-transition-emoji">🎉</div>
-              <h2>{isSolo ? 'Finding' : 'You matched on'} {matchedCategories.length} activity type{matchedCategories.length !== 1 ? 's' : ''}{isSolo ? '…' : '!'}</h2>
-              <p className="act-transition-sub">{matchedCategories.map(c => `${c.emoji} ${c.label}`).join(' · ')}</p>
+              <div className="act-transition-emoji">{isCompromise && !isSolo ? '🤝' : '🎉'}</div>
+              <h2>
+                {isSolo
+                  ? `Finding ${matchedCategories.length} activity type${matchedCategories.length !== 1 ? 's' : ''}…`
+                  : isCompromise
+                    ? 'Meeting in the middle'
+                    : `You matched on ${matchedCategories.length} activity type${matchedCategories.length !== 1 ? 's' : ''}!`}
+              </h2>
+              <p className="act-transition-sub">
+                {isCompromise && !isSolo && 'No exact match, so here\u2019s what got the most votes: '}
+                {matchedCategories.map(c => `${c.emoji} ${c.label}`).join(' · ')}
+              </p>
               <div className="loader" style={{ marginTop: 20 }} />
             </>
           ) : (
@@ -654,14 +743,17 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   }
 
   // ── No-location error / places fetch error ────────────────────────────────
-  function retryCategories() {
-    placesTransitionFiredRef.current = false
-    likedCatIdsRef.current = new Set()
-    setPhase('categories')
-    setPlaces([])
-    setMatchedCategories([])
-    setCurrentIndex(0)
-    setPlacesError(null)
+  async function retryCategories() {
+    const next = roundRef.current + 1
+    startNewRound(next)
+    if (isSolo) return
+    // Persist the new round so the other players reset too. Without this their
+    // client kept reading the old "places" row and dragged this one back into it.
+    try {
+      await updateActivityRoomPhase(room.id, {
+        phase: 'categories', matched_categories: [], places: [], locationData: location, round: next,
+      })
+    } catch (err) { console.error('[ActivityRoom] retryCategories:', err) }
   }
 
   if (phase === 'places' && placesError) {

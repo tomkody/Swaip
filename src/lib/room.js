@@ -323,7 +323,7 @@ export async function createColorGameRoom({ solo = false } = {}) {
 // Packs phase data into topic_id so no custom DB columns are required.
 // locationData should be the parsed location object { lat, lng, locationName, radius }
 // already stored in topic_id — we preserve it alongside the new phase fields.
-export async function updateActivityRoomPhase(roomId, { phase, matched_category, matched_categories, places, locationData }) {
+export async function updateActivityRoomPhase(roomId, { phase, matched_category, matched_categories, places, locationData, compromise = false, round = 0 }) {
   // Merge phase info into the existing topic_id JSON using _ prefixed keys
   const combined = {
     ...(locationData || {}),
@@ -331,6 +331,12 @@ export async function updateActivityRoomPhase(roomId, { phase, matched_category,
     _matched_category: matched_category || (matched_categories?.[0]) || null, // backward compat
     _matched_categories: matched_categories || (matched_category ? [matched_category] : []),
     _places: places || [],
+    // true when nobody agreed on a category and we fell back to the most-voted
+    // ones — both clients must show the same "here's a compromise" wording.
+    ...(compromise && { _compromise: true }),
+    // Round number of the category picker; bumped by "try different …" so every
+    // client resets together instead of being pulled back into the old phase.
+    _round: round,
   }
   const update = { topic_id: JSON.stringify(combined) }
 
@@ -344,6 +350,24 @@ export async function updateActivityRoomPhase(roomId, { phase, matched_category,
 
   const { error } = await supabase.from('rooms').update(update).eq('id', roomId)
   if (error) throw error
+}
+
+// How many distinct players currently like one item. Used by the category
+// phase to answer "has everyone confirmed?" without trusting the single
+// recordSwipe call that happened to be the last one — see the takeover in
+// FoodRoom/ActivityRoom. Returns null when the read failed, so callers can
+// tell "nobody yet" from "we don't know".
+export async function countItemLikers(roomId, itemId) {
+  if (!supabase) {
+    const swipes = JSON.parse(localStorage.getItem(`swaip_swipes_${roomId}`) || '[]')
+    const mine = swipes.filter(s => Number(s.item_id) === Number(itemId))
+    return new Set(currentLikes(mine).map(s => s.user_token)).size
+  }
+  const { data, error } = await supabase
+    .from('swipes').select(VOTE_COLUMNS)
+    .eq('room_id', roomId).eq('item_id', itemId)
+  if (error || !data) return null
+  return new Set(currentLikes(data).map(s => s.user_token)).size
 }
 
 // Subscribe to room data changes (for activity phase transitions)
