@@ -696,8 +696,11 @@ export async function submitRankings(roomId, userToken, itemIds) {
   // Delete old rankings for this user first, then insert new ones
   if (rankingsUnavailable) return
   await supabase.from('rankings').delete().eq('room_id', roomId).eq('user_token', userToken)
-  if (itemIds.length === 0) return
-  const rows = itemIds.map((id, i) => ({ room_id: roomId, user_token: userToken, item_id: id, rank: i + 1 }))
+  // Skipping still has to leave a row. Writing nothing used to be indistinguishable
+  // from "hasn't locked in yet", so a partner who ranked nothing (e.g. zero matches
+  // when they finished first) left the other player waiting forever.
+  const ids = itemIds.length > 0 ? itemIds : [DONE_ITEM_ID]
+  const rows = ids.map((id, i) => ({ room_id: roomId, user_token: userToken, item_id: id, rank: i + 1 }))
   const { error } = await supabase.from('rankings').insert(rows)
   if (error) {
     if (error.code === 'PGRST205') { rankingsUnavailable = true; return }
@@ -725,12 +728,14 @@ export async function getRankings(roomId, userToken) {
   const byUser = {}
   for (const row of data) {
     if (!byUser[row.user_token]) byUser[row.user_token] = []
-    byUser[row.user_token].push(row.item_id)
+    // The skip marker says "this player locked in", not "they ranked this".
+    if (Number(row.item_id) !== DONE_ITEM_ID) byUser[row.user_token].push(row.item_id)
   }
   const myRanking = byUser[userToken] || null
   const otherUser = Object.keys(byUser).find(u => u !== userToken)
   const partnerRanking = otherUser ? byUser[otherUser] : null
-  return { myRanking, partnerRanking, partnerSubmitted: !!partnerRanking }
+  // An empty array is a real answer ("they ranked nothing"); null means no rows.
+  return { myRanking, partnerRanking, partnerSubmitted: partnerRanking != null }
 }
 
 // Subscribe to partner submitting rankings

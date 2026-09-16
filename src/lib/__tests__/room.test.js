@@ -22,13 +22,13 @@ vi.mock('../supabase', () => ({
   supabase: { from: (table) => makeBuilder(table) },
 }))
 
-const { fetchRoomMatches, fetchRoomPicks, fetchPartnerSwipeCount, countItemLikers, currentVotes, MOVIE_SENTINELS, DONE_ITEM_ID } =
+const { fetchRoomMatches, fetchRoomPicks, fetchPartnerSwipeCount, countItemLikers, getRankings, currentVotes, MOVIE_SENTINELS, DONE_ITEM_ID } =
   await import('../room')
 
 const right = (user, item) => ({ user_token: user, item_id: item, direction: 'right' })
 const left = (user, item) => ({ user_token: user, item_id: item, direction: 'left' })
 
-beforeEach(() => { tables.swipes = [] })
+beforeEach(() => { tables.swipes = []; tables.rankings = [] })
 
 // ── fetchRoomMatches ──────────────────────────────────────────────────────────
 describe('fetchRoomMatches', () => {
@@ -158,5 +158,32 @@ describe('countItemLikers', () => {
       { ...left('b', 1999), created_at: '2026-01-01T10:00:02Z' },
     ]
     expect(await countItemLikers('r', 1999)).toBe(1)
+  })
+})
+
+// ── getRankings ───────────────────────────────────────────────────────────────
+// Someone who ranks nothing still writes a skip marker; without it the partner
+// could never tell "locked in with nothing" from "hasn't locked in yet".
+describe('getRankings', () => {
+  const rank = (user, item, r) => ({ user_token: user, item_id: item, rank: r })
+
+  it('reports a partner who skipped as submitted, with an empty list', async () => {
+    tables.rankings = [rank('them', DONE_ITEM_ID, 1)]
+    const { partnerRanking, partnerSubmitted } = await getRankings('r', 'me')
+    expect(partnerSubmitted).toBe(true)
+    expect(partnerRanking).toEqual([])
+  })
+
+  it('keeps real picks and drops the skip marker', async () => {
+    tables.rankings = [rank('them', 10, 1), rank('them', 11, 2)]
+    const { partnerRanking } = await getRankings('r', 'me')
+    expect(partnerRanking).toEqual([10, 11])
+  })
+
+  it('reports no partner submission when only this user has ranked', async () => {
+    tables.rankings = [rank('me', 10, 1)]
+    const { partnerSubmitted, myRanking } = await getRankings('r', 'me')
+    expect(partnerSubmitted).toBe(false)
+    expect(myRanking).toEqual([10])
   })
 })

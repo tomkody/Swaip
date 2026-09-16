@@ -268,6 +268,21 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
     return () => clearInterval(interval)
   }, [isSolo, room.id, movies, playerCount, sentinels])
 
+  // Ranking a list of one is busywork: lock it in automatically. Only once the
+  // others have finished swiping, though — an early single match can still grow.
+  const autoLockedRef = useRef(false)
+  useEffect(() => {
+    if (phase !== 'rank' || autoLockedRef.current) return
+    if (matches.length !== 1 || top3.length > 0) return
+    const everyoneDone = isSolo || (picks != null && picks.othersDone >= playerCount - 1)
+    if (!everyoneDone) return
+    autoLockedRef.current = true
+    const only = matches[0]
+    setTop3([only])
+    setPhase('results')
+    submitRankings(room.id, userToken.current, [only.id]).catch(e => console.error('Failed to save rankings:', e))
+  }, [phase, matches, top3.length, isSolo, picks, playerCount, room.id])
+
   function toggleItem(item) {
     setTop3(prev => {
       const idx = prev.findIndex(m => m.id === item.id)
@@ -654,6 +669,9 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
           const hiddenMatches = allPartnerItems.length - partnerItems.length
           const groupWord = playerCount > 2 ? 'the group' : 'your partner'
           const othersDone = picks?.othersDone || 0
+          // Nothing to show and nothing left to wait for — drop the whole block
+          // rather than leave an empty section on the results page.
+          if (picks != null && othersDone > 0 && (picks.partnerIds || []).length === 0) return null
           const status = picks == null
             ? 'Loading…'
             : othersDone > 0
@@ -689,7 +707,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   {hiddenMatches > 0
                     ? `Everything ${groupWord} liked is already in your matches.`
                     : othersDone > 0
-                      ? `${playerCount > 2 ? 'Nobody' : 'They'} picked anything this time.`
+                      ? `${playerCount > 2 ? 'Nobody' : 'They'} didn't pick anything this time.`
                       : `Nothing yet. You'll see picks here as ${groupWord} swipes.`}
                 </p>
               ) : (
@@ -731,6 +749,12 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
             <Icon name="image" size={17} />
             {sharing ? 'Generating…' : 'Share results'}
           </button>
+          {matches.length > 0 && (
+            <button className="btn rv-share-btn" onClick={() => setPhase('rank')}>
+              <Icon name="grip" size={17} />
+              {top3.length > 0 ? 'Edit my top 3' : 'Rank my top 3'}
+            </button>
+          )}
           <button className="btn btn-primary rv-submit" onClick={onDone}>
             Start New Room
           </button>
@@ -749,8 +773,10 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
     <div className="rv-page">
       <div className="rv-header"><AppHeader /></div>
       <div className="rv-ranking-header">
-        <h2>Pick Your Top {maxPicks > 0 ? maxPicks : ''}</h2>
-        <p>{matches.length} {isSolo ? (matches.length === 1 ? 'pick' : 'picks') : (matches.length === 1 ? 'match' : 'matches')} · tap to rank{top3.length > 1 ? ' · drag tiles to reorder' : ''}</p>
+        <h2>{maxPicks > 0 ? `Pick Your Top ${maxPicks}` : 'Nothing to rank yet'}</h2>
+        <p>{maxPicks > 0
+          ? `${matches.length} ${isSolo ? (matches.length === 1 ? 'pick' : 'picks') : (matches.length === 1 ? 'match' : 'matches')} · tap to rank${top3.length > 1 ? ' · drag tiles to reorder' : ''}`
+          : isSolo ? 'You didn\u2019t swipe right on anything.' : 'You can come back and rank once you match on something.'}</p>
       </div>
 
       {/* Top 3 slots */}
