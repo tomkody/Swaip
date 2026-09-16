@@ -98,6 +98,26 @@
   transform: rotateY(180deg);
 }
 
+/* Once the flip has finished, the 3D goes away and the back becomes an ordinary
+   layer. iOS Safari refuses to scroll anything inside a 3D-transformed subtree,
+   which is why the description could not be read on a phone however scrollable
+   it was declared to be. Nothing moves at this point — the back is already
+   filling the card — so the swap is invisible. */
+.card-flip-inner.is-flat {
+  transform: none;
+  transform-style: flat;
+  transition: none;
+}
+.card-flip-inner.is-flat .card-front {
+  visibility: hidden;
+}
+.card-flip-inner.is-flat .card-back {
+  transform: none;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+  z-index: 3;
+}
+
 /* ── Shared face styles ──────────────────────────────────────────── */
 .card-face {
   position: absolute;

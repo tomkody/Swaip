@@ -20,6 +20,14 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
   const [dragging, setDragging] = useState(false)
   const [leaving, setLeaving] = useState(null)
   const [flipped, setFlipped] = useState(false)
+  // Set once the flip animation has finished. iOS Safari will not scroll an
+  // element that sits inside a 3D-transformed subtree, and the back of the card
+  // is exactly that — a face rotated 180deg inside a preserve-3d container. So
+  // when the flip is over we drop the 3D entirely and leave the back as a plain
+  // layer, which scrolls like anything else. The animation still plays; this
+  // only changes what's left standing at the end of it.
+  const [flatBack, setFlatBack] = useState(false)
+  const flatTimer = useRef(null)
 
   // ── Directions ────────────────────────────────────────────────────
   // No origin param — Google Maps asks for the device's live location itself
@@ -77,7 +85,7 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
     if (dist > DRAG_MIN_MOVE) {
       // Confirmed drag — now show visual movement
       hasMoved.current = true
-      if (flipped) setFlipped(false)
+      if (flipped) setFlip(false)
       setOffset({ x: dx, y: dy })
     }
     // Below threshold: card stays perfectly still (no wibble)
@@ -112,7 +120,7 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
     const s = scrollAtStart.current
     scrollAtStart.current = null
     if (s && Math.abs(s.el.scrollTop - s.top) > 2) return   // they scrolled, not tapped
-    setFlipped(f => !f)
+    setFlip(!flipped)
   }
 
   // ── Button swipe ──────────────────────────────────────────────────
@@ -122,7 +130,7 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
     // The card stays on screen until the parent advances (after its network
     // round-trip); a second tap in that window must not swipe it twice.
     if (isLeavingRef.current) return
-    setFlipped(false)
+    setFlip(false)
     isLeavingRef.current = true
     setLeaving(direction)
     leaveTimerRef.current = setTimeout(() => onSwipe(direction), 300)
@@ -131,6 +139,18 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
   // The card is replaced as soon as the parent advances; a pending fly-out
   // timer would otherwise fire onSwipe for a card that is already gone.
   useEffect(() => () => clearTimeout(leaveTimerRef.current), [])
+
+  useEffect(() => () => clearTimeout(flatTimer.current), [])
+
+  // Flipping to the back drops the 3D once the animation is over (0.45s in the
+  // CSS); flipping away has to restore it first, so the flip back has a 3D
+  // context to animate in.
+  function setFlip(next) {
+    clearTimeout(flatTimer.current)
+    setFlipped(next)
+    if (next) flatTimer.current = setTimeout(() => setFlatBack(true), 470)
+    else setFlatBack(false)
+  }
 
   // ── Keyboard shortcuts (← nope, → like) ──────────────────────────
   useEffect(() => {
@@ -186,7 +206,7 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
         </div>
 
         {/* ── Flip container ── */}
-        <div className={`card-flip-inner ${flipped ? 'is-flipped' : ''}`}>
+        <div className={`card-flip-inner ${flipped ? 'is-flipped' : ''} ${flatBack ? 'is-flat' : ''}`}>
 
           {/* FRONT */}
           <div className="card-face card-front">
