@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildInvitePayload } from '../../components/InvitePanel'
+import { buildInvitePayload } from '../invite'
 
 // AirDrop turned an invite into a .txt attachment because the share payload was
 // text only — the link was concatenated into the message instead of being its
