@@ -397,22 +397,9 @@
   opacity: 0.8;
 }
 
-/* Top bar with clickable Swaip logo → home (swipe + results screens) */
-.conv-swipe-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  margin-bottom: 10px;
-}
-.conv-results-topbar {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 0 16px;
-}
-.conv-swipe-topbar-right { display: flex; align-items: center; gap: 8px; }
+/* Both top bars are the shared AppHeader; only the spacing differs here. */
+.conv-swipe-topbar { margin-bottom: 10px; }
+.conv-results-topbar { margin-bottom: 16px; }
 
 .conv-results-actions {
   display: flex;

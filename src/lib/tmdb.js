@@ -25,10 +25,22 @@ function filterPool(all, platforms, genres) {
   return pool
 }
 
+// The static list is numbered 1..N, which overlaps real TMDB ids — id 12 is
+// "Forrest Gump" here and "Finding Nemo" there. If one player fell back to it
+// and the other didn't, a "match" showed each of them a different film. Shifting
+// the fallback into its own id range turns that into no match at all, which is
+// wrong but honest, and visible.
+export const STATIC_ID_OFFSET = 90000000
+
 // Loaded on demand — the static list is a fallback, not a dependency.
 async function loadStaticMovies() {
   const { MOVIES } = await import('./movies')
-  return MOVIES.map(m => ({ ...m, genre: MOVIE_GENRES[m.id] || '', platforms: MOVIE_PLATFORMS[m.id] || [] }))
+  return MOVIES.map(m => ({
+    ...m,
+    id: m.id + STATIC_ID_OFFSET,
+    genre: MOVIE_GENRES[m.id] || '',
+    platforms: MOVIE_PLATFORMS[m.id] || [],
+  }))
 }
 
 async function fetchStaticMovies(roomId, platforms, genres, prefs) {
@@ -53,14 +65,21 @@ function rowToMovie(r) {
 }
 
 async function loadCatalog(region) {
-  const { data, error } = await supabase
-    .from('movie_catalog')
-    .select('*')
-    .eq('region', region)
-    .order('tmdb_id')   // deterministic set — both partners must fetch identical rows
-    .limit(2000)        // explicit; the default 1000-row cap would truncate silently
-  if (error || !data || data.length === 0) return null
-  return data
+  // One failed read used to drop this player onto the static list while their
+  // partner stayed on the catalog — two different decks, no real matches. A
+  // blip is worth retrying before accepting that.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, 400))
+    const { data, error } = await supabase
+      .from('movie_catalog')
+      .select('*')
+      .eq('region', region)
+      .order('tmdb_id')   // deterministic set — both partners must fetch identical rows
+      .limit(2000)        // explicit; the default 1000-row cap would truncate silently
+    if (!error && data && data.length > 0) return data
+    if (!error) return null           // genuinely empty — retrying won't help
+  }
+  return null
 }
 
 // Region-accurate catalog from Supabase, populated nightly from TMDB.

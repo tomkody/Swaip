@@ -9,8 +9,6 @@ import {
   subscribeToConversationSelections,
 } from '../lib/room'
 import SwipeCard from './SwipeCard'
-import HomeLogo from './HomeLogo'
-import ThemeToggle from './ThemeToggle'
 import AppHeader from './AppHeader'
 import Icon from './Icon'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
@@ -19,6 +17,14 @@ import { seededShuffle } from '../lib/random'
 import './ConversationRoom.css'
 
 const CARDS_PER_SESSION = 15
+
+// Per-room progress survives a reload — the same reason the movie room keeps it:
+// a trip to the share sheet reloads the tab on iOS, and starting again from
+// card 1 with the likes lost is worse than any of the alternatives.
+const progressKey = id => `swaip_conv_progress_${id}`
+function loadConvProgress(id) {
+  try { return JSON.parse(sessionStorage.getItem(progressKey(id)) || 'null') } catch { return null }
+}
 
 export default function ConversationRoom({ room, onDone, isSolo = false }) {
   let rawTopic
@@ -44,10 +50,11 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
     }))
   }, [allSubtopics, room.id])
 
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [likedIds, setLikedIds] = useState([])        // IDs of right-swiped cards
-  const likedIdsRef = useRef([])                      // sync ref — avoids stale closure on last card
-  const [submitted, setSubmitted] = useState(false)
+  const [saved] = useState(() => loadConvProgress(room.id))
+  const [currentIndex, setCurrentIndex] = useState(saved?.index || 0)
+  const [likedIds, setLikedIds] = useState(saved?.liked || [])        // IDs of right-swiped cards
+  const likedIdsRef = useRef(saved?.liked || [])                      // sync ref — avoids stale closure on last card
+  const [submitted, setSubmitted] = useState(Boolean(saved?.submitted))
   const [partnerSubmitted, setPartnerSubmitted] = useState(false)
   const [matches, setMatches] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -76,6 +83,14 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
     finally { setSharing(false) }
   }
 
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(progressKey(room.id), JSON.stringify({
+        index: currentIndex, liked: likedIds, submitted,
+      }))
+    } catch { /* storage blocked — progress just won't survive a reload */ }
+  }, [room.id, currentIndex, likedIds, submitted])
+
   // Subscribe to partner's selections (together mode only)
   useEffect(() => {
     if (isSolo) return
@@ -98,9 +113,17 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
 
   useEffect(() => {
     if (submitted && partnerSubmitted && !matches) {
-      checkMatches()
+      checkMatches().catch(err => console.error('Failed to read topic matches:', err))
     }
   }, [submitted, partnerSubmitted, matches, checkMatches])
+
+  // Realtime is one event: miss it (phone asleep, tab backgrounded, socket
+  // dropped) and the waiting screen never resolves. Poll until it does.
+  useEffect(() => {
+    if (isSolo || !submitted || matches) return
+    const t = setInterval(() => { checkMatches().catch(() => {}) }, 5000)
+    return () => clearInterval(t)
+  }, [isSolo, submitted, matches, checkMatches])
 
   // Confetti on match reveal
   useEffect(() => {
@@ -161,7 +184,7 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
 
     return (
       <div className="conv-results-page">
-        <div className="conv-results-topbar"><HomeLogo /><ThemeToggle /></div>
+        <AppHeader className="conv-results-topbar" />
         <div className="conv-results">
           {matchedCards.length > 0 ? (
             <>
@@ -266,13 +289,9 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
 
   return (
     <div className="conv-swipe-page">
-      <div className="conv-swipe-topbar">
-        <HomeLogo />
-        <div className="conv-swipe-topbar-right">
-          <span className="conv-swipe-progress">{currentIndex + 1} / {cards.length}</span>
-          <ThemeToggle />
-        </div>
-      </div>
+      <AppHeader className="conv-swipe-topbar">
+        <span className="conv-swipe-progress">{currentIndex + 1} / {cards.length}</span>
+      </AppHeader>
       <div className="conv-swipe-header">
         <p className="conv-swipe-label">{isSolo ? 'Swipe right on topics you want to explore' : 'Swipe right on topics you want to talk about'}</p>
       </div>

@@ -21,10 +21,20 @@ function filterPool(all, platforms, genres) {
   return pool
 }
 
+// The static list is numbered 1..N, which overlaps real TMDB ids. If one player
+// fell back to it and the other stayed on the catalog, a "match" showed each of
+// them a different show — see STATIC_ID_OFFSET in tmdb.js.
+import { STATIC_ID_OFFSET } from './tmdb'
+
 // Loaded on demand — the static list is a fallback, not a dependency.
 async function fetchStaticSeries(roomId, platforms, genres) {
   const { SERIES } = await import('./series')
-  const all = SERIES.map(s => ({ ...s, genre: SERIES_GENRES[s.id] || '', platforms: SERIES_PLATFORMS[s.id] || [] }))
+  const all = SERIES.map(s => ({
+    ...s,
+    id: s.id + STATIC_ID_OFFSET,
+    genre: SERIES_GENRES[s.id] || '',
+    platforms: SERIES_PLATFORMS[s.id] || [],
+  }))
   const pool = filterPool(all, platforms, genres)
   return buildDeck(pool, roomId)
 }
@@ -46,14 +56,20 @@ function rowToSeries(r) {
 }
 
 async function loadCatalog(region) {
-  const { data, error } = await supabase
-    .from('series_catalog')
-    .select('*')
-    .eq('region', region)
-    .order('tmdb_id')   // deterministic set — both partners must fetch identical rows
-    .limit(2000)
-  if (error || !data || data.length === 0) return null
-  return data
+  // A single failed read used to drop this player onto the static list while
+  // their partner stayed on the catalog — two different decks. Retry a blip.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, 400))
+    const { data, error } = await supabase
+      .from('series_catalog')
+      .select('*')
+      .eq('region', region)
+      .order('tmdb_id')   // deterministic set — both partners must fetch identical rows
+      .limit(2000)
+    if (!error && data && data.length > 0) return data
+    if (!error) return null           // genuinely empty — retrying won't help
+  }
+  return null
 }
 
 // Region-accurate TV catalog from Supabase, populated nightly from TMDB.
