@@ -19,10 +19,17 @@
 -- RUN THIS LAST. In order:
 --   1. Supabase dashboard → Authentication → Sign In / Providers →
 --      enable "Anonymous sign-ins".
---   2. Run supabase/rls_prepare.sql.
---   3. Deploy the app build that signs in anonymously and registers membership
+--   2. Same dashboard → Authentication → Rate Limits → raise the anonymous
+--      sign-in limit. It is counted per IP per hour, and mobile carriers put
+--      thousands of phones behind one address, so a low limit turns into
+--      "room not found" for real users once these policies are live.
+--   3. Run supabase/rls_prepare.sql.
+--   4. Deploy the app build that signs in anonymously and registers membership
 --      (src/lib/supabase.js ensureSession, src/lib/room.js ensureRoomMembership).
---   4. Wait a few minutes, then run this file.
+--   5. Wait a few minutes, then run this file.
+--
+-- Anonymous users accumulate in auth.users forever; Supabase's own advice is to
+-- delete ones with no activity periodically. Worth a look after a few weeks.
 --
 -- Safe to run more than once.
 
@@ -112,6 +119,9 @@ create policy "submit selections in my rooms" on public.conversation_selections
 -- row is owned by the signed-in user instead. Rows written before this change
 -- have a null user_id and become invisible — localStorage is the source of
 -- truth for this feature, so nobody loses their list, only the remote copy.
+-- They are left in place rather than deleted: the client upserts with
+-- ON CONFLICT DO NOTHING, so an old row a new one collides with costs a silent
+-- skip of the remote mirror and nothing else.
 
 alter table public.saved_matches add column if not exists user_id uuid default auth.uid();
 create index if not exists saved_matches_user_idx on public.saved_matches (user_id);
