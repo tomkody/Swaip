@@ -32,7 +32,38 @@
   text-align: center;
   animation: sheetUp 0.36s cubic-bezier(0.34,1.2,0.64,1);
   box-shadow: 0 -4px 40px rgba(0,0,0,0.18);
-  padding-bottom: max(28px, calc(env(safe-area-inset-bottom) + 20px));
+  padding-bottom: 0;   /* the sticky action bar carries the safe-area inset */
+  /* The sheet had no height limit, so on a phone the badge and title were cut
+     off the top of the screen and the buttons ran off the bottom. dvh, not vh:
+     iOS counts the collapsing URL bar in the large one. */
+  max-height: 92dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* The celebration scrolls; the buttons don't. Measured on an iPhone SE, all
+   three actions sat below the fold of a sheet that gave no sign it could
+   scroll — so the match had nothing you could act on. */
+.match-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: var(--bg-card);
+  margin: 0 -20px;
+  padding: 10px 20px max(16px, env(safe-area-inset-bottom));
+  box-shadow: 0 -10px 18px -10px rgba(0, 0, 0, 0.22);
+}
+
+/* Shorter screens: trim the celebration, not the buttons. */
+@media (max-height: 740px) {
+  .match-modal .match-poster--portrait { width: 92px; }
+  .match-modal .match-card { margin-bottom: 10px; padding: 10px 14px; }
+  .match-modal .match-title { font-size: 22px; }
+  .match-modal .match-subtitle { font-size: 14px; }
+  .match-modal .match-badge { margin-bottom: 4px; transform: scale(0.72); }
+  .match-modal::before { margin-bottom: 8px; }
+  .match-modal .match-poster { margin-bottom: 10px; }
 }
 
 /* Drag handle */

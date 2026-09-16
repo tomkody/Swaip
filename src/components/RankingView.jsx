@@ -4,7 +4,6 @@ import { getPlatformMeta, getWatchUrl, platformChipStyle } from '../lib/platform
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import { track } from '../lib/analytics'
 import { seededShuffle } from '../lib/random'
-import { successFeedback } from '../lib/haptics'
 import AppHeader from './AppHeader'
 import Icon from './Icon'
 import './RankingView.css'
@@ -308,7 +307,6 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
   }
 
   async function handleSubmit() {
-    successFeedback()
     setSubmitting(true)
     track('rankings_locked', { type: room.type, picks: top3.length })
     // Always show results regardless of DB success

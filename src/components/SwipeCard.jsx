@@ -1,7 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import WhereToWatch from './WhereToWatch'
 import Icon from './Icon'
-import { tapFeedback } from '../lib/haptics'
 import './SwipeCard.css'
 
 const SWIPE_THRESHOLD = 100
@@ -79,7 +78,6 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
       isLeavingRef.current = true
       const direction = ox > 0 ? 'right' : 'left'
       setLeaving(direction)
-      tapFeedback()
       leaveTimerRef.current = setTimeout(() => onSwipe(direction), 300)
     } else {
       // Snap back (covers both taps and short drags)
@@ -107,7 +105,6 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
     setFlipped(false)
     isLeavingRef.current = true
     setLeaving(direction)
-    tapFeedback()
     leaveTimerRef.current = setTimeout(() => onSwipe(direction), 300)
   }
 
@@ -294,7 +291,7 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
           {onUndo && (
             <button
               className="swipe-btn undo-btn"
-              onClick={() => { tapFeedback(); onUndo() }}
+              onClick={onUndo}
               disabled={!canUndo || leaving != null}
               aria-label="Undo last swipe"
               title="Undo last swipe"
