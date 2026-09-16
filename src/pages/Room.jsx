@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { getRoom, getUserToken, recordSwipe, subscribeToSwipes, subscribeToRoomActive, subscribeToRoomPicks, fetchRoomPicks, fetchPartnerSwipeCount, markRoomActive, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID, MOVIE_SENTINELS } from '../lib/room'
+import { getRoom, getRoomToken, recordSwipe, subscribeToSwipes, subscribeToRoomActive, subscribeToRoomPicks, fetchRoomPicks, fetchPartnerSwipeCount, markRoomActive, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID, MOVIE_SENTINELS } from '../lib/room'
 import { PLATFORMS } from '../lib/platforms'
 import { fetchTopRatedMovies } from '../lib/tmdb'
 import { normalizePrefs } from '../lib/movieFilters'
@@ -93,14 +93,14 @@ export default function Room() {
   const [canUndo, setCanUndo] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [partnerJoined, setPartnerJoined] = useState(!isCreator || (location.state?.isSolo || false) || Boolean(saved?.started))
+  const [partnerJoined, setPartnerJoined] = useState(!isCreator || (location.state?.isSolo || false) || Boolean(saved?.partnerIn))
   const [partnerJustJoined, setPartnerJustJoined] = useState(false)
-  const [hasJoined, setHasJoined] = useState(isCreator || Boolean(saved?.started))
+  const [hasJoined, setHasJoined] = useState(isCreator || Boolean(saved?.joined))
   const [invited, setInvited] = useState(false)       // shared / copied / showed QR at least once
   const [remindSolo, setRemindSolo] = useState(false) // one-time nudge before going solo
   const [pushState, setPushState] = useState('idle')  // idle | enabled | denied
   const [othersProgress, setOthersProgress] = useState(null) // invitee: how many picks the creator already made
-  const userToken = useRef(getUserToken())
+  const userToken = useRef(getRoomToken(roomId))
 
   useEffect(() => {
     async function init() {
@@ -315,12 +315,26 @@ export default function Room() {
     if (!isSolo && movies.length > 0 && currentIndex >= movies.length) signalDone()
   }, [isSolo, movies.length, currentIndex, signalDone])
 
+  // A reload skips the join screen (we remember that this player joined), so
+  // re-assert it: the original markRoomActive may never have reached the server.
+  // It's an idempotent UPDATE, and without it the creator waits forever.
+  useEffect(() => {
+    if (isCreator || isSolo || !hasJoined || !room) return
+    Promise.resolve(markRoomActive(roomId)).catch(() => {})
+  }, [isCreator, isSolo, hasJoined, room, roomId])
+
   useEffect(() => {
     if (!room) return
     try {
       sessionStorage.setItem(progressKey(roomId), JSON.stringify({
         creator: isCreator,
-        started: partnerJoined || hasJoined,
+        // Two separate facts. The old single `started` flag was true from the
+        // creator's very first render (hasJoined starts as isCreator) and from
+        // the invitee's (partnerJoined starts as !isCreator) — so after a reload
+        // the creator skipped their own invite screen and the invitee skipped
+        // the join screen, which is what actually calls markRoomActive.
+        joined: hasJoined,
+        partnerIn: isCreator && partnerJoined,
         index: currentIndex,
         liked: liked.map(m => m.id),
         done: isDone,

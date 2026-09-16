@@ -12,7 +12,7 @@ import { FOOD_CATEGORIES, buildLocalCuisineCategory } from '../lib/foodCategorie
 import { fetchNearbyPlaces, getBrandKey } from '../lib/placesApi'
 import { notifyRoom } from '../lib/push'
 import {
-  getUserToken,
+  getRoomToken,
   recordSwipe,
   subscribeToSwipes,
   subscribeToRoomPicks,
@@ -70,7 +70,7 @@ function parseRoomFoodData(room) {
 // ─── Main FoodRoom component ──────────────────────────────────────────────────
 
 export default function FoodRoom({ room, onDone, isSolo = false }) {
-  const userToken = useRef(getUserToken())
+  const userToken = useRef(getRoomToken(room.id))
   const location = parseLocation(room.topic_id)
 
   const FOOD_CATS = cuisinesForRoom(room.id, location?.countryCode)

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { getUserToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches, subscribeToSwipes, fetchRoomPicks, subscribeToRoomPicks, MOVIE_SENTINELS } from '../lib/room'
+import { getRoomToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches, subscribeToSwipes, fetchRoomPicks, subscribeToRoomPicks, MOVIE_SENTINELS } from '../lib/room'
 import { getPlatformMeta, getWatchUrl, platformChipStyle } from '../lib/platforms'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import { track } from '../lib/analytics'
@@ -93,7 +93,7 @@ function PlatformBadges({ platforms, title, roomType }) {
 }
 
 export default function RankingView({ matches: initialMatches, liked = [], room, movies = [], onDone, isSolo = false, playerCount = 2, voteCounts = {} }) {
-  const userToken = useRef(getUserToken())
+  const userToken = useRef(getRoomToken(room.id))
   // Movie/series rooms may legitimately contain TMDB ids 1999/2999 — only treat
   // the real DONE sentinel as one there (undefined → the default set elsewhere).
   const sentinels = (room.type === 'movies' || room.type === 'series') ? MOVIE_SENTINELS : undefined

@@ -14,6 +14,7 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
   const hasMoved = useRef(false)       // true once finger moves > 30 px
   const isLeavingRef = useRef(false)   // true once a swipe is committed
   const currentOffset = useRef({ x: 0, y: 0 })
+  const leaveTimerRef = useRef(null)   // fly-out → onSwipe; cleared on unmount
 
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [dragging, setDragging] = useState(false)
@@ -77,7 +78,7 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
       isLeavingRef.current = true
       const direction = ox > 0 ? 'right' : 'left'
       setLeaving(direction)
-      setTimeout(() => onSwipe(direction), 300)
+      leaveTimerRef.current = setTimeout(() => onSwipe(direction), 300)
     } else {
       // Snap back (covers both taps and short drags)
       setOffset({ x: 0, y: 0 })
@@ -104,8 +105,12 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
     setFlipped(false)
     isLeavingRef.current = true
     setLeaving(direction)
-    setTimeout(() => onSwipe(direction), 300)
+    leaveTimerRef.current = setTimeout(() => onSwipe(direction), 300)
   }
+
+  // The card is replaced as soon as the parent advances; a pending fly-out
+  // timer would otherwise fire onSwipe for a card that is already gone.
+  useEffect(() => () => clearTimeout(leaveTimerRef.current), [])
 
   // ── Keyboard shortcuts (← nope, → like) ──────────────────────────
   useEffect(() => {
@@ -280,7 +285,7 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
             <button
               className="swipe-btn undo-btn"
               onClick={onUndo}
-              disabled={!canUndo}
+              disabled={!canUndo || leaving != null}
               aria-label="Undo last swipe"
               title="Undo last swipe"
             >

@@ -14,7 +14,7 @@ import { getRoomPlayerCount, getParticipantCount, fetchVoteCounts } from '../lib
 import { fetchNearbyPlaces, getBrandKey } from '../lib/placesApi'
 import { notifyRoom } from '../lib/push'
 import {
-  getUserToken,
+  getRoomToken,
   recordSwipe,
   subscribeToSwipes,
   subscribeToRoomPicks,
@@ -74,7 +74,7 @@ function parseRoomActivityData(room) {
 // ─── Main ActivityRoom component ──────────────────────────────────────────────
 
 export default function ActivityRoom({ room, onDone, isSolo = false }) {
-  const userToken = useRef(getUserToken())
+  const userToken = useRef(getRoomToken(room.id))
   const location = parseLocation(room.topic_id)
 
   const ACTIVITY_CATEGORIES = categoriesForRoom(room.id)

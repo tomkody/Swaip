@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti'
 import { prefersReducedMotion } from '../lib/motion'
 import { getSubtopicsForTopics } from '../lib/topics'
 import {
-  getUserToken,
+  getRoomToken,
   submitConversationSelections,
   getConversationMatches,
   subscribeToConversationSelections,
@@ -52,7 +52,7 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
   const [matches, setMatches] = useState(null)
   const [loading, setLoading] = useState(false)
   const [sharing, setSharing] = useState(false)
-  const userToken = useRef(getUserToken())
+  const userToken = useRef(getRoomToken(room.id))
   const hasConfettied = useRef(false)
 
   async function handleShare() {

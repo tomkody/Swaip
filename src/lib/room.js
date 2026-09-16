@@ -119,6 +119,29 @@ export function getUserToken() {
   return token
 }
 
+// Identity for ONE room, remembered across tabs of this browser.
+//
+// getUserToken alone is per-tab, which is right for keeping two test tabs (or
+// two people on one machine) apart — but it also meant that reopening the same
+// invite link in a new tab, or following a push notification, minted a SECOND
+// player. That second identity could match with the first, and showed up as
+// "your partner finished". Pinning a token per room fixes the reopen case while
+// a brand-new room still gets whatever this tab's identity is.
+const ROOM_TOKENS_KEY = 'swaip_room_tokens'
+const MAX_REMEMBERED_ROOMS = 50
+export function getRoomToken(roomId) {
+  if (!roomId) return getUserToken()
+  let map = {}
+  try { map = JSON.parse(localStorage.getItem(ROOM_TOKENS_KEY) || '{}') } catch { map = {} }
+  if (typeof map[roomId] === 'string' && map[roomId]) return map[roomId]
+  const token = getUserToken()
+  map[roomId] = token
+  const keys = Object.keys(map)
+  for (const stale of keys.slice(0, Math.max(0, keys.length - MAX_REMEMBERED_ROOMS))) delete map[stale]
+  try { localStorage.setItem(ROOM_TOKENS_KEY, JSON.stringify(map)) } catch { /* private mode */ }
+  return token
+}
+
 // Create a movie room
 // `length` / `era` are soft "tonight" preferences (see movieFilters.js); only
 // non-default values are stored so old rooms and old clients read the same JSON.

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import confetti from 'canvas-confetti'
 import HomeLogo from './HomeLogo'
 import ThemeToggle from './ThemeToggle'
-import { getUserToken, recordSwipe, fetchRoomPicks, subscribeToRoomPicks } from '../lib/room'
+import { getRoomToken, recordSwipe, fetchRoomPicks, subscribeToRoomPicks } from '../lib/room'
 import { puzzlesForRoom, hslToHex, scoreGuess, scoreVerdict, encodeGuess, decodeGuess, ROUNDS_PER_GAME } from '../lib/colorGame'
 import { track } from '../lib/analytics'
 import './ColorGameRoom.css'
@@ -44,7 +44,7 @@ function ColorWheel({ h, s, onPick }) {
 // perceptual distance (ΔE). Duel guesses travel over the existing swipes
 // channel (encoded item ids), so no extra backend is needed.
 export default function ColorGameRoom({ room, onDone, isSolo = false }) {
-  const userToken = useRef(getUserToken())
+  const userToken = useRef(getRoomToken(room.id))
   const puzzles = useMemo(() => puzzlesForRoom(room.id), [room.id])
 
   const [round, setRound] = useState(0)
