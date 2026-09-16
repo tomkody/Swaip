@@ -99,7 +99,7 @@ export default function CreateMovieRoom() {
         <p className="subtitle">
           {solo
             ? 'Swipe through top-rated movies and build your personal watchlist.'
-            : 'Swipe through top-rated movies. When you both swipe right — it\'s a match!'}
+            : 'Swipe through top-rated movies. When you both swipe right - it\'s a match!'}
         </p>
 
         {/* Streaming Platforms */}

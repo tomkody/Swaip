@@ -240,7 +240,7 @@ export default function ColorGameRoom({ room, onDone, isSolo = false }) {
               )}
             </div>
             <p className="cg-verdict">{verdict.emoji} {verdict.text}{!isSolo && theirScore != null && myScore !== theirScore && (
-              <span className="cg-verdict-win"> — {myScore > theirScore ? 'you take the round!' : 'partner takes the round!'}</span>
+              <span className="cg-verdict-win"> - {myScore > theirScore ? 'you take the round!' : 'partner takes the round!'}</span>
             )}</p>
             <button className="btn btn-primary cg-cta" onClick={next}>
               {round + 1 >= puzzles.length ? 'See final score' : 'Next round'}

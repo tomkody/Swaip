@@ -11,8 +11,8 @@ import webpush from 'web-push'
 import { createClient } from '@supabase/supabase-js'
 
 const COPY = {
-  joined: { title: '🎉 They joined!', body: 'Your partner just joined your Swaip room — start swiping!' },
-  match:  { title: "💘 It's a match!", body: 'You both liked the same thing — open Swaip to see it.' },
+  joined: { title: '🎉 They joined!', body: 'Your partner just joined your Swaip room - start swiping!' },
+  match:  { title: "💘 It's a match!", body: 'You both liked the same thing - open Swaip to see it.' },
 }
 const CATALOG_TABLE = { movies: 'movie_catalog', series: 'series_catalog' }
 
@@ -120,7 +120,7 @@ export default async function handler(req, res) {
   const copy = COPY[event]
   const payload = JSON.stringify({
     title: copy.title,
-    body: title ? `${title} — ${copy.body}` : copy.body,
+    body: title ? `${title} - ${copy.body}` : copy.body,
     url: `/room/${id}`,
     tag: `swaip-${id}-${event}`,   // the OS collapses repeats of the same event
   })

@@ -76,7 +76,7 @@ export default function CreateActivityRoom() {
           )
         } else if (level === 'rough') {
           setError(
-            `Heads up: location accurate to ${formatAccuracy(accuracy)} — distances may be off by about that much.`
+            `Heads up: location accurate to ${formatAccuracy(accuracy)} - distances may be off by about that much.`
           )
         }
       })
@@ -186,7 +186,7 @@ export default function CreateActivityRoom() {
             ? 'Swipe through activity categories and discover real places nearby just for you!'
             : playerCount === 2
               ? 'Swipe through categories, find a match, then discover real places nearby you\'d both enjoy!'
-              : `Up to ${playerCount} people swipe independently — see what everyone agrees on!`}
+              : `Up to ${playerCount} people swipe independently - see what everyone agrees on!`}
         </p>
 
         <div className="activity-form">
@@ -215,7 +215,7 @@ export default function CreateActivityRoom() {
           {pinnedCoords && geoAccuracy != null && (
             <p className={`geo-accuracy geo-accuracy--${accuracyLevel(geoAccuracy)}`}>
               {accuracyLevel(geoAccuracy) === 'good' ? '🎯' : '⚠️'} Located to {formatAccuracy(geoAccuracy)}
-              {accuracyLevel(geoAccuracy) !== 'good' && ' — type a city for better results'}
+              {accuracyLevel(geoAccuracy) !== 'good' && ' - type a city for better results'}
             </p>
           )}
 

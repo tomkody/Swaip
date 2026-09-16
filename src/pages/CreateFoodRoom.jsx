@@ -92,7 +92,7 @@ export default function CreateFoodRoom() {
           )
         } else if (level === 'rough') {
           setError(
-            `Heads up: location accurate to ${formatAccuracy(accuracy)} — distances may be off by about that much.`
+            `Heads up: location accurate to ${formatAccuracy(accuracy)} - distances may be off by about that much.`
           )
         }
       })
@@ -200,10 +200,10 @@ export default function CreateFoodRoom() {
 
         <p className="subtitle">
           {solo
-            ? 'Swipe through cuisines and discover restaurants nearby — perfect for planning tonight\'s dinner.'
+            ? 'Swipe through cuisines and discover restaurants nearby - perfect for planning tonight\'s dinner.'
             : playerCount === 2
-              ? 'Swipe through cuisines — when you match, discover real restaurants nearby you\'d both enjoy!'
-              : `Up to ${playerCount} people swipe independently — see what everyone agrees on!`}
+              ? 'Swipe through cuisines - when you match, discover real restaurants nearby you\'d both enjoy!'
+              : `Up to ${playerCount} people swipe independently - see what everyone agrees on!`}
         </p>
 
         <div className="activity-form">
@@ -232,7 +232,7 @@ export default function CreateFoodRoom() {
           {pinnedCoords && geoAccuracy != null && (
             <p className={`geo-accuracy geo-accuracy--${accuracyLevel(geoAccuracy)}`}>
               {accuracyLevel(geoAccuracy) === 'good' ? '🎯' : '⚠️'} Located to {formatAccuracy(geoAccuracy)}
-              {accuracyLevel(geoAccuracy) !== 'good' && ' — type a city for better results'}
+              {accuracyLevel(geoAccuracy) !== 'good' && ' - type a city for better results'}
             </p>
           )}
 

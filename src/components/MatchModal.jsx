@@ -9,12 +9,12 @@ import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import './MatchModal.css'
 
 // Rotating celebration copy so the 5th match doesn't read like the 1st.
-const MATCH_TITLES = ['Another match!', 'Two great minds!', "You're on a roll!", 'Snap — matched again!', 'So in sync!']
+const MATCH_TITLES = ['Another match!', 'Two great minds!', "You're on a roll!", 'Snap - matched again!', 'So in sync!']
 const MATCH_SUBS = [
   'Add it to tonight\'s shortlist',
   'You both swiped right',
   'One more you both want',
-  'Keep going — or lock it in',
+  'Keep going - or lock it in',
   'Your taste lines up',
 ]
 

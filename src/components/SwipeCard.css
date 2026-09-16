@@ -32,9 +32,16 @@
   touch-action: none;
   cursor: grab;
   will-change: transform;
+  /* `touch-action: none` above is what makes the drag work, but it also applies
+     to everything inside the card — so the description on the back could not be
+     scrolled with a finger no matter what that element asked for. Flipped, the
+     card hands vertical gestures back to the browser; horizontal ones still
+     reach the drag handler, so a swipe from the back keeps working. */
   /* perspective lives here so 3D works on the child */
   perspective: 1000px;
 }
+
+.swipe-card.is-showing-back { touch-action: pan-y; }
 
 .swipe-card.active:active { cursor: grabbing; }
 

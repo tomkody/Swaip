@@ -150,7 +150,7 @@ export default function Landing() {
     <div className={`lp ${dark ? '' : 'lp--light'}`}>
       <header className="lp-header">
         <div className="lp-container lp-header-inner">
-          <Link to="/" className="lp-brand" aria-label="Swaip — home">
+          <Link to="/" className="lp-brand" aria-label="Swaip - home">
             <img src={dark ? '/swaip-icon-dark.png' : '/swaip-icon-transparent.png'} alt="" width="34" height="34" />
             <span>Swaip</span>
           </Link>
@@ -284,7 +284,7 @@ export default function Landing() {
               <h2 id="lp-explain-title" className="lp-h2 lp-h2--left">A little less back-and-forth.</h2>
               <p className="lp-explain-lead">Your picks. Your shared possibilities.</p>
               <p className="lp-explain-body">
-                Set the room up once — together or solo, the platforms you actually have, the genres you’re in the mood for. Then send the link and swipe apart. Swaip only shows you what you both said yes to.
+                Set the room up once - together or solo, the platforms you actually have, the genres you’re in the mood for. Then send the link and swipe apart. Swaip only shows you what you both said yes to.
               </p>
               <p className="lp-visually-hidden">
                 Preview of the room setup: choose Together or Solo, then pick platforms and genres.
@@ -301,7 +301,7 @@ export default function Landing() {
                 </div>
                 <div className="lp-mode">
                   <span className="lp-mode-icon">👤</span>
-                  <span><strong>Pick solo</strong><span>Just you — swipe at your own pace</span></span>
+                  <span><strong>Pick solo</strong><span>Just you - swipe at your own pace</span></span>
                 </div>
               </div>
               <div className="lp-filters">

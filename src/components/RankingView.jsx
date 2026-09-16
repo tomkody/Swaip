@@ -467,7 +467,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
             // below already says it.
             let sub = ''
             if (matches.length === 0) {
-              sub = isSolo ? 'Swipe right on more next time!' : playerCount > 2 ? 'No unanimous group picks — try again with fewer people or different picks!' : 'Try swiping more next time!'
+              sub = isSolo ? 'Swipe right on more next time!' : playerCount > 2 ? 'No unanimous group picks - try again with fewer people or different picks!' : 'Try swiping more next time!'
             } else if (!hasMyPicks) {
               sub = isSolo
                 ? 'Everything you liked:'
@@ -492,11 +492,11 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
           const why = recommendation.inBoth
             ? `You ranked it #${recommendation.mp} · your partner ranked it #${recommendation.tp}`
             : recommendation.mp > 0
-              ? `Your #${recommendation.mp} pick — no title landed in both top 3s`
-              : `Your partner's #${recommendation.tp} pick — no title landed in both top 3s`
+              ? `Your #${recommendation.mp} pick - no title landed in both top 3s`
+              : `Your partner's #${recommendation.tp} pick - no title landed in both top 3s`
           return (
             <div className="rv-reco">
-              <p className="rv-reco-eyebrow">{recommendation.inBoth ? '✨ You both ranked this — play it' : '💡 Closest call'}</p>
+              <p className="rv-reco-eyebrow">{recommendation.inBoth ? '✨ You both ranked this - play it' : '💡 Closest call'}</p>
               <div className="rv-reco-card">
                 {m.poster
                   ? <img src={m.poster} alt={m.title} className="rv-reco-poster" />
@@ -897,7 +897,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
             Nobody picked all the same ones, so these are what got the most votes.
           </p>
         )}
-        {matches.length === 0 && <p className="rv-empty">{isSolo ? 'Nothing picked yet.' : 'No matches yet — still waiting for your partner.'}</p>}
+        {matches.length === 0 && <p className="rv-empty">{isSolo ? 'Nothing picked yet.' : 'No matches yet - still waiting for your partner.'}</p>}
         {matches.map(m => {
           const inTop = isInTop3(m.id)
           const rank = rankOf(m.id)
@@ -924,7 +924,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                 )}
               </div>
               <div className={`rv-badge ${inTop ? 'rv-badge-ranked' : full ? 'rv-badge-full' : 'rv-badge-add'}`}>
-                {inTop ? `#${rank}` : full ? '—' : '+'}
+                {inTop ? `#${rank}` : full ? '-' : '+'}
               </div>
             </button>
           )

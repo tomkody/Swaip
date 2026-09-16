@@ -86,7 +86,7 @@ export function accuracyAdvice() {
     case 'android':
       return 'Make sure precise location is allowed for your browser, step outside for a moment, or type your city below.'
     default:
-      return 'Desktop browsers locate by Wi-Fi/IP, which is often kilometres off — type your city below for accurate results.'
+      return 'Desktop browsers locate by Wi-Fi/IP, which is often kilometres off - type your city below for accurate results.'
   }
 }
 

@@ -94,7 +94,7 @@ export default function CreateSeriesRoom() {
         <p className="subtitle">
           {solo
             ? 'Swipe through top-rated TV shows and build your personal watchlist.'
-            : 'Swipe through top-rated TV shows. When you both swipe right on the same show — it\'s a match!'}
+            : 'Swipe through top-rated TV shows. When you both swipe right on the same show - it\'s a match!'}
         </p>
 
         {/* Streaming Platforms */}

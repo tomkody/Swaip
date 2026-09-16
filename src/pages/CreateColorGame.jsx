@@ -38,8 +38,8 @@ export default function CreateColorGame() {
 
       <p className="subtitle">
         {solo
-          ? `${ROUNDS_PER_GAME} rounds: a movie or series poster with the colour drained — mix the shade you remember and see how close you get.`
-          : `${ROUNDS_PER_GAME} rounds: you both see a drained poster and mix the colour from memory. Closest guess takes the round — who knows their movies better?`}
+          ? `${ROUNDS_PER_GAME} rounds: a movie or series poster with the colour drained - mix the shade you remember and see how close you get.`
+          : `${ROUNDS_PER_GAME} rounds: you both see a drained poster and mix the colour from memory. Closest guess takes the round - who knows their movies better?`}
       </p>
 
       <div className="create-cg-demo" aria-hidden="true">

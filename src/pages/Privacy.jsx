@@ -24,15 +24,15 @@ export default function Privacy() {
 
       <h2>What we process</h2>
       <ul>
-        <li><strong>Room activity</strong> — the room code, the options you swipe left/right on, and your ranked top picks. This is what lets two devices match.</li>
-        <li><strong>Approximate location</strong> — only for Food and Activities, and only if you grant your browser's location permission. It's used to find places near you and is not stored as a profile.</li>
-        <li><strong>Usage analytics</strong> — anonymous, aggregated events (e.g. a room was created, results were shared) via a cookieless analytics provider. No cross-site tracking and no advertising profiles.</li>
-        <li><strong>Error diagnostics</strong> — if something crashes, we may collect technical error details to fix bugs. These contain no personal information.</li>
+        <li><strong>Room activity</strong> - the room code, the options you swipe left/right on, and your ranked top picks. This is what lets two devices match.</li>
+        <li><strong>Approximate location</strong> - only for Food and Activities, and only if you grant your browser's location permission. It's used to find places near you and is not stored as a profile.</li>
+        <li><strong>Usage analytics</strong> - anonymous, aggregated events (e.g. a room was created, results were shared) via a cookieless analytics provider. No cross-site tracking and no advertising profiles.</li>
+        <li><strong>Error diagnostics</strong> - if something crashes, we may collect technical error details to fix bugs. These contain no personal information.</li>
       </ul>
 
       <h2>How we use it</h2>
       <p>
-        Solely to run the app — form matches between devices in a room, show places near you,
+        Solely to run the app - form matches between devices in a room, show places near you,
         keep the service working, and understand which features are used so we can improve them.
         We do not sell your data or use it for advertising.
       </p>
@@ -63,7 +63,7 @@ export default function Privacy() {
       <p>
         Depending on where you live (e.g. the EU/UK under GDPR, or California under CCPA), you may
         have rights to access or delete data relating to you. Since Swaip stores no identifying
-        information, we usually can't link room data to a specific person — but if you have a
+        information, we usually can't link room data to a specific person - but if you have a
         question, contact us and we'll help where we can.
       </p>
 

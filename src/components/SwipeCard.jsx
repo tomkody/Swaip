@@ -50,9 +50,6 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
     if (!active) return
     const scroller = flipped ? scrollableBack(e.target) : null
     scrollAtStart.current = scroller ? { el: scroller, top: scroller.scrollTop } : null
-    // Reading the description: let the browser scroll it instead of dragging
-    // the card out from under the finger.
-    if (scroller) return
     const point = e.touches ? e.touches[0] : e
     startPos.current = { x: point.clientX, y: point.clientY }
     hasMoved.current = false
@@ -70,6 +67,12 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
 
     // Always keep position ref up to date
     currentOffset.current = { x: dx, y: dy }
+
+    // Started on the scrollable description: a mostly-vertical gesture is the
+    // browser scrolling the text (touch-action: pan-y), so stay out of its way.
+    // A mostly-horizontal one is still a swipe, so the card can be decided on
+    // without flipping it back first.
+    if (scrollAtStart.current && Math.abs(dy) > Math.abs(dx)) return
 
     if (dist > DRAG_MIN_MOVE) {
       // Confirmed drag — now show visual movement
@@ -163,7 +166,7 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
     <div className="swipe-card-wrapper">
       <div
         ref={cardRef}
-        className={`swipe-card ${active ? 'active' : ''}`}
+        className={`swipe-card ${active ? 'active' : ''} ${flipped ? 'is-showing-back' : ''}`}
         style={cardStyle}
         onClick={handleClick}
         onMouseDown={handleStart}

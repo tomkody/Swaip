@@ -5,14 +5,14 @@
 // job is to carry room-specific Open Graph / Twitter tags.
 
 const TYPE_COPY = {
-  movies:        { emoji: '🍿', title: 'Swipe with me to pick a movie', desc: 'I started a Swaip room — tap to swipe on movies with me and see what we both want to watch.' },
-  series:        { emoji: '📺', title: 'Help me pick our next binge',    desc: 'I started a Swaip room — tap to swipe on TV series with me and find a show you both want.' },
-  food:          { emoji: '🍽️', title: 'Let\'s decide where to eat',     desc: 'I started a Swaip room — tap to swipe on places to eat and match on where we both want to go.' },
-  activities:    { emoji: '🎯', title: 'Pick something to do with me',   desc: 'I started a Swaip room — tap to swipe on things to do nearby and match on a plan.' },
-  conversations: { emoji: '💬', title: 'Let\'s find something to talk about', desc: 'I started a Swaip room — tap to join and match on conversation topics.' },
-  colorgame:     { emoji: '🎨', title: 'Think you know your movie colours?', desc: 'I challenged you to a Color Duel — guess iconic movie & series colours from memory. Closest wins!' },
+  movies:        { emoji: '🍿', title: 'Swipe with me to pick a movie', desc: 'I started a Swaip room - tap to swipe on movies with me and see what we both want to watch.' },
+  series:        { emoji: '📺', title: 'Help me pick our next binge',    desc: 'I started a Swaip room - tap to swipe on TV series with me and find a show you both want.' },
+  food:          { emoji: '🍽️', title: 'Let\'s decide where to eat',     desc: 'I started a Swaip room - tap to swipe on places to eat and match on where we both want to go.' },
+  activities:    { emoji: '🎯', title: 'Pick something to do with me',   desc: 'I started a Swaip room - tap to swipe on things to do nearby and match on a plan.' },
+  conversations: { emoji: '💬', title: 'Let\'s find something to talk about', desc: 'I started a Swaip room - tap to join and match on conversation topics.' },
+  colorgame:     { emoji: '🎨', title: 'Think you know your movie colours?', desc: 'I challenged you to a Color Duel - guess iconic movie & series colours from memory. Closest wins!' },
 }
-const GENERIC = { emoji: '✨', title: 'Decide it together on Swaip', desc: 'I started a Swaip room — tap to swipe with me and instantly see what we both agree on.' }
+const GENERIC = { emoji: '✨', title: 'Decide it together on Swaip', desc: 'I started a Swaip room - tap to swipe with me and instantly see what we both agree on.' }
 
 function esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))

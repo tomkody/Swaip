@@ -16,7 +16,7 @@ export default function Terms() {
       <h2>Using Swaip</h2>
       <p>
         Swaip is free and requires no account. You may use it for personal, non-commercial
-        purposes. Please don't misuse it — no attempting to disrupt or overload the service,
+        purposes. Please don't misuse it - no attempting to disrupt or overload the service,
         reverse-engineer it, scrape it, or use it for anything unlawful.
       </p>
 

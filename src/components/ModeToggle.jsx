@@ -28,7 +28,7 @@ export default function ModeToggle({ solo, onChange }) {
         <span className="mode-card-check" aria-hidden="true">✓</span>
         <span className="mode-card-icon">👤</span>
         <span className="mode-card-title">Pick solo</span>
-        <span className="mode-card-desc">Just you — swipe at your own pace</span>
+        <span className="mode-card-desc">Just you - swipe at your own pace</span>
       </button>
     </div>
   )

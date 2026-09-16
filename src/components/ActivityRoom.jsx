@@ -315,7 +315,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
         return rank(a) - rank(b)
       })
     } else if (!location?.lat) {
-      console.warn('[ActivityRoom] No location data — skipping places fetch. location:', location)
+      console.warn('[ActivityRoom] No location data - skipping places fetch. location:', location)
     }
 
     setFetchingPlaces(false)
@@ -360,7 +360,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   // used to write a places phase with no places and strand the room.
   const resolveMatchedCategories = useCallback(async () => {
     const allMatchIds = await fetchRoomMatches(room.id, userToken.current, playerCount)
-    if (allMatchIds === null) throw new Error('Could not read the picks — try confirming again')
+    if (allMatchIds === null) throw new Error('Could not read the picks - try confirming again')
     const matched = ACTIVITY_CATEGORIES.filter(c => allMatchIds.includes(c.numId))
     if (matched.length > 0) return { cats: matched, compromise: false }
     const counts = await fetchVoteCounts(room.id)
@@ -409,7 +409,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
         const resolved = await resolveMatchedCategories()
         // Nothing to search for means the vote read came back empty — don't
         // write a places phase with no places, that's the dead end we just fixed.
-        if (resolved.cats.length === 0) throw new Error('Could not read the picks — try confirming again')
+        if (resolved.cats.length === 0) throw new Error('Could not read the picks - try confirming again')
         await fetchAndTransitionToPlaces(resolved.cats, { compromise: resolved.compromise })
       }
     } catch (err) {
@@ -618,7 +618,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
                 <button className="btn btn-primary act-match-cta" onClick={() => setMatchItem(null)}>
                   Keep Swiping · {places.length - currentIndex} left
                 </button>
-                <p className="act-match-cta-hint">Don't stop — there might be more matches!</p>
+                <p className="act-match-cta-hint">Don't stop - there might be more matches!</p>
                 <button className="act-match-skip" onClick={() => { setMatchItem(null); setIsDone(true) }}>
                   See all results
                 </button>
@@ -864,10 +864,10 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
         <div className="act-grid-scroll">
           <p className="act-grid-hint">
             {isSolo
-              ? 'Pick everything you\'re up for — one or more.'
+              ? 'Pick everything you\'re up for - one or more.'
               : playerCount > 2
-                ? `Pick what you're up for — you'll do what all ${playerCount} agree on.`
-                : 'Pick everything you\'re up for — you\'ll do what you both agree on.'}
+                ? `Pick what you're up for - you'll do what all ${playerCount} agree on.`
+                : 'Pick everything you\'re up for - you\'ll do what you both agree on.'}
           </p>
           <CategoryGrid
             categories={ACTIVITY_CATEGORIES}

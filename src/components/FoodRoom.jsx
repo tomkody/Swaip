@@ -349,7 +349,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
   // used to write a places phase with no places and strand the room.
   const resolveMatchedCategories = useCallback(async () => {
     const allMatchIds = await fetchRoomMatches(room.id, userToken.current, playerCount)
-    if (allMatchIds === null) throw new Error('Could not read the picks — try confirming again')
+    if (allMatchIds === null) throw new Error('Could not read the picks - try confirming again')
     const matched = FOOD_CATS.filter(c => allMatchIds.includes(c.numId))
     if (matched.length > 0) return { cats: matched, compromise: false }
     const counts = await fetchVoteCounts(room.id)
@@ -397,7 +397,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
         const resolved = await resolveMatchedCategories()
         // Nothing to search for means the vote read came back empty — don't
         // write a places phase with no places, that's the dead end we just fixed.
-        if (resolved.cats.length === 0) throw new Error('Could not read the picks — try confirming again')
+        if (resolved.cats.length === 0) throw new Error('Could not read the picks - try confirming again')
         await fetchAndTransitionToPlaces(resolved.cats, { compromise: resolved.compromise })
       }
     } catch (err) {
@@ -606,7 +606,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
                 <button className="btn btn-primary act-match-cta" onClick={() => setMatchItem(null)}>
                   Keep Swiping · {places.length - currentIndex} left
                 </button>
-                <p className="act-match-cta-hint">Don't stop — there might be more matches!</p>
+                <p className="act-match-cta-hint">Don't stop - there might be more matches!</p>
                 <button className="act-match-skip" onClick={() => { setMatchItem(null); setIsDone(true) }}>
                   See all results
                 </button>
@@ -864,10 +864,10 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
         <div className="act-grid-scroll">
           <p className="act-grid-hint">
             {isSolo
-              ? 'Pick every cuisine you fancy — one or more.'
+              ? 'Pick every cuisine you fancy - one or more.'
               : playerCount > 2
-                ? `Pick what you fancy — you'll eat what all ${playerCount} agree on.`
-                : 'Pick every cuisine you fancy — you\'ll eat what you both agree on.'}
+                ? `Pick what you fancy - you'll eat what all ${playerCount} agree on.`
+                : 'Pick every cuisine you fancy - you\'ll eat what you both agree on.'}
           </p>
           <CategoryGrid
             categories={FOOD_CATS}
