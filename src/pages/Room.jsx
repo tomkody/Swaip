@@ -84,6 +84,7 @@ export default function Room() {
   const [matches, setMatches] = useState([])
   const [partnerDone, setPartnerDone] = useState(false)
   const [partnerStop, setPartnerStop] = useState(Infinity)  // partner's last-swiped deck position
+  const [partnerLikeIds, setPartnerLikeIds] = useState([]) // what they liked — how many matches are still reachable
   const [liked, setLiked] = useState([])
   const [isDone, setIsDone] = useState(false)
   const isDoneRef = useRef(false)
@@ -226,15 +227,21 @@ export default function Room() {
     if (isSolo || (room?.type !== 'movies' && room?.type !== 'series')) return
     let active = true
     let handled = false
-    const markDone = async () => {
+    const markDone = async (picks) => {
       if (!active || handled) return
       handled = true
       setPartnerDone(true)
+      // Their likes are final now, so this is the full set of matches still
+      // reachable in the rest of this deck.
+      if (picks?.partnerIds) setPartnerLikeIds(picks.partnerIds)
+      else fetchRoomPicks(roomId, userToken.current, MOVIE_SENTINELS)
+        .then(p => { if (active && p?.partnerIds) setPartnerLikeIds(p.partnerIds) })
+        .catch(() => {})
       const n = await fetchPartnerSwipeCount(roomId, userToken.current, 0, MOVIE_SENTINELS)
       if (active) setPartnerStop(n)
     }
     const check = () => fetchRoomPicks(roomId, userToken.current, MOVIE_SENTINELS)
-      .then(p => { if (p && p.othersDone > 0) markDone() })
+      .then(p => { if (p && p.othersDone > 0) markDone(p) })
       .catch(() => {})
     check() // initial
     const unsub = subscribeToRoomPicks(roomId, userToken.current, (swipe) => {
@@ -541,14 +548,23 @@ export default function Room() {
         <span className="room-progress">{currentIndex + 1} / {movies.length}</span>
       </AppHeader>
 
-      {partnerDone && !isSolo && currentIndex >= partnerStop && (
-        <div className="room-banner">
-          <div className="partner-done-banner">
-            <span className="partner-done-dot" aria-hidden="true" />
-            Your partner finished swiping
+      {partnerDone && !isSolo && currentIndex >= partnerStop && (() => {
+        // "They're done" on its own reads like "you may as well stop too". Say
+        // how many of their picks are still ahead of you, which is the actual
+        // reason to keep going.
+        const theirs = new Set(partnerLikeIds)
+        const reachable = movies.slice(currentIndex).filter(m => theirs.has(m.id)).length
+        return (
+          <div className="room-banner">
+            <div className="partner-done-banner">
+              <span className="partner-done-dot" aria-hidden="true" />
+              {reachable > 0
+                ? `Your partner finished · ${reachable} possible match${reachable !== 1 ? 'es' : ''} left`
+                : 'Your partner finished swiping'}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       <div className="room-cards">
         <SwipeCard

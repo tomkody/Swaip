@@ -435,6 +435,9 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
   if (phase === 'results') {
     const hasMyPicks = top3.length > 0
     const rest = matches.filter(m => !top3.some(t => t.id === m.id))
+    // With exactly one match there is nothing to compare: the recommendation,
+    // "My Top 1" and the partner's top 3 were all the same title, three times.
+    const singleMatch = matches.length === 1
 
     return (
       <div className="rv-page">
@@ -553,7 +556,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
         })()}
 
         {/* My Top Picks — shown prominently */}
-        {hasMyPicks && (
+        {hasMyPicks && !singleMatch && (
           <div className="rv-match-list">
             <p className="rv-label">🏆 My Top {top3.length}</p>
             {top3.map((m, i) => (
@@ -584,7 +587,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
         )}
 
         {/* Partner's / group's locked-in Top 3 — live, with manual refresh */}
-        {!isSolo && !rankingsOff && (() => {
+        {!isSolo && !rankingsOff && !singleMatch && (() => {
           const groupWord = playerCount > 2 ? 'The group' : 'Partner'
           const rankItems = (partnerRanks || [])
             .map(id => movies.find(m => m.id === id))
@@ -680,8 +683,9 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
           </div>
         )}
 
-        {/* No picks — just show all matches flat */}
-        {!hasMyPicks && matches.length > 0 && (
+        {/* No picks — just show all matches flat. A lone match lands here too,
+            unless the recommendation card above is already showing it. */}
+        {matches.length > 0 && (!hasMyPicks || singleMatch) && !recommendation && (
           <div className="rv-match-list">
             {matches.map(m => (
               <div key={m.id} className="rv-result-card">
