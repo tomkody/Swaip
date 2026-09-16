@@ -444,15 +444,21 @@
 }
 
 /* ── Swipe hint bar ──────────────────────────────────────────────── */
+/* These name the ← and → keyboard shortcuts, so they belong beside the buttons
+   they describe rather than on a row of their own underneath — where they
+   collided with the "I'm done swiping" button and ate the space a phone hasn't
+   got. A touch screen has no arrow keys, so there they're hidden outright. */
 .swipe-hint {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  max-width: 260px;
   font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
   color: var(--text-muted);
   opacity: 0.55;
+  flex-shrink: 0;
+}
+
+@media (pointer: coarse), (max-width: 520px) {
+  .swipe-hint { display: none; }
 }
 
 

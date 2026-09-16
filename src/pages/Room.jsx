@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { getRoom, getRoomToken, recordSwipe, subscribeToSwipes, subscribeToRoomActive, subscribeToRoomPicks, fetchRoomPicks, fetchPartnerSwipeCount, markRoomActive, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID, MOVIE_SENTINELS } from '../lib/room'
+import { getRoom, getRoomToken, recordSwipe, fetchRoomMatches, subscribeToSwipes, subscribeToRoomActive, subscribeToRoomPicks, fetchRoomPicks, fetchPartnerSwipeCount, markRoomActive, isRoomSolo, getRoomPlayerCount, DONE_ITEM_ID, MOVIE_SENTINELS } from '../lib/room'
 import { PLATFORMS } from '../lib/platforms'
 import { fetchTopRatedMovies } from '../lib/tmdb'
 import { normalizePrefs } from '../lib/movieFilters'
@@ -217,6 +217,32 @@ export default function Room() {
 
     return () => unsubSwipes()
   }, [room, roomId, isSolo])
+
+  // The counter above the deck was built purely from realtime events, so a
+  // dropped socket or a backgrounded tab left it under-reporting for the rest
+  // of the session — three matches showing as one. Reconcile against the
+  // database, which is the only thing that actually knows.
+  useEffect(() => {
+    if (isSolo || !room || (room.type !== 'movies' && room.type !== 'series')) return
+    let active = true
+    const reconcile = async () => {
+      const ids = await fetchRoomMatches(roomId, userToken.current, 2, MOVIE_SENTINELS)
+      if (!active || !ids) return          // null = read failed; keep what we have
+      const fresh = moviesRef.current.filter(m => ids.includes(m.id))
+      setMatches(prev =>
+        prev.length === fresh.length && prev.every(p => ids.includes(p.id)) ? prev : fresh
+      )
+    }
+    reconcile()
+    const poll = setInterval(reconcile, 8000)
+    const onVisible = () => { if (document.visibilityState === 'visible') reconcile() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      active = false
+      clearInterval(poll)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [isSolo, room, roomId])
 
   // Let the still-swiping user know once they reach a card their partner never
   // got to. We flag "done" from the partner's DONE_ITEM_ID sentinel (tap done or
