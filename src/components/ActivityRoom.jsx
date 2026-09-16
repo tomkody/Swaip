@@ -407,6 +407,9 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       const isAllDone = await recordSwipe(room.id, userToken.current, catDoneId, 'right', playerCount)
       if (isAllDone) {
         const resolved = await resolveMatchedCategories()
+        // Nothing to search for means the vote read came back empty — don't
+        // write a places phase with no places, that's the dead end we just fixed.
+        if (resolved.cats.length === 0) throw new Error('Could not read the picks — try confirming again')
         await fetchAndTransitionToPlaces(resolved.cats, { compromise: resolved.compromise })
       }
     } catch (err) {
@@ -504,7 +507,9 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
           const likers = await countItemLikers(room.id, catDoneId)
           if (likers != null && likers >= playerCount) {
             const resolved = await resolveMatchedCategories()
-            await fetchAndTransitionToPlaces(resolved.cats, { compromise: resolved.compromise })
+            if (resolved.cats.length > 0) {
+              await fetchAndTransitionToPlaces(resolved.cats, { compromise: resolved.compromise })
+            }
           }
         }
       } catch (err) { console.error('[ActivityRoom] categories poll:', err) }
