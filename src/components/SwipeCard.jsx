@@ -204,7 +204,14 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
                   )}
                 </div>
               )}
+              {item.eyebrow && <p className="card-eyebrow">{item.eyebrow}</p>}
               <h2 className="card-title">{item.title}</h2>
+              {/* A card with no poster showed an emoji and a title and nothing
+                  else — conversation topics in particular looked empty. The
+                  description is short; put it on the front where it helps. */}
+              {!item.poster && item.overview && (
+                <p className="card-front-desc">{item.overview}</p>
+              )}
               <p className="card-flip-hint">Tap for details</p>
             </div>
           </div>

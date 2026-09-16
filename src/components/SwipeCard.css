@@ -453,3 +453,23 @@
   opacity: 0.55;
 }
 
+
+/* Posterless cards (conversation topics) carry their text on the front. */
+.card-eyebrow {
+  margin: 0 0 2px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-orange);
+}
+.card-front-desc {
+  margin: 6px 0 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

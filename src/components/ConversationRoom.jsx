@@ -26,6 +26,30 @@ function loadConvProgress(id) {
   try { return JSON.parse(sessionStorage.getItem(progressKey(id)) || 'null') } catch { return null }
 }
 
+// One question is a conversation starter; five per topic across five topics is
+// a wall of text nobody reads. Show the first, keep the rest one tap away.
+function TopicQuestions({ questions }) {
+  const [expanded, setExpanded] = useState(false)
+  const shown = expanded ? questions : questions.slice(0, 1)
+  const hidden = questions.length - shown.length
+  return (
+    <div className="result-questions">
+      <div className="result-questions-label">Deep talk questions</div>
+      {shown.map((q, i) => (
+        <div key={i} className="result-question">
+          <span className="question-num">{i + 1}</span>
+          <span>{q}</span>
+        </div>
+      ))}
+      {hidden > 0 && (
+        <button type="button" className="result-questions-more" onClick={() => setExpanded(true)}>
+          + {hidden} more question{hidden !== 1 ? 's' : ''}
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function ConversationRoom({ room, onDone, isSolo = false }) {
   let rawTopic
   try { rawTopic = JSON.parse(room.topic_id) } catch { rawTopic = [] }
@@ -40,6 +64,7 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
       title: sub.name,
       overview: sub.desc,
       emoji: sub.emoji,
+      eyebrow: sub.topicName ? `${sub.topicEmoji || ''} ${sub.topicName}`.trim() : null,
       poster: null,
       rating: null,
       isOpen: null,
@@ -203,15 +228,7 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
                       {card.emoji} {card.title}
                     </div>
                     {card._questions && card._questions.length > 0 && (
-                      <div className="result-questions">
-                        <div className="result-questions-label">Deep talk questions</div>
-                        {card._questions.map((q, i) => (
-                          <div key={i} className="result-question">
-                            <span className="question-num">{i + 1}</span>
-                            <span>{q}</span>
-                          </div>
-                        ))}
-                      </div>
+                      <TopicQuestions questions={card._questions} />
                     )}
                   </div>
                 ))}
