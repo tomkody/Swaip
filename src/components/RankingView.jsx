@@ -362,6 +362,12 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
     track('top3_reordered', { type: room.type })
   }
 
+  // Once someone has ranked a top 3 that IS their answer - rolling a die over
+  // everything they ever swiped right on ignores the choice they just made,
+  // and a share card showing three other titles contradicts the screen it was
+  // shared from. Both read from here.
+  const shortlist = top3.length > 0 ? top3 : matches
+
   async function handleShare() {
     if (sharing) return
     track('results_shared', { type: room.type, matches: matches.length, solo: isSolo })
@@ -371,7 +377,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
       const canvas = await generateShareImage({
         title: matches.length === 1 ? matches[0].title : `${matches.length} ${typeLabel}`,
         posterUrl: matches.length === 1 ? (matches[0].poster || null) : null,
-        items: matches.slice(0, 3),
+        items: shortlist.slice(0, 3),
         swipeCount: matches.length,
         mode: 'matches',
         typeLabel,
@@ -482,8 +488,8 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
         </div>
 
         {/* Can't-choose roulette — only useful with 2+ matches */}
-        {matches.length >= 2 && (
-          <DecideForUs matches={matches} emoji={emoji} seed={room.id} onRolled={() => track('dice_rolled', { type: room.type })} />
+        {shortlist.length >= 2 && (
+          <DecideForUs matches={shortlist} emoji={emoji} seed={room.id} onRolled={() => track('dice_rolled', { type: room.type })} />
         )}
 
         {/* Recommended pick — once both have locked in a Top 3 */}
