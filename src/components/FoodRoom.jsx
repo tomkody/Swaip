@@ -623,7 +623,9 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
     const resultsToShow = isSolo ? likedPlaces : matches
 
     let finalResults = resultsToShow
+    let usedVoteFallback = false
     if (!isSolo && resultsToShow.length === 0 && playerCount > 2 && Object.keys(voteCounts).length > 0) {
+      usedVoteFallback = true
       const sorted = [...normalizedPlaces].sort((a, b) => (voteCounts[b.id] || 0) - (voteCounts[a.id] || 0))
       finalResults = sorted.filter(p => (voteCounts[p.id] || 0) >= 2).slice(0, 10)
     }
@@ -638,6 +640,7 @@ export default function FoodRoom({ room, onDone, isSolo = false }) {
         isSolo={isSolo}
         playerCount={playerCount}
         voteCounts={voteCounts}
+        isFallback={usedVoteFallback}
       />
     )
   }

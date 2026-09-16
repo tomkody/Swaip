@@ -26,7 +26,7 @@ vi.mock('../supabase', () => ({
   supabase: { from: (table) => makeBuilder(table) },
 }))
 
-const { fetchRoomMatches, fetchRoomPicks, fetchPartnerSwipeCount, countItemLikers, getRankings, currentVotes, MOVIE_SENTINELS, DONE_ITEM_ID } =
+const { fetchRoomMatches, fetchRoomPicks, fetchPartnerSwipeCount, countItemLikers, getRankings, combineRankings, currentVotes, MOVIE_SENTINELS, DONE_ITEM_ID } =
   await import('../room')
 
 const right = (user, item) => ({ user_token: user, item_id: item, direction: 'right' })
@@ -189,5 +189,23 @@ describe('getRankings', () => {
     const { partnerSubmitted, myRanking } = await getRankings('r', 'me')
     expect(partnerSubmitted).toBe(false)
     expect(myRanking).toEqual([10])
+  })
+})
+
+// ── combineRankings ───────────────────────────────────────────────────────────
+// A group's "top 3" used to be one arbitrary player's list.
+describe('combineRankings', () => {
+  it('weights slots (#1=3, #2=2, #3=1) across every list', () => {
+    // b: 2+3 = 5, a: 3+1 = 4, c: 1+2 = 3
+    expect(combineRankings([[ 'a', 'b', 'c' ], [ 'b', 'c', 'a' ]])).toEqual(['b', 'a', 'c'])
+  })
+
+  it('is stable for everyone combining the same lists', () => {
+    const lists = [[10, 20], [20, 10]]          // a perfect tie on points and slot
+    expect(combineRankings(lists)).toEqual(combineRankings([...lists].reverse()))
+  })
+
+  it('survives a player who ranked nothing', () => {
+    expect(combineRankings([[], [7, 8]])).toEqual([7, 8])
   })
 })

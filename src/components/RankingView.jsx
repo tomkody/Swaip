@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { getRoomToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches, subscribeToSwipes, fetchRoomPicks, subscribeToRoomPicks, MOVIE_SENTINELS } from '../lib/room'
+import { getRoomToken, submitRankings, getRankings, subscribeToRankings, fetchRoomMatches, subscribeToSwipes, fetchRoomPicks, subscribeToRoomPicks, combineRankings, MOVIE_SENTINELS } from '../lib/room'
 import { getPlatformMeta, getWatchUrl, platformChipStyle } from '../lib/platforms'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import { track } from '../lib/analytics'
@@ -100,7 +100,7 @@ function PlatformBadges({ platforms, title, roomType }) {
   )
 }
 
-export default function RankingView({ matches: initialMatches, liked = [], room, movies = [], onDone, isSolo = false, playerCount = 2, voteCounts = {} }) {
+export default function RankingView({ matches: initialMatches, liked = [], room, movies = [], onDone, isSolo = false, playerCount = 2, voteCounts = {}, isFallback = false }) {
   const userToken = useRef(getRoomToken(room.id))
   // Movie/series rooms may legitimately contain TMDB ids 1999/2999 — only treat
   // the real DONE sentinel as one there (undefined → the default set elsewhere).
@@ -193,12 +193,18 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
 
   // Partner ranking subscription — together mode only
   const rankingsDeadRef = useRef(false)
+  const [othersLocked, setOthersLocked] = useState(0)
   const checkPartner = useCallback(async () => {
     if (isSolo || rankingsDeadRef.current) return
-    const { partnerRanking, partnerSubmitted, unavailable } = await getRankings(room.id, userToken.current)
+    const { partnerRanking, partnerSubmitted, unavailable, othersRankings } = await getRankings(room.id, userToken.current)
     if (unavailable) { rankingsDeadRef.current = true; setRankingsOff(true); return }
-    if (partnerSubmitted) setPartnerRanks(partnerRanking)
-  }, [isSolo, room.id])
+    setOthersLocked(othersRankings?.length || 0)
+    // In a group, one arbitrary player's list was being shown as "the group's
+    // top 3" — combine everyone else's instead.
+    if (partnerSubmitted) {
+      setPartnerRanks(playerCount > 2 ? combineRankings(othersRankings) : partnerRanking)
+    }
+  }, [isSolo, room.id, playerCount])
 
   // One button refreshes both partner picks and their locked-in top 3
   const refreshAll = useCallback(() => {
@@ -593,7 +599,9 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   <p className="rv-label rv-label--tight">🏆 {groupWord}'s Top {rankItems.length > 0 ? rankItems.length : 3}</p>
                   <p className="rv-partner-status">
                     {submitted
-                      ? `Locked in${agoLabel ? ` · ${agoLabel}` : ''}`
+                      ? playerCount > 2
+                        ? `Combined from ${othersLocked} of ${playerCount - 1}${agoLabel ? ` · ${agoLabel}` : ''}`
+                        : `Locked in${agoLabel ? ` · ${agoLabel}` : ''}`
                       : `Waiting for ${playerCount > 2 ? 'the group' : 'your partner'} to lock in…`}
                   </p>
                 </div>
@@ -863,7 +871,16 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
 
       {/* Matches / picks list */}
       <div className="rv-match-list">
-        <p className="rv-label">{isSolo ? `✨ Your Picks (${matches.length})` : `🤝 Mutual Matches (${matches.length})`}</p>
+        <p className="rv-label">
+          {isSolo ? `✨ Your Picks (${matches.length})`
+            : isFallback ? `🔥 Most wanted (${matches.length})`
+              : `🤝 Mutual Matches (${matches.length})`}
+        </p>
+        {isFallback && (
+          <p className="rv-selection-note">
+            Nobody picked all the same ones, so these are what got the most votes.
+          </p>
+        )}
         {matches.length === 0 && <p className="rv-empty">{isSolo ? 'Nothing picked yet.' : 'No matches yet — still waiting for your partner.'}</p>}
         {matches.map(m => {
           const inTop = isInTop3(m.id)

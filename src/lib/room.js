@@ -749,14 +749,15 @@ export async function getRankings(roomId, userToken) {
     const myRanking = data[userToken] || null
     const otherUser = Object.keys(data).find(u => u !== userToken)
     const partnerRanking = otherUser ? data[otherUser] : null
-    return { myRanking, partnerRanking, partnerSubmitted: !!partnerRanking }
+    const othersRankings = Object.entries(data).filter(([t]) => t !== userToken).map(([, ids]) => ids)
+    return { myRanking, partnerRanking, partnerSubmitted: !!partnerRanking, othersRankings }
   }
-  if (rankingsUnavailable) return { myRanking: null, partnerRanking: null, partnerSubmitted: false, unavailable: true }
+  if (rankingsUnavailable) return { myRanking: null, partnerRanking: null, partnerSubmitted: false, othersRankings: [], unavailable: true }
   const { data, error } = await supabase.from('rankings').select().eq('room_id', roomId).order('rank')
   if (error) {
     // PGRST205 = table missing from the schema cache
     if (error.code === 'PGRST205') rankingsUnavailable = true
-    return { myRanking: null, partnerRanking: null, partnerSubmitted: false, unavailable: rankingsUnavailable }
+    return { myRanking: null, partnerRanking: null, partnerSubmitted: false, othersRankings: [], unavailable: rankingsUnavailable }
   }
   const byUser = {}
   for (const row of data) {
@@ -767,8 +768,33 @@ export async function getRankings(roomId, userToken) {
   const myRanking = byUser[userToken] || null
   const otherUser = Object.keys(byUser).find(u => u !== userToken)
   const partnerRanking = otherUser ? byUser[otherUser] : null
+  // In a group, `partnerRanking` is one arbitrary other player — calling that
+  // "the group's top 3" was a lie. Hand back everyone else's lists so the
+  // caller can combine them.
+  const othersRankings = Object.entries(byUser)
+    .filter(([token]) => token !== userToken)
+    .map(([, ids]) => ids)
   // An empty array is a real answer ("they ranked nothing"); null means no rows.
-  return { myRanking, partnerRanking, partnerSubmitted: partnerRanking != null }
+  return { myRanking, partnerRanking, partnerSubmitted: partnerRanking != null, othersRankings }
+}
+
+// Combine several players' top-3 lists into one. Slot weights #1=3, #2=2, #3=1;
+// ties break toward the better single slot, then by id so every client that
+// combines the same lists produces the same order.
+export function combineRankings(lists, limit = 3) {
+  const score = new Map()
+  for (const list of lists || []) {
+    ;(list || []).forEach((id, i) => {
+      const prev = score.get(id) || { id, points: 0, best: 99 }
+      prev.points += Math.max(0, 3 - i)
+      prev.best = Math.min(prev.best, i + 1)
+      score.set(id, prev)
+    })
+  }
+  return [...score.values()]
+    .sort((a, b) => (b.points - a.points) || (a.best - b.best) || (a.id - b.id))
+    .slice(0, limit)
+    .map(x => x.id)
 }
 
 // Subscribe to partner submitting rankings
