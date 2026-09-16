@@ -1,6 +1,6 @@
 import { buildTvCatalog } from './_lib/catalog.js'
 import { createClient } from '@supabase/supabase-js'
-import { writeCatalog, EMIT_REGIONS } from './_lib/catalogWrite.js'
+import { writeCatalog, EMIT_REGIONS, DETAILS_DEADLINE_MS } from './_lib/catalogWrite.js'
 
 // Series only. Split out of refresh-movies on 2026-09-16: the two ran in one
 // function, the series write came second, and the run had been exceeding the
@@ -21,18 +21,23 @@ export default async function handler(req, res) {
   }
 
   try {
+    const started = Date.now()
+    const stats = {}
     const rows = await buildTvCatalog({
       token, regions: EMIT_REGIONS,
-      pages: 10, minVotes: 1500, freshPages: 3, concurrency: 24,
+      pages: 10, minVotes: 1500, freshPages: 3, genrePages: 2, concurrency: 32,
+      deadline: started + DETAILS_DEADLINE_MS, stats,
     })
 
     const supabase = createClient(url, key, { auth: { persistSession: false } })
-    const report = await writeCatalog(supabase, 'series_catalog', rows, EMIT_REGIONS, new Date().toISOString())
+    const report = await writeCatalog(supabase, 'series_catalog', rows, EMIT_REGIONS, new Date().toISOString(), { allowPrune: !stats.skipped })
 
     return res.status(report.pruned ? 200 : 500).json({
       ok: report.pruned,
       error: report.pruned ? undefined : 'incomplete refresh, prune skipped',
-      series: rows.length, regions: EMIT_REGIONS.length, catalog: report,
+      series: rows.length, regions: EMIT_REGIONS.length,
+      build: { ...stats, seconds: Math.round((Date.now() - started) / 1000) },
+      catalog: report,
     })
   } catch (e) {
     return res.status(500).json({ error: String(e?.message || e) })

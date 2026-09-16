@@ -1,5 +1,6 @@
 import { SERIES_PLATFORMS } from './platforms'
 import { SERIES_GENRES } from './seriesGenres'
+import { normalizeGenres, matchesGenres } from './genres'
 import { supabase } from './supabase'
 import { CATALOG_REGIONS, detectRegion } from './regions'
 import { buildDeck } from './deck'
@@ -14,8 +15,9 @@ function filterPool(all, platforms, genres) {
     : all.filter(s => s.platforms && s.platforms.some(p => platforms.includes(p)))
   if (pool.length === 0) pool = [...all]
 
-  if (genres.length > 0) {
-    const filtered = pool.filter(s => s.genre && genres.some(g => s.genre.includes(g)))
+  const wanted = normalizeGenres(genres)
+  if (wanted.length > 0) {
+    const filtered = pool.filter(s => matchesGenres(s.genres, wanted))
     if (filtered.length > 0) pool = filtered
   }
   return pool
@@ -24,23 +26,28 @@ function filterPool(all, platforms, genres) {
 // The static list is numbered 1..N, which overlaps real TMDB ids. If one player
 // fell back to it and the other stayed on the catalog, a "match" showed each of
 // them a different show — see STATIC_ID_OFFSET in tmdb.js.
-import { STATIC_ID_OFFSET } from './tmdb'
+import { STATIC_ID_OFFSET, readCatalogRegion } from './tmdb'
 
 // Loaded on demand — the static list is a fallback, not a dependency.
 async function fetchStaticSeries(roomId, platforms, genres) {
   const { SERIES } = await import('./series')
-  const all = SERIES.map(s => ({
-    ...s,
-    id: s.id + STATIC_ID_OFFSET,
-    genre: SERIES_GENRES[s.id] || '',
-    platforms: SERIES_PLATFORMS[s.id] || [],
-  }))
+  const all = SERIES.map(s => {
+    const genres = normalizeGenres((SERIES_GENRES[s.id] || '').split(' · '))
+    return {
+      ...s,
+      id: s.id + STATIC_ID_OFFSET,
+      genres,
+      genre: genres.join(' · '),
+      platforms: SERIES_PLATFORMS[s.id] || [],
+    }
+  })
   const pool = filterPool(all, platforms, genres)
   return buildDeck(pool, roomId)
 }
 
 // Map a series_catalog row → the shape SwipeCard/MatchModal expect.
 function rowToSeries(r) {
+  const genres = normalizeGenres(r.genres || [])
   return {
     id: r.tmdb_id,
     title: r.title,
@@ -48,7 +55,8 @@ function rowToSeries(r) {
     rating: r.rating != null ? String(r.rating) : null,
     year: r.year || '',
     runtime: r.runtime || '',
-    genre: (r.genres || []).join(' · '),
+    genres,
+    genre: genres.join(' · '),
     overview: r.overview || '',
     platforms: r.platforms || [],
     popularity: r.popularity ?? null,
@@ -60,12 +68,7 @@ async function loadCatalog(region) {
   // their partner stayed on the catalog — two different decks. Retry a blip.
   for (let attempt = 0; attempt < 2; attempt++) {
     if (attempt > 0) await new Promise(r => setTimeout(r, 400))
-    const { data, error } = await supabase
-      .from('series_catalog')
-      .select('*')
-      .eq('region', region)
-      .order('tmdb_id')   // deterministic set — both partners must fetch identical rows
-      .limit(2000)
+    const { data, error } = await readCatalogRegion('series_catalog', region)
     if (!error && data && data.length > 0) return data
     if (!error) return null           // genuinely empty — retrying won't help
   }

@@ -12,7 +12,14 @@
 // past this is treated as incomplete: upsert what we got, never prune.
 const MIN_COMPLETE_RATIO = 0.7
 
-export async function writeCatalog(supabase, table, rows, regions, runStamp) {
+// Both refresh functions get 60s. TMDB detail calls stop being made this long
+// after the start, which leaves the rest for the write (~31 chunks of ~650 KB
+// for movies across 58 regions) - a run that overstays is killed mid-write.
+export const DETAILS_DEADLINE_MS = 40_000
+
+// `allowPrune: false` keeps every existing row whatever the counts say - the
+// refresh endpoints pass it when the build ran out of time and skipped titles.
+export async function writeCatalog(supabase, table, rows, regions, runStamp, { allowPrune = true } = {}) {
   // Rows with no platform in their region are never read (loadStreamable drops
   // them) and the builders no longer emit them. Clear out the ones already
   // stored, before counting — otherwise `before` would keep counting rows this
@@ -26,7 +33,7 @@ export async function writeCatalog(supabase, table, rows, regions, runStamp) {
     .from(table).select('tmdb_id', { count: 'exact', head: true }).in('region', regions)
   if (countErr) throw countErr
   const before = count ?? 0
-  const complete = rows.length >= Math.max(1, Math.floor(before * MIN_COMPLETE_RATIO))
+  const complete = allowPrune && rows.length >= Math.max(1, Math.floor(before * MIN_COMPLETE_RATIO))
 
   const stamped = rows.map(r => ({ ...r, updated_at: runStamp }))
   const CHUNK = 1000
@@ -34,15 +41,23 @@ export async function writeCatalog(supabase, table, rows, regions, runStamp) {
   // isn't there yet, drop it and retry rather than failing the whole refresh.
   let dropPopularity = false
   const strip = rows => rows.map(({ popularity, ...r }) => r)   // eslint-disable-line no-unused-vars
-  for (let i = 0; i < stamped.length; i += CHUNK) {
-    let chunk = stamped.slice(i, i + CHUNK)
+  const upsertChunk = async start => {
+    let chunk = stamped.slice(start, start + CHUNK)
     if (dropPopularity) chunk = strip(chunk)
     let { error } = await supabase.from(table).upsert(chunk, { onConflict: 'tmdb_id,region' })
-    if (error && !dropPopularity && /popularity/i.test(error.message || '')) {
+    if (error && /popularity/i.test(error.message || '')) {
       dropPopularity = true
       ;({ error } = await supabase.from(table).upsert(strip(chunk), { onConflict: 'tmdb_id,region' }))
     }
     if (error) throw error
+  }
+  // 58 regions put the movie table past 20 chunks, one after another, in a
+  // function that has 60s for everything. The first chunk goes alone so a
+  // missing popularity column is found once; the rest go four at a time.
+  const starts = Array.from({ length: Math.ceil(stamped.length / CHUNK) }, (_, i) => i * CHUNK)
+  if (starts.length) await upsertChunk(starts[0])
+  for (let i = 1; i < starts.length; i += 4) {
+    await Promise.all(starts.slice(i, i + 4).map(upsertChunk))
   }
   if (!complete) return { table, before, written: rows.length, pruned: false }
   const { error: pruneErr } = await supabase

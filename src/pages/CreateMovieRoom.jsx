@@ -6,20 +6,7 @@ import ModeToggle from '../components/ModeToggle'
 import './CreateMovieRoom.css'
 import AppHeader from '../components/AppHeader'
 import Icon from '../components/Icon'
-
-const GENRE_OPTIONS = [
-  'Action', 'Adventure', 'Animation', 'Biography',
-  'Comedy', 'Crime', 'Drama', 'Fantasy',
-  'Horror', 'Musical', 'Mystery', 'Romance',
-  'Sci-Fi', 'Thriller', 'War', 'Western',
-]
-
-const GENRE_EMOJI = {
-  Action: '💥', Adventure: '🧭', Animation: '🧸', Biography: '📖',
-  Comedy: '😂', Crime: '🚔', Drama: '🎭', Fantasy: '🐉',
-  Horror: '👻', Musical: '🎵', Mystery: '🔍', Romance: '❤️',
-  'Sci-Fi': '🚀', Thriller: '😱', War: '⚔️', Western: '🤠',
-}
+import { GENRES } from '../lib/genres'
 
 export default function CreateMovieRoom() {
   const navigate = useNavigate()
@@ -32,7 +19,9 @@ export default function CreateMovieRoom() {
   const platformRef = useRef(null)
   const genreRef = useRef(null)
 
-  // Close dropdowns when clicking outside
+  // Close dropdowns when clicking outside - on the click, not the press. Closing
+  // an open genre list on mousedown/touchstart pulled the page up under the
+  // finger, and the tap on Create Room below it landed on nothing.
   useEffect(() => {
     function handleClickOutside(e) {
       if (platformOpen && platformRef.current && !platformRef.current.contains(e.target)) {
@@ -42,12 +31,8 @@ export default function CreateMovieRoom() {
         setGenreOpen(false)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    document.addEventListener('touchstart', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('touchstart', handleClickOutside)
-    }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
   }, [platformOpen, genreOpen])
 
   function togglePlatform(id) {
@@ -175,18 +160,18 @@ export default function CreateMovieRoom() {
                 All Genres
               </button>
               <div className="filter-grid">
-                {GENRE_OPTIONS.map(g => {
-                  const active = genres.includes(g)
+                {GENRES.map(({ name, emoji }) => {
+                  const active = genres.includes(name)
                   return (
                     <button
-                      key={g}
+                      key={name}
                       className={`filter-btn ${active ? 'active' : ''}`}
-                      onClick={() => toggleGenre(g)}
+                      onClick={() => toggleGenre(name)}
                     >
                       {active
                         ? <span className="filter-check">✓</span>
-                        : <span className="filter-emoji">{GENRE_EMOJI[g]}</span>}
-                      {g}
+                        : <span className="filter-emoji">{emoji}</span>}
+                      {name}
                     </button>
                   )
                 })}

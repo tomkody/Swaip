@@ -227,7 +227,9 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
                 {item.runtime && <span className="card-runtime">{item.runtime}</span>}
                 {item.distance && <span className="card-distance">📍 {item.distance}</span>}
               </div>
-              {item.genre && <p className="card-genre">{item.genre}</p>}
+              {/* Three at most on the front - they come most specific first
+                  (see LABEL_ORDER), and the back lists every one. */}
+              {item.genre && <p className="card-genre">{item.genre.split(' · ').slice(0, 3).join(' · ')}</p>}
               {item.isOpen != null && (
                 <div className="card-open-row">
                   <span className={`card-open-badge ${item.isOpen ? 'card-open-badge--open' : 'card-open-badge--closed'}`}>

@@ -1,6 +1,6 @@
 import { buildCatalog } from './_lib/catalog.js'
 import { createClient } from '@supabase/supabase-js'
-import { writeCatalog, cleanupOldData, EMIT_REGIONS, DISCOVERY_REGIONS } from './_lib/catalogWrite.js'
+import { writeCatalog, cleanupOldData, EMIT_REGIONS, DISCOVERY_REGIONS, DETAILS_DEADLINE_MS } from './_lib/catalogWrite.js'
 
 // Movies only. The series catalog has its own endpoint and its own budget —
 // they used to share this one and the series half was the part that got cut
@@ -26,18 +26,22 @@ export default async function handler(req, res) {
   }
 
   try {
-    // concurrency 40: the run is dominated by waiting on TMDB, ~1,100 calls at
-    // 20 at a time was ~56s of a 60s budget. TMDB allows well over this rate.
+    // The run is dominated by waiting on TMDB: ~1,340 calls, and TMDB holds
+    // anyone to ~45 a second, so ~30s. Whatever is left of the budget after
+    // DETAILS_DEADLINE_MS belongs to the write - see fetchDetails.
+    const started = Date.now()
+    const stats = {}
     const rows = await buildCatalog({
       token,
       regions: EMIT_REGIONS,
       providerRegions: DISCOVERY_REGIONS,
-      pages: 16, minVotes: 3500, freshPages: 3, providerPages: 3, concurrency: 40,
+      pages: 16, minVotes: 3500, freshPages: 3, providerPages: 3, genrePages: 2, concurrency: 32,
+      deadline: started + DETAILS_DEADLINE_MS, stats,
     })
 
     const supabase = createClient(url, key, { auth: { persistSession: false } })
     const runStamp = new Date().toISOString()
-    const report = await writeCatalog(supabase, 'movie_catalog', rows, EMIT_REGIONS, runStamp)
+    const report = await writeCatalog(supabase, 'movie_catalog', rows, EMIT_REGIONS, runStamp, { allowPrune: !stats.skipped })
 
     // Housekeeping lives with the movie job — never let it fail the refresh.
     let cleanup = null
@@ -48,6 +52,7 @@ export default async function handler(req, res) {
       ok: report.pruned,
       error: report.pruned ? undefined : 'incomplete refresh, prune skipped',
       movies: rows.length, regions: EMIT_REGIONS.length, discoveryRegions: DISCOVERY_REGIONS.length,
+      build: { ...stats, seconds: Math.round((Date.now() - started) / 1000) },
       catalog: report, cleanup,
     })
   } catch (e) {

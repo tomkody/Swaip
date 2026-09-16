@@ -1,5 +1,6 @@
 import { MOVIE_PLATFORMS } from './platforms'
 import { MOVIE_GENRES } from './movieGenres'
+import { normalizeGenres, matchesGenres } from './genres'
 import { supabase } from './supabase'
 import { CATALOG_REGIONS, detectRegion } from './regions'
 import { buildDeck } from './deck'
@@ -18,8 +19,9 @@ function filterPool(all, platforms, genres) {
     : all.filter(m => m.platforms && m.platforms.some(p => platforms.includes(p)))
   if (pool.length === 0) pool = [...all]
 
-  if (genres.length > 0) {
-    const filtered = pool.filter(m => m.genre && genres.some(g => m.genre.includes(g)))
+  const wanted = normalizeGenres(genres)
+  if (wanted.length > 0) {
+    const filtered = pool.filter(m => matchesGenres(m.genres, wanted))
     if (filtered.length > 0) pool = filtered
   }
   return pool
@@ -35,12 +37,16 @@ export const STATIC_ID_OFFSET = 90000000
 // Loaded on demand — the static list is a fallback, not a dependency.
 async function loadStaticMovies() {
   const { MOVIES } = await import('./movies')
-  return MOVIES.map(m => ({
-    ...m,
-    id: m.id + STATIC_ID_OFFSET,
-    genre: MOVIE_GENRES[m.id] || '',
-    platforms: MOVIE_PLATFORMS[m.id] || [],
-  }))
+  return MOVIES.map(m => {
+    const genres = normalizeGenres((MOVIE_GENRES[m.id] || '').split(' · '))
+    return {
+      ...m,
+      id: m.id + STATIC_ID_OFFSET,
+      genres,
+      genre: genres.join(' · '),
+      platforms: MOVIE_PLATFORMS[m.id] || [],
+    }
+  })
 }
 
 async function fetchStaticMovies(roomId, platforms, genres, prefs) {
@@ -50,6 +56,7 @@ async function fetchStaticMovies(roomId, platforms, genres, prefs) {
 
 // Map a movie_catalog row → the shape SwipeCard/MatchModal expect.
 function rowToMovie(r) {
+  const genres = normalizeGenres(r.genres || [])
   return {
     id: r.tmdb_id,
     title: r.title,
@@ -57,10 +64,26 @@ function rowToMovie(r) {
     rating: r.rating != null ? String(r.rating) : null,
     year: r.year || '',
     runtime: r.runtime || '',
-    genre: (r.genres || []).join(' · '),
+    genres,
+    genre: genres.join(' · '),
     overview: r.overview || '',
     platforms: r.platforms || [],
     popularity: r.popularity ?? null,
+  }
+}
+
+// One region of a catalog table, all of it. PostgREST ends a plain read at 1000
+// rows without saying so - `.limit(2000)` doesn't lift that - and the US movie
+// catalog is past 800. Ordered by id so both partners fetch identical rows.
+export async function readCatalogRegion(table, region) {
+  const rows = []
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase
+      .from(table).select('*').eq('region', region)
+      .order('tmdb_id').range(from, from + 999)
+    if (error) return { data: null, error }
+    rows.push(...data)
+    if (data.length < 1000) return { data: rows, error: null }
   }
 }
 
@@ -70,12 +93,7 @@ async function loadCatalog(region) {
   // blip is worth retrying before accepting that.
   for (let attempt = 0; attempt < 2; attempt++) {
     if (attempt > 0) await new Promise(r => setTimeout(r, 400))
-    const { data, error } = await supabase
-      .from('movie_catalog')
-      .select('*')
-      .eq('region', region)
-      .order('tmdb_id')   // deterministic set — both partners must fetch identical rows
-      .limit(2000)        // explicit; the default 1000-row cap would truncate silently
+    const { data, error } = await readCatalogRegion('movie_catalog', region)
     if (!error && data && data.length > 0) return data
     if (!error) return null           // genuinely empty — retrying won't help
   }
