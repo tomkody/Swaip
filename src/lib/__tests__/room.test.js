@@ -11,9 +11,13 @@ function makeBuilder(table) {
     _table: table,
     select() { return b }, eq() { return b }, in() { return b },
     order() { return b }, limit() { return b }, maybeSingle() { return b },
+    range(from, to) { b._range = [from, to]; return b },
     insert() { return b }, upsert() { return b }, update() { return b }, delete() { return b },
     single() { return b },
-    then(resolve) { resolve({ data: tables[table] ?? [], error: null }) },
+    then(resolve) {
+      const all = tables[table] ?? []
+      resolve({ data: b._range ? all.slice(b._range[0], b._range[1] + 1) : all, error: null })
+    },
   }
   return b
 }

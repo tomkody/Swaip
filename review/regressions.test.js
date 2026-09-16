@@ -6,9 +6,10 @@ import { beforeEach, expect, it, vi } from 'vitest'
 const state = vi.hoisted(() => ({ tables: {} }))
 function builder(table) {
   const filters = []
-  let operation = 'select', payload, countOnly = false
+  let operation = 'select', payload, countOnly = false, rangeFrom = null, rangeTo = null
   const b = {
     select(_cols, opts) { if (opts?.head) countOnly = true; return b }, order() { return b }, limit() { return b },
+    range(from, to) { rangeFrom = from; rangeTo = to; return b },
     eq(key, value) { filters.push(r => r[key] === value); return b },
     lt(key, value) { filters.push(r => r[key] < value); return b },
     in(key, values) { filters.push(r => values.includes(r[key])); return b },
@@ -23,7 +24,8 @@ function builder(table) {
         const matched = (state.tables[table] || []).filter(r => filters.every(f => f(r)))
         // Like PostgREST: plain reads stop at 1000 rows; head+count reads return only the count.
         if (countOnly) return Promise.resolve({ data: null, count: matched.length, error: null }).then(resolve, reject)
-        return Promise.resolve({ data: operation === 'select' ? matched.slice(0, 1000) : matched, error: null }).then(resolve, reject)
+        const page = rangeFrom != null ? matched.slice(rangeFrom, rangeTo + 1) : matched
+        return Promise.resolve({ data: operation === 'select' ? page.slice(0, 1000) : matched, error: null }).then(resolve, reject)
       } catch (e) { return Promise.reject(e).then(resolve, reject) }
     },
   }
@@ -34,7 +36,7 @@ vi.mock('@supabase/supabase-js', () => ({ createClient: () => ({ from: table => 
 vi.mock('web-push', () => ({ default: { setVapidDetails: vi.fn(), sendNotification: vi.fn().mockResolvedValue(undefined) } }))
 vi.mock('../src/lib/analytics', () => ({ track: vi.fn() }))
 
-import { submitConversationSelections, getConversationMatches, fetchRoomPicks } from '../src/lib/room'
+import { submitConversationSelections, getConversationMatches, fetchRoomPicks, fetchRoomMatches } from '../src/lib/room'
 import notify from '../api/notify'
 import places from '../api/places'
 import refreshMovies, { writeCatalog } from '../api/refresh-movies'
@@ -137,3 +139,20 @@ it('does not prune a catalog larger than the 1000-row read cap after a partial r
 // catalog, and an empty platform/genre filter silently widens to everything.
 it.todo('keeps the shared room deck fixed across a catalog refresh')
 it.todo('surfaces (rather than silently drops) a platform filter with no titles')
+
+// A busy room (a group, or a lot of take-backs) passes 1000 swipe rows, and
+// PostgREST truncates a plain select there without saying so — matches were
+// then computed from a prefix of the votes.
+it('reads past the 1000-row cap when matching a busy room', async () => {
+  const rows = []
+  for (let i = 0; i < 700; i++) {
+    rows.push({ room_id: 'busy', user_token: 'me', item_id: i, direction: 'left', created_at: '2026-01-01T00:00:00Z' })
+    rows.push({ room_id: 'busy', user_token: 'them', item_id: i, direction: 'left', created_at: '2026-01-01T00:00:00Z' })
+  }
+  // The only mutual like sits well past row 1000.
+  rows.push({ room_id: 'busy', user_token: 'me', item_id: 5001, direction: 'right', created_at: '2026-01-01T00:01:00Z' })
+  rows.push({ room_id: 'busy', user_token: 'them', item_id: 5001, direction: 'right', created_at: '2026-01-01T00:01:00Z' })
+  state.tables.swipes = rows
+
+  expect(await fetchRoomMatches('busy', 'me', 2)).toEqual([5001])
+})

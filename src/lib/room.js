@@ -28,6 +28,23 @@ export function currentVotes(rows) {
 const currentLikes = rows => currentVotes(rows).filter(r => r.direction === 'right')
 const VOTE_COLUMNS = 'user_token, item_id, direction, created_at'
 
+// PostgREST caps a plain select at 1000 rows and says nothing about it — a busy
+// room (a group, or lots of take-backs) would silently compute its matches from
+// a prefix of the votes. Read every page instead. Returns null on a failed read
+// so callers can tell "nothing" from "we don't know".
+const PAGE = 1000
+async function selectAllSwipes(roomId, columns, narrow) {
+  const rows = []
+  for (let from = 0; ; from += PAGE) {
+    let q = supabase.from('swipes').select(columns).eq('room_id', roomId)
+    if (narrow) q = narrow(q)
+    const { data, error } = await q.range(from, from + PAGE - 1)
+    if (error || !data) return null
+    rows.push(...data)
+    if (data.length < PAGE) return rows
+  }
+}
+
 // Movie/series rooms must only treat DONE_ITEM_ID as a sentinel: 1999 and 2999
 // are valid TMDB ids, so filtering them out there would silently make those two
 // titles unmatchable. Callers in movie/series context pass this set to
@@ -71,9 +88,8 @@ export async function getParticipantCount(roomId) {
     const swipes = JSON.parse(localStorage.getItem(key) || '[]')
     return new Set(swipes.map(s => s.user_token)).size
   }
-  const { data, error } = await supabase
-    .from('swipes').select('user_token').eq('room_id', roomId)
-  if (error || !data) return 0
+  const data = await selectAllSwipes(roomId, 'user_token')
+  if (!data) return 0
   return new Set(data.map(s => s.user_token)).size
 }
 
@@ -90,10 +106,8 @@ export async function fetchVoteCounts(roomId) {
     }
     return Object.fromEntries(Object.entries(byItem).map(([id, set]) => [id, set.size]))
   }
-  const { data, error } = await supabase
-    .from('swipes').select(VOTE_COLUMNS)
-    .eq('room_id', roomId)
-  if (error || !data) return {}
+  const data = await selectAllSwipes(roomId, VOTE_COLUMNS)
+  if (!data) return {}
   const byItem = {}
   for (const s of currentLikes(data)) {
     const id = Number(s.item_id)
@@ -414,14 +428,11 @@ export function subscribeToRoomChanges(roomId, onUpdate) {
 export async function fetchRoomMatches(roomId, userToken, playerCount = 2, sentinels = DONE_SENTINELS) {
   if (!supabase) return null // demo mode: caller uses in-memory matches
 
-  const { data, error } = await supabase
-    .from('swipes')
-    .select(VOTE_COLUMNS)
-    .eq('room_id', roomId)
+  const data = await selectAllSwipes(roomId, VOTE_COLUMNS)
 
   // null = couldn't read (offline, 5xx). Callers keep what they have; an empty
   // array would read as "no matches" and wipe the results and the top 3.
-  if (error || !data) return null
+  if (!data) return null
 
   // Count distinct users whose CURRENT vote is a like, and this user's own likes.
   const likersByItem = {}
@@ -494,9 +505,8 @@ export async function getRoom(roomId) {
 // ≥ 2,000,000, so pass that to skip the category swipes in food/activity rooms).
 export async function fetchPartnerSwipeCount(roomId, userToken, minItemId = 0, sentinels = DONE_SENTINELS) {
   if (!supabase) return 0
-  const { data, error } = await supabase
-    .from('swipes').select('user_token, item_id').eq('room_id', roomId)
-  if (error || !data) return 0
+  const data = await selectAllSwipes(roomId, 'user_token, item_id')
+  if (!data) return 0
   const seen = {}
   for (const r of data) {
     if (r.user_token === userToken) continue
@@ -786,11 +796,8 @@ export async function fetchRoomPicks(roomId, userToken, sentinels = DONE_SENTINE
   if (!supabase) {
     rows = currentLikes(JSON.parse(localStorage.getItem(`swaip_swipes_${roomId}`) || '[]'))
   } else {
-    const { data, error } = await supabase
-      .from('swipes')
-      .select(VOTE_COLUMNS)
-      .eq('room_id', roomId)
-    if (error || !data) return null
+    const data = await selectAllSwipes(roomId, VOTE_COLUMNS)
+    if (!data) return null
     rows = currentLikes(data)
   }
 

@@ -79,6 +79,38 @@ function fromOurSite(req) {
   return ALLOWED_SITES.some(site => src === site || src.startsWith(site + '/'))
 }
 
+// ── Per-IP rate limit ─────────────────────────────────────────────────────────
+// The referer check turns away a bare script, but anything that sets a Referer
+// could still loop this endpoint and spend the Google budget. Only the ops that
+// actually cost money are limited; cached hits are counted too, since the point
+// is to cap abuse rather than to meter spend exactly. In-memory, so it resets
+// when a serverless instance recycles and doesn't see other instances — it
+// blunts a burst from one client, it is not the hard cap. That one belongs in
+// the Google Cloud console as a daily quota.
+const PAID_OPS = new Set(['nearby', 'geocode', 'revgeo', 'photo'])
+const RATE_WINDOW_MS = 60_000
+const RATE_MAX = 60             // per IP per minute, across all paid ops
+const hits = new Map()
+
+function overRateLimit(req, op) {
+  if (!PAID_OPS.has(op)) return false
+  const ip = String(
+    req.headers?.['x-forwarded-for'] || req.headers?.['x-real-ip'] || 'unknown'
+  ).split(',')[0].trim()
+  const now = Date.now()
+  const seen = hits.get(ip)
+  if (!seen || now - seen.start > RATE_WINDOW_MS) {
+    hits.set(ip, { start: now, n: 1 })
+    // Opportunistic cleanup so one instance can't grow the map without bound.
+    if (hits.size > 5000) {
+      for (const [k, v] of hits) if (now - v.start > RATE_WINDOW_MS) hits.delete(k)
+    }
+    return false
+  }
+  seen.n++
+  return seen.n > RATE_MAX
+}
+
 function send(res, status, cacheSeconds, payload) {
   if (cacheSeconds && status === 200) {
     res.setHeader('Cache-Control', `public, s-maxage=${cacheSeconds}, stale-while-revalidate=${cacheSeconds * 2}`)
@@ -95,6 +127,10 @@ export default async function handler(req, res) {
   const q = req.query || {}
   const op = q.op
   const lang = (q.lang || 'en').toString().slice(0, 5)
+  if (overRateLimit(req, op)) {
+    res.setHeader('Retry-After', '60')
+    return send(res, 429, 0, { error: 'too many requests' })
+  }
 
   try {
     // ── Nearby search (POST to Google, GET from the client so it edge-caches) ──

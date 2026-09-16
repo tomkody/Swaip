@@ -18,6 +18,27 @@ const CATALOG_TABLE = { movies: 'movie_catalog', series: 'series_catalog' }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
+// One notification per room+event+item per minute. The client fires these
+// itself, so nothing stopped it (or anyone replaying the call) from having us
+// push the same thing over and over. In-memory: it resets when the instance
+// recycles and doesn't see other instances, so it dampens a burst rather than
+// guaranteeing exactly-once.
+const RECENT_TTL_MS = 60_000
+const recent = new Map()
+function notifiedRecently(signature) {
+  const at = recent.get(signature)
+  return at != null && Date.now() - at < RECENT_TTL_MS
+}
+// Only a notification we actually sent counts. Marking on arrival instead would
+// let a stream of rejected requests suppress the genuine one behind them.
+function markNotified(signature) {
+  const now = Date.now()
+  recent.set(signature, now)
+  if (recent.size > 2000) {
+    for (const [k, t] of recent) if (now - t > RECENT_TTL_MS) recent.delete(k)
+  }
+}
+
 function playerCount(room) {
   try { return Number(JSON.parse(room.topic_id || '')?.playerCount) || 2 } catch { return 2 }
 }
@@ -36,10 +57,19 @@ async function verifyJoined(supabase, room, id) {
 async function verifyMatch(supabase, room, id, itemId, from) {
   const item = Number(itemId)
   if (!Number.isFinite(item)) return { ok: false }
-  const { data: likes } = await supabase
-    .from('swipes').select('user_token')
-    .eq('room_id', id).eq('item_id', item).eq('direction', 'right')
-  const likers = new Set((likes || []).map(l => l.user_token))
+  // Swipes are append-only, so a like that was taken back is still a 'right'
+  // row. Filtering on direction counted those and could fire "It's a match!"
+  // for a pair that no longer exists — read every vote and keep the latest one
+  // per player, exactly like the client does.
+  const { data: votes } = await supabase
+    .from('swipes').select('user_token, direction, created_at')
+    .eq('room_id', id).eq('item_id', item)
+  const latest = new Map()
+  for (const v of votes || []) {
+    const prev = latest.get(v.user_token)
+    if (!prev || String(v.created_at || '') >= String(prev.created_at || '')) latest.set(v.user_token, v)
+  }
+  const likers = new Set([...latest.values()].filter(v => v.direction === 'right').map(v => v.user_token))
   if (likers.size < playerCount(room) || (from && !likers.has(from))) return { ok: false }
   const table = CATALOG_TABLE[room.type]
   if (!table) return { ok: true, title: null }
@@ -59,6 +89,9 @@ export default async function handler(req, res) {
   const { roomId, event, from, itemId } = req.body || {}
   const id = (roomId || '').toString().slice(0, 64)
   if (!id || !COPY[event]) return res.status(400).json({ error: 'roomId and a known event are required' })
+
+  const signature = `${id}:${event}:${itemId ?? ''}`
+  if (notifiedRecently(signature)) return res.status(200).json({ ok: true, sent: 0, skipped: 'duplicate' })
 
   const supabase = createClient(url, key, { auth: { persistSession: false } })
 
@@ -82,6 +115,7 @@ export default async function handler(req, res) {
     .from('push_subscriptions').select('user_token, subscription').eq('room_id', id)
   if (error) return res.status(500).json({ error: error.message })
 
+  markNotified(signature)
   webpush.setVapidDetails('mailto:hello@swaip.app', pub, priv)
   const copy = COPY[event]
   const payload = JSON.stringify({
