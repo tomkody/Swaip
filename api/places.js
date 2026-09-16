@@ -53,6 +53,56 @@ async function cachePut(key, payload) {
   } catch { /* cache is best-effort */ }
 }
 
+// ── Daily spend cap ───────────────────────────────────────────────────────────
+// Google's own per-day quota for these SKUs is greyed out on this project
+// ("Quota is not adjustable"), so the only hard stop we can actually enforce
+// lives here. Unlike the per-IP limit this one is shared: it counts in the
+// places_cache table, so it survives an instance recycling and every instance
+// sees the same number.
+//
+// Only the two search SKUs are capped — they are the expensive ones. Photos and
+// reverse geocoding are an order of magnitude cheaper, and a photo can only be
+// requested with a name that came from a search that was already counted.
+//
+// Tune without a deploy: PLACES_NEARBY_DAILY_MAX / PLACES_GEOCODE_DAILY_MAX.
+// Read per call, not at module load: a changed value on Vercel then takes
+// effect without waiting for a cold start.
+const dailyMax = op => ({
+  nearby: Number(process.env.PLACES_NEARBY_DAILY_MAX || 500),
+  geocode: Number(process.env.PLACES_GEOCODE_DAILY_MAX || 200),
+}[op] || 0)
+
+const usageKey = op => `usage:${op}:${new Date().toISOString().slice(0, 10)}`
+
+// Reserve one paid call against today's budget. Returns false when the budget
+// is spent. Counts before calling Google, so a failed call still costs a slot —
+// for a safety cap, erring high is the right direction.
+//
+// Read-then-write, so two simultaneous calls can both read the same number and
+// undercount by one. That doesn't matter for a cap whose job is to stop a
+// runaway, and avoiding it would mean a database function to install.
+async function reserveDailyCall(op) {
+  const max = dailyMax(op)
+  if (!max) return true
+  const sb = cacheClient()
+  if (!sb) return true              // no counter available — the per-IP limit still applies
+  try {
+    const key = usageKey(op)
+    const { data, error } = await sb
+      .from('places_cache').select('payload').eq('cache_key', key).maybeSingle()
+    if (error) { if (error.code === 'PGRST205') cacheDead = true; return true }
+    const used = Number(data?.payload?.n || 0)
+    if (used >= max) return false
+    await sb.from('places_cache').upsert(
+      { cache_key: key, payload: { n: used + 1 }, created_at: new Date().toISOString() },
+      { onConflict: 'cache_key' }
+    )
+    return true
+  } catch {
+    return true                     // never let the meter take the feature down
+  }
+}
+
 const NEARBY_MASK = [
   'places.id', 'places.displayName', 'places.formattedAddress', 'places.rating',
   'places.userRatingCount', 'places.photos', 'places.editorialSummary', 'places.types',
@@ -144,6 +194,10 @@ export default async function handler(req, res) {
       const cacheKey = `nearby:${lat.toFixed(3)}:${lng.toFixed(3)}:${radius}:${[...types].sort().join('+')}:${lang}`
       const cached = await cacheGet(cacheKey)
       if (cached) return send(res, 200, 900, cached)
+      if (!(await reserveDailyCall('nearby'))) {
+        res.setHeader('Retry-After', '3600')
+        return send(res, 429, 0, { error: "Today's place searches are used up. Try again tomorrow." })
+      }
       const r = await fetch(`${BASE}/places:searchNearby`, {
         method: 'POST',
         headers: {
@@ -168,6 +222,10 @@ export default async function handler(req, res) {
     if (op === 'geocode') {
       const query = (q.q || '').toString()
       if (!query) return send(res, 400, 0, { error: 'geocode needs q' })
+      if (!(await reserveDailyCall('geocode'))) {
+        res.setHeader('Retry-After', '3600')
+        return send(res, 429, 0, { error: "Today's location lookups are used up. Try again tomorrow." })
+      }
       const r = await fetch(`${BASE}/places:searchText`, {
         method: 'POST',
         headers: {

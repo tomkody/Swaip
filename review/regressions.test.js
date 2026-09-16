@@ -6,10 +6,11 @@ import { beforeEach, expect, it, vi } from 'vitest'
 const state = vi.hoisted(() => ({ tables: {} }))
 function builder(table) {
   const filters = []
-  let operation = 'select', payload, countOnly = false, rangeFrom = null, rangeTo = null
+  let operation = 'select', payload, countOnly = false, rangeFrom = null, rangeTo = null, singleRow = false
   const b = {
     select(_cols, opts) { if (opts?.head) countOnly = true; return b }, order() { return b }, limit() { return b },
     range(from, to) { rangeFrom = from; rangeTo = to; return b },
+    maybeSingle() { singleRow = true; return b },
     eq(key, value) { filters.push(r => r[key] === value); return b },
     lt(key, value) { filters.push(r => r[key] < value); return b },
     in(key, values) { filters.push(r => values.includes(r[key])); return b },
@@ -25,6 +26,7 @@ function builder(table) {
         // Like PostgREST: plain reads stop at 1000 rows; head+count reads return only the count.
         if (countOnly) return Promise.resolve({ data: null, count: matched.length, error: null }).then(resolve, reject)
         const page = rangeFrom != null ? matched.slice(rangeFrom, rangeTo + 1) : matched
+        if (singleRow) return Promise.resolve({ data: page[0] ?? null, error: null }).then(resolve, reject)
         return Promise.resolve({ data: operation === 'select' ? page.slice(0, 1000) : matched, error: null }).then(resolve, reject)
       } catch (e) { return Promise.reject(e).then(resolve, reject) }
     },
@@ -155,4 +157,30 @@ it('reads past the 1000-row cap when matching a busy room', async () => {
   state.tables.swipes = rows
 
   expect(await fetchRoomMatches('busy', 'me', 2)).toEqual([5001])
+})
+
+// Google's own per-day quota for the Places search SKUs is not adjustable on
+// this project, so the daily cap in api/places.js is the only hard stop there
+// is. It has to hold across instances, which means counting in the database.
+it('stops calling Google once the day\'s place-search budget is spent', async () => {
+  for (const [name, value] of Object.entries({
+    GOOGLE_MAPS_API_KEY: 'fake',
+    SUPABASE_URL: 'https://review.invalid',
+    SUPABASE_SERVICE_ROLE_KEY: 'fake',
+    PLACES_NEARBY_DAILY_MAX: '2',
+  })) vi.stubEnv(name, value)
+  const today = new Date().toISOString().slice(0, 10)
+  state.tables.places_cache = [{ cache_key: `usage:nearby:${today}`, payload: { n: 2 }, created_at: new Date().toISOString() }]
+
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ places: [] }) })
+  vi.stubGlobal('fetch', fetchMock)
+  const res = response()
+  await places({
+    method: 'GET',
+    headers: { origin: 'https://swaip.app' },
+    query: { op: 'nearby', lat: '50.08', lng: '14.42', radius: '1000', types: 'cafe' },
+  }, res)
+
+  expect(res.code).toBe(429)
+  expect(fetchMock).not.toHaveBeenCalled()
 })

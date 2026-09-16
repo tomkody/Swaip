@@ -67,6 +67,15 @@ export function getBrandKey(title) {
 // `import.meta.env.DEV` and is compiled out of the production build, so the key
 // is not present in dist/ at all.
 const DEV_KEY = import.meta.env.DEV ? import.meta.env.VITE_GOOGLE_MAPS_API_KEY : null
+// Google answers with { error: { message } }; our own proxy (quota spent, rate
+// limited, misconfigured) answers with { error: "..." }. Reading only the first
+// shape turned our own plain-English messages into "failed: 429".
+function errorMessage(body) {
+  const e = body?.error
+  if (typeof e === 'string') return e
+  return e?.message || null
+}
+
 const PROXY = '/api/places'
 const BASE = 'https://places.googleapis.com/v1'
 
@@ -275,7 +284,7 @@ export async function geocodeLocation(query) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new Error(err?.error?.message || `Geocode failed: ${res.status}`)
+    throw new Error(errorMessage(err) || `Geocode failed: ${res.status}`)
   }
 
   const data = await res.json()
@@ -311,7 +320,7 @@ export async function fetchNearbyPlaces(lat, lng, radius, types, roomId) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new Error(err?.error?.message || `Nearby search failed: ${res.status}`)
+    throw new Error(errorMessage(err) || `Nearby search failed: ${res.status}`)
   }
 
   // Primary types that should never appear in Food or Activities results
