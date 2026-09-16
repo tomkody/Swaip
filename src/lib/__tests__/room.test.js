@@ -24,6 +24,9 @@ function makeBuilder(table) {
 
 vi.mock('../supabase', () => ({
   supabase: { from: (table) => makeBuilder(table) },
+  // room.js waits for this before every read and write; the policies need an
+  // identity, and without one the request goes out as nobody.
+  ensureSession: async () => ({ user: { id: 'test-user' } }),
 }))
 
 const { fetchRoomMatches, fetchRoomPicks, fetchPartnerSwipeCount, countItemLikers, getRankings, combineRankings, currentVotes, MOVIE_SENTINELS, DONE_ITEM_ID } =

@@ -33,7 +33,10 @@ function builder(table) {
   }
   return b
 }
-vi.mock('../src/lib/supabase', () => ({ supabase: { from: table => builder(table) } }))
+vi.mock('../src/lib/supabase', () => ({
+  supabase: { from: table => builder(table) },
+  ensureSession: async () => ({ user: { id: 'test-user' } }),
+}))
 vi.mock('@supabase/supabase-js', () => ({ createClient: () => ({ from: table => builder(table) }) }))
 vi.mock('web-push', () => ({ default: { setVapidDetails: vi.fn(), sendNotification: vi.fn().mockResolvedValue(undefined) } }))
 vi.mock('../src/lib/analytics', () => ({ track: vi.fn() }))
@@ -183,4 +186,24 @@ it('stops calling Google once the day\'s place-search budget is spent', async ()
 
   expect(res.code).toBe(429)
   expect(fetchMock).not.toHaveBeenCalled()
+})
+
+// CI caught this before a user did: with row-level security on, creating a room
+// inserts `created_by = auth.uid()`, and the policy compares the two. The
+// anonymous sign-in is kicked off at startup but nothing waited for it, so a
+// fast click on "Create Room" went out with no identity and was refused.
+it('waits for the session before touching the database', async () => {
+  const order = []
+  vi.resetModules()
+  vi.doMock('../src/lib/supabase', () => ({
+    supabase: { from: table => { order.push('query'); return builder(table) } },
+    ensureSession: async () => { order.push('session'); return { user: { id: 'u' } } },
+  }))
+  const { recordSwipe, getRoom } = await import('../src/lib/room')
+  state.tables.rooms = [{ id: 'r1', type: 'movies' }]
+  await recordSwipe('r1', 'me', 10, 'right')
+  await getRoom('r1')
+  vi.doUnmock('../src/lib/supabase')
+  expect(order[0]).toBe('session')
+  expect(order).not.toContain(undefined)
 })

@@ -5,6 +5,7 @@ import { useDialogFocus } from '../lib/useDialogFocus'
 import { prefersReducedMotion } from '../lib/motion'
 import WhereToWatch from './WhereToWatch'
 import Icon from './Icon'
+import { successFeedback } from '../lib/haptics'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import './MatchModal.css'
 
@@ -39,6 +40,9 @@ export default function MatchModal({ item, roomType, swipeCount = 0, matchCount 
   useEffect(() => {
     if (!hasConfettied.current) {
       hasConfettied.current = true
+      // Before the reduced-motion check on purpose: that preference is about
+      // things moving on screen, not about feeling the match land.
+      successFeedback()
       if (prefersReducedMotion()) return
       const end = Date.now() + (isFirst ? 1500 : 700) // shorter burst on repeats
       const count = isFirst ? 3 : 2

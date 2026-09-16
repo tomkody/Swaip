@@ -13,6 +13,7 @@ import { getRoomPlayerCount, getParticipantCount, fetchVoteCounts } from '../lib
 
 import { fetchNearbyPlaces, getBrandKey } from '../lib/placesApi'
 import { notifyRoom } from '../lib/push'
+import { successFeedback } from '../lib/haptics'
 import {
   getRoomToken,
   recordSwipe,
@@ -210,7 +211,9 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
           // Only celebrate while still swiping — not over the results/waiting screen.
           if (!resultsShownRef.current) {
             setMatchItem(place)
-            if (!prefersReducedMotion()) confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
+            successFeedback()
+            successFeedback()
+          if (!prefersReducedMotion()) confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
           }
         }
       }

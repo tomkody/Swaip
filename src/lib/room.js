@@ -88,6 +88,7 @@ export async function getParticipantCount(roomId) {
     const swipes = JSON.parse(localStorage.getItem(key) || '[]')
     return new Set(swipes.map(s => s.user_token)).size
   }
+  await ensureSession()   // RLS needs an identity before any read or write
   const data = await selectAllSwipes(roomId, 'user_token')
   if (!data) return 0
   return new Set(data.map(s => s.user_token)).size
@@ -106,6 +107,7 @@ export async function fetchVoteCounts(roomId) {
     }
     return Object.fromEntries(Object.entries(byItem).map(([id, set]) => [id, set.size]))
   }
+  await ensureSession()   // RLS needs an identity before any read or write
   const data = await selectAllSwipes(roomId, VOTE_COLUMNS)
   if (!data) return {}
   const byItem = {}
@@ -200,6 +202,7 @@ export async function createMovieRoom(platforms = [], genres = [], { solo = fals
     localStorage.setItem(`swaip_room_${roomId}`, JSON.stringify(room))
     return room
   }
+  await ensureSession()   // RLS needs an identity before any read or write
 
   const { data, error } = await supabase
     .from('rooms')
@@ -231,6 +234,7 @@ export async function createConversationRoom(topicIds, topicNames, { solo = fals
     localStorage.setItem(`swaip_room_${roomId}`, JSON.stringify(room))
     return room
   }
+  await ensureSession()   // RLS needs an identity before any read or write
 
   const { data, error } = await supabase
     .from('rooms')
@@ -261,6 +265,7 @@ export async function createSeriesRoom(platforms = [], genres = [], { solo = fal
     localStorage.setItem(`swaip_room_${roomId}`, JSON.stringify(room))
     return room
   }
+  await ensureSession()   // RLS needs an identity before any read or write
 
   const { data, error } = await supabase
     .from('rooms')
@@ -292,6 +297,7 @@ export async function checkMutualSwipesByIds(roomId, userToken, itemIds, playerC
     }
     return null
   }
+  await ensureSession()   // RLS needs an identity before any read or write
 
   const { data, error } = await supabase
     .from('swipes')
@@ -323,6 +329,7 @@ export async function createFoodRoom({ lat, lng, locationName, radius, countryCo
     localStorage.setItem(`swaip_room_${roomId}`, JSON.stringify(room))
     return room
   }
+  await ensureSession()   // RLS needs an identity before any read or write
   const { data, error } = await supabase
     .from('rooms')
     .insert({ id: roomId, type: 'food', topic_id: locationData, status: 'waiting' })
@@ -354,6 +361,7 @@ export async function createActivityRoom({ lat, lng, locationName, radius, solo 
     localStorage.setItem(`swaip_room_${roomId}`, JSON.stringify(room))
     return room
   }
+  await ensureSession()   // RLS needs an identity before any read or write
 
   const { data, error } = await supabase
     .from('rooms')
@@ -377,6 +385,7 @@ export async function createColorGameRoom({ solo = false } = {}) {
     localStorage.setItem(`swaip_room_${roomId}`, JSON.stringify(room))
     return room
   }
+  await ensureSession()   // RLS needs an identity before any read or write
 
   const { data, error } = await supabase
     .from('rooms')
@@ -415,6 +424,7 @@ export async function updateActivityRoomPhase(roomId, { phase, matched_category,
     localStorage.setItem(key, JSON.stringify(room))
     return
   }
+  await ensureSession()   // RLS needs an identity before any read or write
 
   const { error } = await supabase.from('rooms').update(update).eq('id', roomId)
   if (error) throw error
@@ -431,6 +441,7 @@ export async function countItemLikers(roomId, itemId) {
     const mine = swipes.filter(s => Number(s.item_id) === Number(itemId))
     return new Set(currentLikes(mine).map(s => s.user_token)).size
   }
+  await ensureSession()   // RLS needs an identity before any read or write
   const { data, error } = await supabase
     .from('swipes').select(VOTE_COLUMNS)
     .eq('room_id', roomId).eq('item_id', itemId)
@@ -442,16 +453,27 @@ export async function countItemLikers(roomId, itemId) {
 export function subscribeToRoomChanges(roomId, onUpdate) {
   if (!supabase) return () => {}
 
-  const channel = supabase
-    .channel(uniqueChannel('room-data', roomId))
-    .on(
-      'postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
-      (payload) => onUpdate(payload.new)
-    )
-    .subscribe()
+  // Realtime authorises with the session token, so a channel opened before
+  // the anonymous sign-in lands would subscribe as nobody and, under the
+  // row-level policies, receive nothing.
+  let channel = null
+  let cancelled = false
+  ensureSession().then(() => {
+    if (cancelled) return
+    channel = supabase
+      .channel(uniqueChannel('room-data', roomId))
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
+        (payload) => onUpdate(payload.new)
+      )
+      .subscribe()
+  })
 
-  return () => supabase.removeChannel(channel)
+  return () => {
+    cancelled = true
+    if (channel) supabase.removeChannel(channel)
+  }
 }
 
 // Fetch actual mutual matches from DB (authoritative source)
@@ -475,6 +497,7 @@ export async function fetchRoomMatches(roomId, userToken, playerCount = 2, senti
     likersByItem[id].add(row.user_token)
     if (row.user_token === userToken) myLikes.add(id)
   }
+  await ensureSession()   // RLS needs an identity before any read or write
 
   // A match = an item THIS user liked that at least playerCount distinct users liked.
   // Keyed off playerCount (not "every participant") so results agree with the
@@ -492,6 +515,7 @@ export async function markRoomActive(roomId) {
     localStorage.setItem(key, JSON.stringify(room))
     return
   }
+  await ensureSession()   // RLS needs an identity before any read or write
   await supabase.from('rooms').update({ status: 'active' }).eq('id', roomId)
 }
 
@@ -499,18 +523,29 @@ export async function markRoomActive(roomId) {
 export function subscribeToRoomActive(roomId, onActive) {
   if (!supabase) return () => {}
 
-  const channel = supabase
-    .channel(uniqueChannel('room-active', roomId))
-    .on(
-      'postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
-      (payload) => {
-        if (payload.new.status === 'active') onActive()
-      }
-    )
-    .subscribe()
+  // Realtime authorises with the session token, so a channel opened before
+  // the anonymous sign-in lands would subscribe as nobody and, under the
+  // row-level policies, receive nothing.
+  let channel = null
+  let cancelled = false
+  ensureSession().then(() => {
+    if (cancelled) return
+    channel = supabase
+      .channel(uniqueChannel('room-active', roomId))
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
+        (payload) => {
+          if (payload.new.status === 'active') onActive()
+        }
+      )
+      .subscribe()
+  })
 
-  return () => supabase.removeChannel(channel)
+  return () => {
+    cancelled = true
+    if (channel) supabase.removeChannel(channel)
+  }
 }
 
 export async function getRoom(roomId) {
@@ -518,6 +553,7 @@ export async function getRoom(roomId) {
     const room = localStorage.getItem(`swaip_room_${roomId}`)
     return room ? JSON.parse(room) : null
   }
+  await ensureSession()   // RLS needs an identity before any read or write
 
   // Every path into a room goes through here, so this is where a joiner claims
   // membership — before the read that membership authorises.
@@ -549,6 +585,7 @@ export async function fetchPartnerSwipeCount(roomId, userToken, minItemId = 0, s
     if (sentinels.has(id) || id < minItemId) continue
     ;(seen[r.user_token] ||= new Set()).add(id)
   }
+  await ensureSession()   // RLS needs an identity before any read or write
   let max = 0
   for (const set of Object.values(seen)) if (set.size > max) max = set.size
   return max
@@ -563,6 +600,7 @@ export async function recordSwipe(roomId, userToken, itemId, direction, playerCo
     localStorage.setItem(key, JSON.stringify(swipes))
     return checkLocalMatch(roomId, itemId, userToken, direction, playerCount)
   }
+  await ensureSession()   // RLS needs an identity before any read or write
 
   // The card has already advanced on screen, so a lost insert silently costs a
   // vote (and possibly the match). Retry transient failures. Re-votes for the
@@ -613,6 +651,7 @@ export async function submitConversationSelections(roomId, userToken, subtopicId
     localStorage.setItem(key, JSON.stringify(existing))
     return
   }
+  await ensureSession()   // RLS needs an identity before any read or write
 
   // Always write the DONE sentinel too: someone who passed on every topic
   // submits an empty list, and without a row of their own they'd never count
@@ -645,6 +684,7 @@ export async function getConversationMatches(roomId, userToken) {
     const matches = theirPicks.filter((id) => myPicks.has(id))
     return { matches, partnerSubmitted: true }
   }
+  await ensureSession()   // RLS needs an identity before any read or write
 
   // Get all selections for this room
   const { data, error } = await supabase
@@ -677,75 +717,97 @@ export async function getConversationMatches(roomId, userToken) {
 export function subscribeToSwipes(roomId, userToken, onMatch, playerCount = 2, { onUnmatch, isMatched } = {}) {
   if (!supabase) return () => {}
 
-  const channel = supabase
-    .channel(uniqueChannel('room', roomId))
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'swipes',
-        filter: `room_id=eq.${roomId}`,
-      },
-      async (payload) => {
-        const swipe = payload.new
-        if (swipe.user_token !== userToken && swipe.direction === 'left' && onUnmatch && isMatched?.(Number(swipe.item_id))) {
-          const { data } = await supabase
-            .from('swipes')
-            .select(VOTE_COLUMNS)
-            .eq('room_id', roomId)
-            .eq('item_id', swipe.item_id)
-          const likers = new Set(currentLikes(data).map(s => s.user_token))
-          if (likers.size < playerCount) onUnmatch(Number(swipe.item_id))
-          return
-        }
-        if (swipe.user_token !== userToken && swipe.direction === 'right') {
-          // Fire match when all playerCount distinct users have liked this item
-          const { data } = await supabase
-            .from('swipes')
-            .select(VOTE_COLUMNS)
-            .eq('room_id', roomId)
-            .eq('item_id', swipe.item_id)
+  // Realtime authorises with the session token, so a channel opened before
+  // the anonymous sign-in lands would subscribe as nobody and, under the
+  // row-level policies, receive nothing.
+  let channel = null
+  let cancelled = false
+  ensureSession().then(() => {
+    if (cancelled) return
+    channel = supabase
+      .channel(uniqueChannel('room', roomId))
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'swipes',
+          filter: `room_id=eq.${roomId}`,
+        },
+        async (payload) => {
+          const swipe = payload.new
+          if (swipe.user_token !== userToken && swipe.direction === 'left' && onUnmatch && isMatched?.(Number(swipe.item_id))) {
+            const { data } = await supabase
+              .from('swipes')
+              .select(VOTE_COLUMNS)
+              .eq('room_id', roomId)
+              .eq('item_id', swipe.item_id)
+            const likers = new Set(currentLikes(data).map(s => s.user_token))
+            if (likers.size < playerCount) onUnmatch(Number(swipe.item_id))
+            return
+          }
+          if (swipe.user_token !== userToken && swipe.direction === 'right') {
+            // Fire match when all playerCount distinct users have liked this item
+            const { data } = await supabase
+              .from('swipes')
+              .select(VOTE_COLUMNS)
+              .eq('room_id', roomId)
+              .eq('item_id', swipe.item_id)
 
-          const uniqueTokens = new Set(currentLikes(data).map(s => s.user_token))
-          // Only notify THIS user when they are actually part of the match.
-          // Without the has(userToken) check, a match between other people in
-          // the room would wrongly pop "It's a Match!" for someone who never
-          // liked the item.
-          if (uniqueTokens.size >= playerCount && uniqueTokens.has(userToken)) {
-            onMatch(Number(swipe.item_id))
+            const uniqueTokens = new Set(currentLikes(data).map(s => s.user_token))
+            // Only notify THIS user when they are actually part of the match.
+            // Without the has(userToken) check, a match between other people in
+            // the room would wrongly pop "It's a Match!" for someone who never
+            // liked the item.
+            if (uniqueTokens.size >= playerCount && uniqueTokens.has(userToken)) {
+              onMatch(Number(swipe.item_id))
+            }
           }
         }
-      }
-    )
-    .subscribe()
+      )
+      .subscribe()
+  })
 
-  return () => supabase.removeChannel(channel)
+  return () => {
+    cancelled = true
+    if (channel) supabase.removeChannel(channel)
+  }
 }
 
 // Subscribe to conversation selections (conversations)
 export function subscribeToConversationSelections(roomId, userToken, onPartnerSubmitted) {
   if (!supabase) return () => {}
 
-  const channel = supabase
-    .channel(uniqueChannel('conv', roomId))
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'conversation_selections',
-        filter: `room_id=eq.${roomId}`,
-      },
-      (payload) => {
-        if (payload.new.user_token !== userToken) {
-          onPartnerSubmitted()
+  // Realtime authorises with the session token, so a channel opened before
+  // the anonymous sign-in lands would subscribe as nobody and, under the
+  // row-level policies, receive nothing.
+  let channel = null
+  let cancelled = false
+  ensureSession().then(() => {
+    if (cancelled) return
+    channel = supabase
+      .channel(uniqueChannel('conv', roomId))
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'conversation_selections',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          if (payload.new.user_token !== userToken) {
+            onPartnerSubmitted()
+          }
         }
-      }
-    )
-    .subscribe()
+      )
+      .subscribe()
+  })
 
-  return () => supabase.removeChannel(channel)
+  return () => {
+    cancelled = true
+    if (channel) supabase.removeChannel(channel)
+  }
 }
 
 // True once we learn the rankings table isn't available in this database, so
@@ -761,6 +823,7 @@ export async function submitRankings(roomId, userToken, itemIds) {
     localStorage.setItem(key, JSON.stringify(existing))
     return
   }
+  await ensureSession()   // RLS needs an identity before any read or write
   // Delete old rankings for this user first, then insert new ones
   if (rankingsUnavailable) return
   await supabase.from('rankings').delete().eq('room_id', roomId).eq('user_token', userToken)
@@ -787,6 +850,7 @@ export async function getRankings(roomId, userToken) {
     const othersRankings = Object.entries(data).filter(([t]) => t !== userToken).map(([, ids]) => ids)
     return { myRanking, partnerRanking, partnerSubmitted: !!partnerRanking, othersRankings }
   }
+  await ensureSession()   // RLS needs an identity before any read or write
   if (rankingsUnavailable) return { myRanking: null, partnerRanking: null, partnerSubmitted: false, othersRankings: [], unavailable: true }
   const { data, error } = await supabase.from('rankings').select().eq('room_id', roomId).order('rank')
   if (error) {
@@ -835,13 +899,25 @@ export function combineRankings(lists, limit = 3) {
 // Subscribe to partner submitting rankings
 export function subscribeToRankings(roomId, userToken, onPartnerSubmitted) {
   if (!supabase) return () => {}
-  const channel = supabase
-    .channel(uniqueChannel('rankings', roomId))
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rankings', filter: `room_id=eq.${roomId}` },
-      (payload) => { if (payload.new.user_token !== userToken && payload.new.rank === 1) onPartnerSubmitted() }
-    )
-    .subscribe()
-  return () => supabase.removeChannel(channel)
+  // Realtime authorises with the session token, so a channel opened before
+  // the anonymous sign-in lands would subscribe as nobody and, under the
+  // row-level policies, receive nothing.
+  let channel = null
+  let cancelled = false
+  ensureSession().then(() => {
+    if (cancelled) return
+    channel = supabase
+      .channel(uniqueChannel('rankings', roomId))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rankings', filter: `room_id=eq.${roomId}` },
+        (payload) => { if (payload.new.user_token !== userToken && payload.new.rank === 1) onPartnerSubmitted() }
+      )
+      .subscribe()
+  })
+
+  return () => {
+    cancelled = true
+    if (channel) supabase.removeChannel(channel)
+  }
 }
 
 // ── Partner picks ─────────────────────────────────────────────────────────────
@@ -861,6 +937,7 @@ export async function fetchRoomPicks(roomId, userToken, sentinels = DONE_SENTINE
     if (!data) return null
     rows = currentLikes(data)
   }
+  await ensureSession()   // RLS needs an identity before any read or write
 
   const countsById = {}
   const likersByItem = {}
@@ -900,15 +977,27 @@ export async function fetchRoomPicks(roomId, userToken, sentinels = DONE_SENTINE
 // results screen can live-update what the partner has picked.
 export function subscribeToRoomPicks(roomId, userToken, onPartnerSwipe) {
   if (!supabase) return () => {}
-  const channel = supabase
-    .channel(uniqueChannel('picks', roomId))
-    .on(
-      'postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'swipes', filter: `room_id=eq.${roomId}` },
-      (payload) => {
-        if (payload.new.user_token !== userToken) onPartnerSwipe(payload.new)
-      }
-    )
-    .subscribe()
-  return () => supabase.removeChannel(channel)
+  // Realtime authorises with the session token, so a channel opened before
+  // the anonymous sign-in lands would subscribe as nobody and, under the
+  // row-level policies, receive nothing.
+  let channel = null
+  let cancelled = false
+  ensureSession().then(() => {
+    if (cancelled) return
+    channel = supabase
+      .channel(uniqueChannel('picks', roomId))
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'swipes', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          if (payload.new.user_token !== userToken) onPartnerSwipe(payload.new)
+        }
+      )
+      .subscribe()
+  })
+
+  return () => {
+    cancelled = true
+    if (channel) supabase.removeChannel(channel)
+  }
 }

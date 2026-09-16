@@ -14,6 +14,7 @@ import Icon from './Icon'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import { track } from '../lib/analytics'
 import { seededShuffle } from '../lib/random'
+import { successFeedback } from '../lib/haptics'
 import './ConversationRoom.css'
 
 const CARDS_PER_SESSION = 15
@@ -154,8 +155,10 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
 
   // Confetti on match reveal
   useEffect(() => {
-    if (matches && matches.length > 0 && !hasConfettied.current && !prefersReducedMotion()) {
+    if (matches && matches.length > 0 && !hasConfettied.current) {
       hasConfettied.current = true
+      successFeedback()
+      if (prefersReducedMotion()) return
       const end = Date.now() + 1500
       const colors = ['#ff6b6b', '#ee5a24', '#2ecc71', '#f1c40f', '#9b59b6']
       function frame() {
