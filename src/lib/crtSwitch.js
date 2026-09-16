@@ -112,7 +112,7 @@ function whine(ac, at, from, to, dur, peak = 0.028) {
 // The degauss: a low hum that swells and dies, wobbling as it goes. That
 // wobble is the whole character of it, so it gets its own oscillator driving
 // the gain rather than a plain envelope.
-function degauss(ac, at, dur = 0.42) {
+function degauss(ac, at, dur, peak, lfoFrom, lfoTo) {
   const osc = ac.createOscillator()
   osc.type = 'sine'
   osc.frequency.setValueAtTime(62, at)
@@ -129,16 +129,14 @@ function degauss(ac, at, dur = 0.42) {
   const lfo = ac.createOscillator()
   const lfoDepth = ac.createGain()
   lfo.type = 'sine'
-  lfo.frequency.setValueAtTime(18, at)
-  lfo.frequency.linearRampToValueAtTime(7, at + dur)
+  lfo.frequency.setValueAtTime(lfoFrom, at)
+  lfo.frequency.linearRampToValueAtTime(lfoTo, at + dur)
   lfoDepth.gain.value = 0.38
   lfo.connect(lfoDepth).connect(wobble.gain)
 
   const env = ac.createGain()
   env.gain.setValueAtTime(0.0001, at)
-  // Higher than the old 0.055: the wobble now multiplies instead of adding, so
-  // the average gain sits below the peak rather than on it.
-  env.gain.exponentialRampToValueAtTime(0.088, at + 0.05)
+  env.gain.exponentialRampToValueAtTime(peak, at + 0.05)
   env.gain.exponentialRampToValueAtTime(0.0001, at + dur)
   silence(env, at + dur)
 
@@ -153,19 +151,20 @@ function tvSound(off) {
   try {
     if (ac.state === 'suspended') ac.resume()
     const t = ac.currentTime
+    // These are the "Quick" settings off the comparison bench: about half the
+    // length of the others, a snap rather than a sigh, which is what a control
+    // people press often should sound like. Levels look high because a narrow
+    // band-pass throws most of the noise away - measured output peaks near 0.05.
     if (off) {
-      // Levels look high next to the others, but a narrow band-pass throws most
-      // of the noise away - measured output peaks at about 0.05, matching the
-      // other half rather than being the thin, shrill thing it started as.
-      hiss(ac, t, 0.34, 0.10, 780)                             // the tube crackling
-      crack(ac, t, { peak: 0.16, decay: 0.06, freq: 760, q: 1.9 })    // charge letting go
-      whine(ac, t, 1200, 80, 0.28, 0.042)                      // flyback sliding down
-      crack(ac, t + 0.23, { peak: 0.22, decay: 0.11, freq: 540, q: 2.1 })  // the picture dying
+      hiss(ac, t, 0.20, 0.10, 820)                             // the tube crackling
+      crack(ac, t, { peak: 0.18, decay: 0.045, freq: 820, q: 2.0 })   // charge letting go
+      whine(ac, t, 1400, 90, 0.17, 0.040)                      // flyback sliding down
+      crack(ac, t + 0.14, { peak: 0.24, decay: 0.07, freq: 580, q: 2.2 })  // the picture dying
     } else {
-      hiss(ac, t, 0.46, 0.024, 850)                            // the tube waking up
-      degauss(ac, t)                                           // the coil, the sound you remember
-      crack(ac, t + 0.05, { peak: 0.022, decay: 0.07, freq: 950, q: 1.2 })
-      whine(ac, t + 0.06, 110, 780, 0.3, 0.016)                // flyback spinning up, gently
+      hiss(ac, t, 0.26, 0.022, 900)                            // the tube waking up
+      degauss(ac, t, 0.24, 0.090, 22, 11)                      // the coil, the sound you remember
+      crack(ac, t + 0.03, { peak: 0.024, decay: 0.05, freq: 1000, q: 1.3 })
+      whine(ac, t + 0.04, 130, 860, 0.18, 0.016)               // flyback spinning up
     }
   } catch { /* audio is a bonus, never a requirement */ }
 }

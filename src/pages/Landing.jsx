@@ -16,7 +16,9 @@ const CATEGORIES = [
   { to: '/create/series',        label: 'TV Series',     desc: 'Find your next binge-watch',          emoji: '📺', primary: true },
   { to: '/create/activities',    label: 'Activities',    desc: 'Discover fun things to do nearby',    emoji: '🎯', tone: 'activities', beta: true },
   { to: '/create/food',          label: 'Food & Drinks', desc: 'Find where to eat or grab a drink',   emoji: '🍽️', tone: 'food',       beta: true },
-  { to: '/create/conversations', label: 'Conversations', desc: 'Questions that spark a real talk',    emoji: '💬', tone: 'convo',      beta: true, wide: true },
+  // Off the grid for now, kept whole so it can come back: the room, the route
+  // and the topic set are all still here, /create/conversations still works.
+  { to: '/create/conversations', label: 'Conversations', desc: 'Questions that spark a real talk',    emoji: '💬', tone: 'convo',      beta: true, wide: true, hidden: true },
 ]
 
 // Hero photograph slot. The design calls for a wide cinematic photo (home
@@ -262,7 +264,7 @@ export default function Landing() {
             <h2 id="lp-explore-title" className="lp-h2 lp-h2--sm">What are we deciding?</h2>
             <p className="lp-section-sub">Pick a category to open a room. You’ll set the details on the next screen.</p>
             <nav className="lp-catgrid" aria-label="Categories">
-              {CATEGORIES.map(c => (
+              {CATEGORIES.filter(c => !c.hidden).map(c => (
                 <Link
                   key={c.to}
                   to={c.to}
