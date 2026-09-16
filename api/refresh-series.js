@@ -5,6 +5,11 @@ import { writeCatalog, EMIT_REGIONS, DETAILS_DEADLINE_MS } from './_lib/catalogW
 // Series only. Split out of refresh-movies on 2026-09-16: the two ran in one
 // function, the series write came second, and the run had been exceeding the
 // 60s budget for long enough that the series catalog was 16 days stale.
+//
+// It runs an hour after the movies (vercel.json). On the Hobby plan a daily job
+// fires anywhere inside its hour - the movies' 04:00 job wrote at 04:33 - so a
+// 04:30 slot could land on top of it, and the two would split TMDB's ~45
+// requests a second between them.
 export const config = { maxDuration: 60 }
 
 export default async function handler(req, res) {
