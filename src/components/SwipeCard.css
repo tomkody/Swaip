@@ -473,3 +473,10 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Desktop: the card was phone-sized in the middle of an empty page. There's
+   height to spare on a laptop, so use it — the poster is the whole point. */
+@media (min-width: 900px) and (min-height: 760px) {
+  .swipe-card-wrapper { max-width: 420px; gap: 20px; }
+  .swipe-card { height: min(580px, calc(100dvh - 240px)); }
+}

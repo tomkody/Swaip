@@ -85,6 +85,8 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
   const [loading, setLoading] = useState(false)
   const [sharing, setSharing] = useState(false)
   const userToken = useRef(getRoomToken(room.id))
+  const historyRef = useRef([])                       // this session's swipes, newest last (undo)
+  const [canUndo, setCanUndo] = useState(false)
   const hasConfettied = useRef(false)
 
   async function handleShare() {
@@ -195,12 +197,27 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
       likedIdsRef.current = [...likedIdsRef.current, card.id]
       setLikedIds(likedIdsRef.current)
     }
+    historyRef.current.push({ index: currentIndex, id: card.id, direction })
+    setCanUndo(true)
     const nextIndex = currentIndex + 1
     setCurrentIndex(nextIndex)
     if (nextIndex >= cards.length) {
       // All cards swiped — auto-submit
       setTimeout(() => handleSwipeDone(), 400)
     }
+  }
+
+  // Nothing is written until the whole set is submitted, so stepping back here
+  // is purely local — drop the like again and return to the card.
+  function handleUndo() {
+    const last = historyRef.current.pop()
+    setCanUndo(historyRef.current.length > 0)
+    if (!last) return
+    if (last.direction === 'right') {
+      likedIdsRef.current = likedIdsRef.current.filter(id => id !== last.id)
+      setLikedIds(likedIdsRef.current)
+    }
+    setCurrentIndex(last.index)
   }
 
   // ── Results screen ──────────────────────────────────────────────────
@@ -318,6 +335,8 @@ export default function ConversationRoom({ room, onDone, isSolo = false }) {
           key={currentCard.id}
           item={currentCard}
           onSwipe={handleSwipe}
+          onUndo={handleUndo}
+          canUndo={canUndo}
           active
         />
       </div>

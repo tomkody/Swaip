@@ -631,3 +631,8 @@
 
 /* Status next to the theme toggle in the swipe header */
 .room-app-header .room-progress { margin-right: 2px; }
+
+/* Give the swipe column room to match the larger desktop card. */
+@media (min-width: 900px) and (min-height: 760px) {
+  .room { max-width: 560px; }
+}
