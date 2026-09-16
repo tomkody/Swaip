@@ -388,8 +388,9 @@
   flex: 1;
   width: 100%;
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   justify-content: center;
+  min-height: 0;
 }
 
 /* ── Deep talk questions label ─────────────────────────────────────── */

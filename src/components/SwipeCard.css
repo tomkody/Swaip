@@ -7,13 +7,26 @@
   width: 100%;
   max-width: 340px;
   margin: 0 auto;
+  /* Fill the space the room gives us and let the card take whatever is left
+     after the buttons. The card used to be a hand-tuned `100dvh - 260px`, and
+     any change to what sits above or below it — a taller card on desktop, a
+     banner, a bigger footer — pushed the button row down over the "I'm done"
+     button underneath. Flex can't get that arithmetic wrong.
+
+     No `height: 100%` here on purpose: setting any explicit height cancels the
+     parent's `align-items: stretch`, and a percentage against a flexed parent
+     doesn't resolve — the wrapper then shrank to its content and the card sat
+     at its minimum. Letting the cross size stay auto is what makes it fill. */
+  min-height: 0;
 }
 
 /* ── Card shell (draggable, holds the flip) ──────────────────────── */
 .swipe-card {
   position: relative;
   width: 100%;
-  height: min(480px, calc(100dvh - 260px));
+  flex: 1 1 auto;
+  min-height: 180px;
+  max-height: 480px;
   border-radius: var(--radius);
   user-select: none;
   touch-action: none;
@@ -486,5 +499,5 @@
    height to spare on a laptop, so use it — the poster is the whole point. */
 @media (min-width: 900px) and (min-height: 760px) {
   .swipe-card-wrapper { max-width: 420px; gap: 20px; }
-  .swipe-card { height: min(580px, calc(100dvh - 240px)); }
+  .swipe-card { max-height: 580px; }
 }

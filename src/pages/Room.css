@@ -43,14 +43,15 @@
 .room-cards {
   flex: 1;
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;   /* the card sizes itself to what's left */
   justify-content: center;
   min-height: 0;
   padding-top: 8px;
 }
 
 .room-footer {
-  padding: 8px 0;
+  /* The card shrinks to give this room, so a little air here costs nothing. */
+  padding: 16px 0 8px;
   padding-bottom: max(8px, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
