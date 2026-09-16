@@ -8,11 +8,6 @@ import { prefersReducedMotion } from './motion'
 // Decorative, so it gets out of the way completely when the system asks for
 // reduced motion: the theme still changes, just instantly.
 
-const COLLAPSE = 130   // picture squashes to a line
-const PINCH = 110      // line pinches to a dot
-const OPEN = 120       // dot stretches back to a line
-const EXPAND = 180     // line opens into a picture
-
 // ── Sound ────────────────────────────────────────────────────────────────────
 // A CRT switching off is three things at once: the crack of static as the
 // charge lets go, the flyback whine sliding down as it loses power, and a soft
@@ -47,6 +42,27 @@ function noise(ac) {
   return buf
 }
 
+// The bed the whole thing sits on: low-passed noise, brought in and taken away
+// gently. This is the soft crackle of a tube, and it's what stops the effect
+// from being a bare tone - the piercing version had the sweep and nothing
+// underneath it.
+function hiss(ac, at, dur, peak = 0.02, cutoff = 900) {
+  const src = ac.createBufferSource()
+  src.buffer = noise(ac)
+  src.loop = true
+  const low = ac.createBiquadFilter()
+  low.type = 'lowpass'
+  low.frequency.setValueAtTime(cutoff, at)
+  low.Q.value = 0.4
+  const gain = ac.createGain()
+  gain.gain.setValueAtTime(0.0001, at)
+  gain.gain.exponentialRampToValueAtTime(peak, at + dur * 0.28)
+  gain.gain.exponentialRampToValueAtTime(0.0001, at + dur)
+  src.connect(low).connect(gain).connect(ac.destination)
+  src.start(at)
+  src.stop(at + dur + 0.05)
+}
+
 // A burst of static: sharp attack, quick decay, band-passed so it reads as an
 // electrical crack rather than a hiss.
 function crack(ac, at, { peak = 0.05, decay = 0.05, freq = 3200, q = 0.8 } = {}) {
@@ -58,7 +74,7 @@ function crack(ac, at, { peak = 0.05, decay = 0.05, freq = 3200, q = 0.8 } = {})
   band.Q.value = q
   const gain = ac.createGain()
   gain.gain.setValueAtTime(0.0001, at)
-  gain.gain.exponentialRampToValueAtTime(peak, at + 0.006)
+  gain.gain.exponentialRampToValueAtTime(peak, at + 0.014)   // not instant: a click, not a spike
   gain.gain.exponentialRampToValueAtTime(0.0001, at + decay)
   src.connect(band).connect(gain).connect(ac.destination)
   src.start(at)
@@ -71,7 +87,7 @@ function crack(ac, at, { peak = 0.05, decay = 0.05, freq = 3200, q = 0.8 } = {})
 function whine(ac, at, from, to, dur, peak = 0.028) {
   const osc = ac.createOscillator()
   const gain = ac.createGain()
-  osc.type = 'triangle'
+  osc.type = 'sine'          // triangle's upper harmonics were the shrill part
   osc.frequency.setValueAtTime(from, at)
   osc.frequency.exponentialRampToValueAtTime(to, at + dur)
   gain.gain.setValueAtTime(0.0001, at)
@@ -115,22 +131,44 @@ function tvSound(off) {
     if (ac.state === 'suspended') ac.resume()
     const t = ac.currentTime
     if (off) {
-      crack(ac, t, { peak: 0.06, decay: 0.045, freq: 3600 })   // the charge letting go
-      whine(ac, t, 3800, 140, 0.24)                            // flyback sliding down
-      crack(ac, t + 0.2, { peak: 0.03, decay: 0.09, freq: 700, q: 1.6 })  // the picture dying
+      // Levels look high next to the others, but a narrow band-pass throws most
+      // of the noise away - measured output peaks at about 0.05, matching the
+      // other half rather than being the thin, shrill thing it started as.
+      hiss(ac, t, 0.34, 0.10, 780)                             // the tube crackling
+      crack(ac, t, { peak: 0.16, decay: 0.06, freq: 760, q: 1.9 })    // charge letting go
+      whine(ac, t, 1200, 80, 0.28, 0.042)                      // flyback sliding down
+      crack(ac, t + 0.23, { peak: 0.22, decay: 0.11, freq: 540, q: 2.1 })  // the picture dying
     } else {
+      hiss(ac, t, 0.46, 0.024, 850)                            // the tube waking up
       degauss(ac, t)                                           // the coil, the sound you remember
-      crack(ac, t + 0.04, { peak: 0.035, decay: 0.06, freq: 2600 })
-      whine(ac, t + 0.06, 170, 3400, 0.26, 0.022)              // flyback spinning up
+      crack(ac, t + 0.05, { peak: 0.022, decay: 0.07, freq: 950, q: 1.2 })
+      whine(ac, t + 0.06, 110, 780, 0.3, 0.016)                // flyback spinning up, gently
     }
   } catch { /* audio is a bonus, never a requirement */ }
 }
 
 // ── The animation ────────────────────────────────────────────────────────────
 
-const ease = 'cubic-bezier(0.4, 0, 0.2, 1)'
-const run = (el, frames, ms) =>
-  el.animate(frames, { duration: ms, easing: ease, fill: 'forwards' }).finished
+// One uninterrupted animation per element rather than four awaited phases.
+// Awaiting between phases costs a frame at every boundary — the promise
+// resolves after the frame that finished the previous animation, so the next
+// one starts a beat late. Four boundaries, four visible hitches. Everything
+// below runs as a single timeline with keyframe offsets, so the compositor
+// never has to stop and be told what to do next.
+const COLLAPSE = 130   // picture squashes to a line
+const PINCH = 110      // line pinches to a dot
+const DARK = 90        // held dark: room for the repaint the theme swap causes
+const OPEN = 130       // dot stretches back to a line
+const EXPAND = 200     // line opens into a picture
+const TOTAL = COLLAPSE + PINCH + DARK + OPEN + EXPAND
+
+const at = ms => ms / TOTAL
+const T_PINCHED = at(COLLAPSE + PINCH)
+const T_OPENING = at(COLLAPSE + PINCH + DARK)
+const T_OPEN = at(COLLAPSE + PINCH + DARK + OPEN)
+
+const timeline = el => (frames) =>
+  el.animate(frames, { duration: TOTAL, fill: 'forwards' })
 
 export async function crtSwitch(swap, { sound = true } = {}) {
   if (typeof document === 'undefined' || prefersReducedMotion() || !document.body.animate) {
@@ -151,27 +189,41 @@ export async function crtSwitch(swap, { sound = true } = {}) {
   const bottom = stage.querySelector('.crt-bar--bottom')
   const line = stage.querySelector('.crt-line')
 
+  const soft = 'cubic-bezier(0.32, 0, 0.16, 1)'
+  const bars = [
+    { transform: 'scaleY(0)', offset: 0, easing: soft },
+    { transform: 'scaleY(1)', offset: at(COLLAPSE) },
+    { transform: 'scaleY(1)', offset: T_OPEN, easing: soft },
+    { transform: 'scaleY(0)', offset: 1 },
+  ]
+
   try {
     if (sound) tvSound(true)
 
-    // Picture squashes: the bars close in and the line brightens between them.
-    await Promise.all([
-      run(top, [{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }], COLLAPSE),
-      run(bottom, [{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }], COLLAPSE),
-      run(line, [{ opacity: 0 }, { opacity: 1 }], COLLAPSE),
-    ])
-    // And pinches to a dot.
-    await run(line, [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0.015)' }], PINCH)
+    const running = [
+      timeline(top)(bars),
+      timeline(bottom)(bars),
+      timeline(line)([
+        { opacity: 0, transform: 'scaleX(1)', offset: 0, easing: soft },
+        { opacity: 1, transform: 'scaleX(1)', offset: at(COLLAPSE), easing: soft },
+        { opacity: 1, transform: 'scaleX(0.012)', offset: T_PINCHED },
+        { opacity: 1, transform: 'scaleX(0.012)', offset: T_OPENING, easing: soft },
+        { opacity: 1, transform: 'scaleX(1)', offset: T_OPEN, easing: soft },
+        { opacity: 0, transform: 'scaleX(1)', offset: 1 },
+      ]),
+    ]
 
-    swap()   // the screen is dark; nothing is seen to change
+    // The swap repaints the whole document, so it goes in the middle of the
+    // dark hold where there is nothing on screen to stutter.
+    const swapAt = setTimeout(swap, COLLAPSE + PINCH + DARK / 2)
+    const soundAt = sound ? setTimeout(() => tvSound(false), COLLAPSE + PINCH + DARK) : null
 
-    await run(line, [{ transform: 'scaleX(0.015)' }, { transform: 'scaleX(1)' }], OPEN)
-    if (sound) tvSound(false)
-    await Promise.all([
-      run(top, [{ transform: 'scaleY(1)' }, { transform: 'scaleY(0)' }], EXPAND),
-      run(bottom, [{ transform: 'scaleY(1)' }, { transform: 'scaleY(0)' }], EXPAND),
-      run(line, [{ opacity: 1 }, { opacity: 0 }], EXPAND),
-    ])
+    try {
+      await Promise.all(running.map(a => a.finished))
+    } finally {
+      clearTimeout(swapAt)
+      clearTimeout(soundAt)
+    }
   } catch (err) {
     // Swallowing this silently once hid a broken half of the sequence, so it
     // gets said out loud even though it's never fatal.
