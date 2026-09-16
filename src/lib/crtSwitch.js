@@ -19,7 +19,15 @@ import { prefersReducedMotion } from './motion'
 // buffer of noise, and an audio asset for half a second of blip isn't worth
 // the download. One context, created on the first toggle - a click is a user
 // gesture, which is what browsers require before any audio can start.
+// One knob for the whole effect. Everything below connects here instead of
+// straight to the output, so "louder" or "quieter" is this number and nothing
+// else. It started at 1, which measured about -23 dBFS at the output - audible
+// on headphones in a quiet room and easy to miss anywhere else, which is
+// exactly what happened.
+const MASTER = 3.2
+
 let audio = null
+let master = null
 let noiseBuffer = null
 
 function ctx() {
@@ -27,7 +35,16 @@ function ctx() {
   const AC = window.AudioContext || window.webkitAudioContext
   if (!AC) return null
   try { audio = new AC() } catch { return null }
+  master = audio.createGain()
+  master.gain.value = MASTER
+  master.connect(audio.destination)
   return audio
+}
+
+// Where every voice goes. Falls back to the output if the master somehow isn't
+// there, so a missing gain node can never mean silence.
+function out(ac) {
+  return master || ac.destination
 }
 
 // White noise, made once and reused. The real thing is a broadband crackle;
@@ -67,7 +84,7 @@ function hiss(ac, at, dur, peak = 0.02, cutoff = 900) {
   gain.gain.exponentialRampToValueAtTime(peak, at + dur * 0.28)
   gain.gain.exponentialRampToValueAtTime(0.0001, at + dur)
   silence(gain, at + dur)
-  src.connect(low).connect(gain).connect(ac.destination)
+  src.connect(low).connect(gain).connect(out(ac))
   src.start(at)
   src.stop(at + dur + TAIL)
 }
@@ -86,7 +103,7 @@ function crack(ac, at, { peak = 0.05, decay = 0.05, freq = 3200, q = 0.8 } = {})
   gain.gain.exponentialRampToValueAtTime(peak, at + 0.014)   // not instant: a click, not a spike
   gain.gain.exponentialRampToValueAtTime(0.0001, at + decay)
   silence(gain, at + decay)
-  src.connect(band).connect(gain).connect(ac.destination)
+  src.connect(band).connect(gain).connect(out(ac))
   src.start(at)
   src.stop(at + decay + TAIL)
 }
@@ -104,7 +121,7 @@ function whine(ac, at, from, to, dur, peak = 0.028) {
   gain.gain.exponentialRampToValueAtTime(peak, at + 0.02)
   gain.gain.exponentialRampToValueAtTime(0.0001, at + dur)
   silence(gain, at + dur)
-  osc.connect(gain).connect(ac.destination)
+  osc.connect(gain).connect(out(ac))
   osc.start(at)
   osc.stop(at + dur + TAIL)
 }
@@ -140,7 +157,7 @@ function degauss(ac, at, dur, peak, lfoFrom, lfoTo) {
   env.gain.exponentialRampToValueAtTime(0.0001, at + dur)
   silence(env, at + dur)
 
-  osc.connect(wobble).connect(env).connect(ac.destination)
+  osc.connect(wobble).connect(env).connect(out(ac))
   osc.start(at); lfo.start(at)
   osc.stop(at + dur + TAIL); lfo.stop(at + dur + TAIL)
 }

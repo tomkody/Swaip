@@ -12,7 +12,10 @@
 const TARGET_ACCURACY_M = 60      // good enough to stop waiting
 const MAX_WAIT_MS = 9000          // ceiling before we take the best we have
 
-export function getBestPosition({ maxWaitMs = MAX_WAIT_MS, targetAccuracy = TARGET_ACCURACY_M } = {}) {
+// `onFix` is called with the accuracy of each better fix as it arrives. A weak
+// signal means waiting the full nine seconds, and nine seconds of a spinner
+// with nothing said is indistinguishable from the thing being broken.
+export function getBestPosition({ maxWaitMs = MAX_WAIT_MS, targetAccuracy = TARGET_ACCURACY_M, onFix } = {}) {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error('unsupported'))
@@ -36,7 +39,10 @@ export function getBestPosition({ maxWaitMs = MAX_WAIT_MS, targetAccuracy = TARG
 
     watchId = navigator.geolocation.watchPosition(
       (pos) => {
-        if (!best || pos.coords.accuracy < best.coords.accuracy) best = pos
+        if (!best || pos.coords.accuracy < best.coords.accuracy) {
+          best = pos
+          if (onFix) { try { onFix(best.coords.accuracy) } catch { /* never break the fix */ } }
+        }
         if (best.coords.accuracy <= targetAccuracy) finish()
       },
       (err) => {

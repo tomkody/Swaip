@@ -24,6 +24,7 @@ export default function CreateActivityRoom() {
   const [radius, setRadius] = useState(5000)
   const [loading, setLoading] = useState(false)
   const [geoLoading, setGeoLoading] = useState(false)
+  const [geoProgress, setGeoProgress] = useState('')   // what the GPS is doing while we wait
   const [error, setError] = useState(null)
   const [solo, setSolo] = useState(false)
   const [playerCount, setPlayerCount] = useState(2)
@@ -62,7 +63,14 @@ export default function CreateActivityRoom() {
 
     // Wait for the best fix we can get (iOS hands over a coarse one first),
     // then be explicit about how good it actually is.
-    getBestPosition()
+    setGeoProgress('Finding you…')
+    getBestPosition({
+      onFix: acc => setGeoProgress(
+        accuracyLevel(acc) === 'good'
+          ? 'Got a precise fix'
+          : `Placed you to ${formatAccuracy(acc)} - holding on for a better fix…`
+      ),
+    })
       .then(({ lat, lng, accuracy }) => {
         setGeoAccuracy(accuracy)
         applyCoords(lat, lng)
@@ -81,6 +89,7 @@ export default function CreateActivityRoom() {
         }
       })
       .catch(onDenied)
+      .finally(() => setGeoProgress(''))
   }
 
   async function handleCreate() {
@@ -209,6 +218,10 @@ export default function CreateActivityRoom() {
               {geoLoading ? <span className="geo-spinner" /> : '📍'}
             </button>
           </div>
+
+          {geoLoading && geoProgress && (
+            <p className="geo-accuracy geo-accuracy--progress">{geoProgress}</p>
+          )}
 
           {/* Be upfront about fix quality — a coarse fix makes every "nearby"
               distance wrong, so the user should see it before creating a room. */}

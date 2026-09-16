@@ -275,6 +275,9 @@
 .geo-accuracy--good  { color: var(--success, #16a34a); }
 .geo-accuracy--rough { color: var(--accent-orange, #f59e0b); }
 .geo-accuracy--bad   { color: var(--danger, #dc2626); }
+/* Said while the fix is still improving, so it stays quiet - it's a progress
+   note, not a verdict. */
+.geo-accuracy--progress { color: var(--text-muted); }
 
 /* Touch target: chips stay visually light but hit 44px. */
 .radius-chip { min-height: 44px; }
