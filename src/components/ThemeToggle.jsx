@@ -8,8 +8,11 @@ import './ThemeToggle.css'
 export default function ThemeToggle({ className = '' }) {
   const [dark, setDark] = useState(getSavedDark)
 
-  useEffect(() => { applyTheme(dark) }, [dark])
-  // Stay in sync if another toggle on the page flips the theme.
+  // Apply once on mount only. Applying on every change would swap the colours
+  // before the switch animation reaches its dark moment, which is the whole
+  // point of it - see saveTheme.
+  useEffect(() => { applyTheme(getSavedDark()) }, [])
+  // The theme event lands at that dark moment, for this toggle and any other.
   useEffect(() => {
     const on = e => setDark(Boolean(e.detail?.dark))
     window.addEventListener('swaip-theme', on)
@@ -20,7 +23,7 @@ export default function ThemeToggle({ className = '' }) {
     <button
       type="button"
       className={`theme-toggle ${className}`}
-      onClick={() => { const next = !dark; setDark(next); saveTheme(next) }}
+      onClick={() => saveTheme(!dark)}
       aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
     >
       <Icon name={dark ? 'sun' : 'moon'} size={18} />

@@ -359,3 +359,37 @@ h1, h2, h3, h4 {
   width: auto;
   margin: 0;
 }
+
+/* ── Theme switch: the picture collapsing on an old TV ──────────────────────
+   Driven from src/lib/crtSwitch.js. Purely decorative and pointer-transparent;
+   the bars scale from their outer edge so they meet in the middle, leaving the
+   line between them. */
+.crt-switch {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+  overflow: hidden;
+}
+.crt-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50.5%;          /* a hair over half so no seam shows in the middle */
+  background: #05060A;
+  will-change: transform;
+}
+.crt-bar--top    { top: 0;    transform-origin: top;    transform: scaleY(0); }
+.crt-bar--bottom { bottom: 0; transform-origin: bottom; transform: scaleY(0); }
+.crt-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  background: #FFFFFF;
+  box-shadow: 0 0 14px 3px rgba(255, 255, 255, 0.75);
+  opacity: 0;
+  will-change: transform, opacity;
+}

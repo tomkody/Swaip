@@ -105,12 +105,16 @@ export default function Landing() {
   // moment you clicked through to create a room. Only persist when the user
   // actually toggles, so we never overwrite a choice they haven't made.
   const [dark, setDark] = useState(getSavedDark)
-  useEffect(() => { applyTheme(dark) }, [dark])
-  const toggleDark = () => {
-    const next = !dark
-    saveTheme(next)
-    setDark(next)
-  }
+  // Mount only: saveTheme applies the change mid-animation instead.
+  useEffect(() => { applyTheme(getSavedDark()) }, [])
+  useEffect(() => {
+    const on = e => setDark(Boolean(e.detail?.dark))
+    window.addEventListener('swaip-theme', on)
+    return () => window.removeEventListener('swaip-theme', on)
+  }, [])
+  // No setDark here: the theme event fires mid-animation and updates it then,
+  // so the menu icon turns while the screen is dark rather than before it.
+  const toggleDark = () => saveTheme(!dark)
 
   // ── Hero demo (self-playing, decorative) ────────────────────────────────
   // stage: 'in' → 'stamp' → 'out' per card; 'done' after the last card;
