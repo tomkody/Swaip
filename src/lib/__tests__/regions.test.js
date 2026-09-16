@@ -39,3 +39,24 @@ describe('detectRegion', () => {
     expect(detectRegion()).toBe('CZ')
   })
 })
+
+// The client list and the refresh job's list must match: a region the job fills
+// but the client doesn't know about falls back to the US catalog, silently.
+describe('catalog regions', () => {
+  it('matches the regions the refresh job writes rows for', async () => {
+    const { CATALOG_REGIONS } = await import('../regions')
+    const { EMIT_REGIONS } = await import('../../../api/_lib/catalogWrite.js')
+    expect([...CATALOG_REGIONS].sort()).toEqual([...EMIT_REGIONS].sort())
+  })
+
+  it('has a time zone for every region it claims to support', async () => {
+    const { CATALOG_REGIONS, zoneToCountry } = await import('../regions')
+    // Every country we keep a catalog for should be reachable from some zone,
+    // otherwise its users can only get there via their language.
+    const zones = Intl.supportedValuesOf ? Intl.supportedValuesOf('timeZone') : []
+    if (zones.length === 0) return
+    const reachable = new Set(zones.map(zoneToCountry).filter(Boolean))
+    const missing = CATALOG_REGIONS.filter(r => !reachable.has(r))
+    expect(missing).toEqual([])
+  })
+})

@@ -115,9 +115,13 @@ function detailToRows(id, detail, regions) {
     popularity: detail.popularity != null ? Number(Number(detail.popularity).toFixed(2)) : null,
   }
   const provByRegion = detail['watch/providers']?.results || {}
-  return regions.map(region => {
+  // Only regions where the title is actually on one of our platforms. A row with
+  // an empty platforms array is dead weight: loadStreamable drops it on the way
+  // in, so it was 39% of the movie table doing nothing but cost write time.
+  return regions.flatMap(region => {
     const flatrate = provByRegion[region]?.flatrate || []
     const platforms = [...new Set(flatrate.map(providerToPlatform).filter(Boolean))]
+    if (platforms.length === 0) return []
     return { ...base, region, platforms }
   })
 }
@@ -227,9 +231,13 @@ function tvDetailToRows(id, detail, regions) {
     popularity: detail.popularity != null ? Number(Number(detail.popularity).toFixed(2)) : null,
   }
   const provByRegion = detail['watch/providers']?.results || {}
-  return regions.map(region => {
+  // Only regions where the title is actually on one of our platforms. A row with
+  // an empty platforms array is dead weight: loadStreamable drops it on the way
+  // in, so it was 39% of the movie table doing nothing but cost write time.
+  return regions.flatMap(region => {
     const flatrate = provByRegion[region]?.flatrate || []
     const platforms = [...new Set(flatrate.map(providerToPlatform).filter(Boolean))]
+    if (platforms.length === 0) return []
     return { ...base, region, platforms }
   })
 }

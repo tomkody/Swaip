@@ -1,7 +1,15 @@
 // Regions the nightly refresh job populates (see api/refresh-movies.js).
 // Single source of truth — tmdb.js and seriesFetch.js both import this so the
 // list can never drift out of sync between movies and series.
-export const CATALOG_REGIONS = ['US', 'GB', 'CA', 'AU', 'IE', 'DE', 'FR', 'ES', 'IT', 'NL', 'BR', 'MX', 'IN', 'CZ', 'PL', 'SE']
+// Must stay in step with EMIT_REGIONS in api/_lib/catalogWrite.js — anything
+// not listed here falls back to the US catalog.
+export const CATALOG_REGIONS = [
+  'US', 'GB', 'CA', 'AU', 'IE', 'DE', 'FR', 'ES', 'IT', 'NL', 'BR', 'MX', 'IN', 'CZ', 'PL', 'SE',
+  'AT', 'CH', 'BE', 'PT', 'DK', 'NO', 'FI', 'SK', 'HU', 'RO', 'GR', 'TR', 'BG', 'HR', 'SI',
+  'LT', 'LV', 'EE', 'UA', 'RS',
+  'JP', 'KR', 'SG', 'HK', 'TW', 'TH', 'PH', 'MY', 'ID', 'NZ', 'IL', 'AE', 'SA', 'ZA', 'EG',
+  'AR', 'CL', 'CO', 'PE', 'UY', 'CR', 'PA',
+]
 
 // ── Which country's streaming catalog to show ────────────────────────────────
 // This used to read navigator.language and take the bit after the dash. On a
@@ -14,22 +22,70 @@ export const CATALOG_REGIONS = ['US', 'GB', 'CA', 'AU', 'IE', 'DE', 'FR', 'ES', 
 // UTC+1. It also follows the device rather than the language, so a Czech phone
 // running in English still lands on CZ.
 const ZONE_COUNTRY = {
+  // Europe — the offsets collide constantly (Prague, Berlin, Vienna, Paris and
+  // Rome are all UTC+1), which is exactly why the zone id, not the offset, is
+  // the thing worth reading.
   'Europe/Prague': 'CZ',
   'Europe/Berlin': 'DE', 'Europe/Busingen': 'DE',
+  'Europe/Vienna': 'AT',
+  'Europe/Zurich': 'CH',
+  'Europe/Brussels': 'BE',
   'Europe/Warsaw': 'PL',
+  'Europe/Bratislava': 'SK',
+  'Europe/Budapest': 'HU',
+  'Europe/Bucharest': 'RO',
+  'Europe/Sofia': 'BG',
+  'Europe/Zagreb': 'HR',
+  'Europe/Ljubljana': 'SI',
+  'Europe/Belgrade': 'RS',
+  'Europe/Athens': 'GR',
+  'Europe/Istanbul': 'TR',
+  'Europe/Vilnius': 'LT',
+  'Europe/Riga': 'LV',
+  'Europe/Tallinn': 'EE',
+  'Europe/Kyiv': 'UA', 'Europe/Kiev': 'UA', 'Europe/Uzhgorod': 'UA', 'Europe/Zaporozhye': 'UA',
   'Europe/Stockholm': 'SE',
+  'Europe/Oslo': 'NO',
+  'Europe/Copenhagen': 'DK',
+  'Europe/Helsinki': 'FI',
   'Europe/London': 'GB',
   'Europe/Dublin': 'IE',
   'Europe/Paris': 'FR',
   'Europe/Madrid': 'ES', 'Africa/Ceuta': 'ES', 'Atlantic/Canary': 'ES',
+  'Europe/Lisbon': 'PT', 'Atlantic/Madeira': 'PT', 'Atlantic/Azores': 'PT',
   'Europe/Rome': 'IT',
   'Europe/Amsterdam': 'NL',
+  // Asia-Pacific
   'Asia/Kolkata': 'IN', 'Asia/Calcutta': 'IN',
+  'Asia/Tokyo': 'JP',
+  'Asia/Seoul': 'KR',
+  'Asia/Singapore': 'SG',
+  'Asia/Hong_Kong': 'HK',
+  'Asia/Taipei': 'TW',
+  'Asia/Bangkok': 'TH',
+  'Asia/Manila': 'PH',
+  'Asia/Kuala_Lumpur': 'MY', 'Asia/Kuching': 'MY',
+  'Asia/Jakarta': 'ID', 'Asia/Pontianak': 'ID', 'Asia/Makassar': 'ID', 'Asia/Jayapura': 'ID',
+  'Pacific/Auckland': 'NZ', 'Pacific/Chatham': 'NZ',
+  // Middle East and Africa
+  'Asia/Jerusalem': 'IL', 'Asia/Tel_Aviv': 'IL',
+  'Asia/Dubai': 'AE',
+  'Asia/Riyadh': 'SA',
+  'Africa/Johannesburg': 'ZA',
+  'Africa/Cairo': 'EG',
+  // Latin America
+  'America/Santiago': 'CL', 'Pacific/Easter': 'CL',
+  'America/Bogota': 'CO',
+  'America/Lima': 'PE',
+  'America/Montevideo': 'UY',
+  'America/Costa_Rica': 'CR',
+  'America/Panama': 'PA',
 }
 
 // Countries with many zones, matched as a group rather than city by city.
 const ZONE_PATTERNS = [
   [/^Australia\//, 'AU'],
+  [/^America\/Argentina\//, 'AR'],
   [/^America\/(Toronto|Vancouver|Edmonton|Winnipeg|Halifax|St_Johns|Regina|Whitehorse|Yellowknife|Iqaluit|Moncton|Glace_Bay|Goose_Bay|Blanc-Sablon|Atikokan|Creston|Dawson|Dawson_Creek|Fort_Nelson|Inuvik|Rankin_Inlet|Resolute|Swift_Current|Cambridge_Bay)$/, 'CA'],
   [/^America\/(Mexico_City|Cancun|Merida|Monterrey|Chihuahua|Hermosillo|Tijuana|Mazatlan|Matamoros|Ojinaga|Bahia_Banderas)$/, 'MX'],
   [/^America\/(Sao_Paulo|Bahia|Fortaleza|Recife|Belem|Manaus|Cuiaba|Campo_Grande|Porto_Velho|Boa_Vista|Rio_Branco|Eirunepe|Maceio|Araguaina|Santarem|Noronha)$/, 'BR'],
