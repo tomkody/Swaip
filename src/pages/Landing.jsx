@@ -13,7 +13,7 @@ import './Landing.css'
 // neutral cards. `tone` keys the icon tile colour.
 const CATEGORIES = [
   { to: '/create/movies',        label: 'Movies',        desc: "Find a film you'll both love",        emoji: '🍿', primary: true },
-  { to: '/create/series',        label: 'TV Series',     desc: 'Find your next binge-watch',          emoji: '📺', primary: true },
+  { to: '/create/series',        label: 'TV Series',     desc: 'Find your next binge-watch',          emoji: '🎭', primary: true },
   { to: '/create/activities',    label: 'Activities',    desc: 'Discover fun things to do nearby',    emoji: '🎯', tone: 'activities', beta: true },
   { to: '/create/food',          label: 'Food & Drinks', desc: 'Find where to eat or grab a drink',   emoji: '🍽️', tone: 'food',       beta: true },
   { to: '/create/conversations', label: 'Conversations', desc: 'Questions that spark a real talk',    emoji: '💬', tone: 'convo',      beta: true, wide: true },
