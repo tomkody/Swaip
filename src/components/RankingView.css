@@ -933,3 +933,14 @@ a.rv-plat:active { transform: scale(0.96); }
   color: var(--accent-coral, #FF6B6B);
   text-transform: uppercase;
 }
+
+/* Places: the useful action on a result is getting there. */
+.rv-directions {
+  align-self: flex-start;
+  margin-top: 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent-coral, #FF6B6B);
+  text-decoration: none;
+}
+.rv-directions:hover { text-decoration: underline; }

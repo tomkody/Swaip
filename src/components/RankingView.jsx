@@ -3,6 +3,7 @@ import { getRoomToken, submitRankings, getRankings, subscribeToRankings, fetchRo
 import { getPlatformMeta, getWatchUrl, platformChipStyle } from '../lib/platforms'
 import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import { track } from '../lib/analytics'
+import { seededShuffle } from '../lib/random'
 import AppHeader from './AppHeader'
 import Icon from './Icon'
 import './RankingView.css'
@@ -10,16 +11,23 @@ import './RankingView.css'
 // "Decide for us" — a little roulette over the matches for the moment nobody
 // wants to choose. Purely local (each player can roll their own); driven from
 // the click handler with timeouts, no effects.
-function DecideForUs({ matches, emoji, onRolled }) {
+function DecideForUs({ matches, emoji, onRolled, seed }) {
   const [spinIndex, setSpinIndex] = useState(null)   // index while spinning / final
   const [spinning, setSpinning] = useState(false)
+  const [rolls, setRolls] = useState(0)
   const timerRef = useRef(null)
 
   const roll = () => {
     if (spinning || matches.length < 2) return
     setSpinning(true)
+    setRolls(n => n + 1)
     onRolled?.()
-    const winner = Math.floor(Math.random() * matches.length)
+    // The first roll is seeded by the room so both people land on the SAME
+    // title — "we can't choose, let the app choose" is worthless if it answers
+    // differently on each phone. A deliberate re-roll after that is your own.
+    const picked = rolls === 0 ? seededShuffle(matches, seed)[0] : null
+    const seededIndex = picked ? matches.findIndex(m => m.id === picked.id) : -1
+    const winner = seededIndex >= 0 ? seededIndex : Math.floor(Math.random() * matches.length)
     // ~18 hops with an easing slowdown, landing on the winner
     const hops = 18 + ((winner - ((18 - 1) % matches.length) + matches.length) % matches.length)
     let i = 0
@@ -47,7 +55,7 @@ function DecideForUs({ matches, emoji, onRolled }) {
             ? <img src={current.poster} alt="" className="rv-dice-poster" />
             : <span className="rv-dice-poster rv-dice-poster--empty">{emoji}</span>}
           <div className="rv-dice-info">
-            {!spinning && <span className="rv-dice-eyebrow">🎉 Tonight's pick</span>}
+            {!spinning && <span className="rv-dice-eyebrow">{rolls > 1 ? '🎲 Your re-roll' : "🎉 Tonight's pick"}</span>}
             <strong>{current.title}</strong>
           </div>
         </div>
@@ -383,6 +391,34 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
     finally { setSharing(false) }
   }
 
+  const isPlaceRoom = room.type === 'food' || room.type === 'activities'
+  // Places have no year, and `{m.year}{rating && ` · …`}` rendered a stray
+  // leading " · " for every restaurant. Build the line from what exists.
+  const metaLine = m => [
+    m.year || null,
+    m.rating ? `⭐ ${m.rating}` : null,
+    isPlaceRoom ? (m.distance || null) : (m.runtime || null),
+  ].filter(Boolean).join(' · ')
+  // Places can't be "watched" — the useful action on a result is getting there.
+  // Rendered only in results cards; the ranking picker wraps each row in a
+  // <button>, where a nested <a> would be invalid markup.
+  const directionsLink = m => (isPlaceRoom && (m.lat || m.address)) ? (
+    <a
+      className="rv-directions"
+      href={mapsUrl(m)}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={e => { e.stopPropagation(); track('directions_clicked', { type: room.type }) }}
+    >
+      📍 Directions
+    </a>
+  ) : null
+  const mapsUrl = m => {
+    const q = encodeURIComponent([m.title, m.address].filter(Boolean).join(' '))
+    return m.lat && m.lng
+      ? `https://www.google.com/maps/dir/?api=1&destination=${m.lat},${m.lng}`
+      : `https://www.google.com/maps/search/?api=1&query=${q}`
+  }
   const emoji = room.type === 'series' ? '📺' : room.type === 'activities' ? '🎯' : room.type === 'food' ? '🍽️' : '🎬'
   const typeLabel = room.type === 'series' ? 'shows' : room.type === 'activities' ? 'activities' : room.type === 'food' ? 'restaurants' : 'movies'
   // "1 movie" not "1 movies"
@@ -424,7 +460,13 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
             if (matches.length === 0) {
               sub = isSolo ? 'Swipe right on more next time!' : playerCount > 2 ? 'No unanimous group picks — try again with fewer people or different picks!' : 'Try swiping more next time!'
             } else if (!hasMyPicks) {
-              sub = isSolo ? 'Everything you liked:' : playerCount > 2 ? `Everything your group of ${playerCount} all agreed on:` : `Here's everything you both want to watch:`
+              sub = isSolo
+                ? 'Everything you liked:'
+                : playerCount > 2
+                  ? `Everything your group of ${playerCount} all agreed on:`
+                  : isPlaceRoom
+                    ? `Here's everywhere you both want to go:`
+                    : `Here's everything you both want to watch:`
             }
             return sub ? <p className="rv-hero-sub">{sub}</p> : null
           })()}
@@ -432,7 +474,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
 
         {/* Can't-choose roulette — only useful with 2+ matches */}
         {matches.length >= 2 && (
-          <DecideForUs matches={matches} emoji={emoji} onRolled={() => track('dice_rolled', { type: room.type })} />
+          <DecideForUs matches={matches} emoji={emoji} seed={room.id} onRolled={() => track('dice_rolled', { type: room.type })} />
         )}
 
         {/* Recommended pick — once both have locked in a Top 3 */}
@@ -452,7 +494,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   : <div className="rv-reco-poster rv-result-poster-empty">{emoji}</div>}
                 <div className="rv-reco-info">
                   <strong>{m.title}</strong>
-                  <span className="rv-reco-meta">{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                  <span className="rv-reco-meta">{metaLine(m)}</span>
                   <span className="rv-reco-why">{why}</span>
                   <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
                 </div>
@@ -518,8 +560,9 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                     : <div className="rv-result-poster rv-result-poster-empty">{emoji}</div>}
                   <div className="rv-result-info">
                     <strong>{m.title}</strong>
-                    <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
-                    <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
+                    <span>{metaLine(m)}</span>
+                  <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
+                  {directionsLink(m)}
                     {m.isOpen != null && (
                       <span className={`rv-hours ${m.isOpen ? 'rv-hours--open' : 'rv-hours--closed'}`}>
                         {m.isOpen ? '● Open' : '● Closed'}
@@ -583,8 +626,9 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                           : <div className="rv-result-poster rv-result-poster-empty">{emoji}</div>}
                         <div className="rv-result-info">
                           <strong>{m.title}</strong>
-                          <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                          <span>{metaLine(m)}</span>
                           <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
+                          {directionsLink(m)}
                         </div>
                         {isMutual && <span className="rv-partner-tag rv-partner-tag--match">✓ Both</span>}
                       </div>
@@ -608,8 +652,9 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                     : <div className="rv-result-poster rv-result-poster-empty">{emoji}</div>}
                   <div className="rv-result-info">
                     <strong>{m.title}</strong>
-                    <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
-                    <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
+                    <span>{metaLine(m)}</span>
+                  <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
+                  {directionsLink(m)}
                     {playerCount > 2 && voteCounts[m.id] && (
                       <span className="rv-vote-count">{voteCounts[m.id]}/{playerCount} voted</span>
                     )}
@@ -638,8 +683,9 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                     : <div className="rv-result-poster rv-result-poster-empty">{emoji}</div>}
                   <div className="rv-result-info">
                     <strong>{m.title}</strong>
-                    <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
-                    <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
+                    <span>{metaLine(m)}</span>
+                  <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
+                  {directionsLink(m)}
                     {playerCount > 2 && voteCounts[m.id] && (
                       <span className="rv-vote-count">{voteCounts[m.id]}/{playerCount} voted</span>
                     )}
@@ -722,8 +768,9 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                           : <div className="rv-result-poster rv-result-poster-empty">{emoji}</div>}
                         <div className="rv-result-info">
                           <strong>{m.title}</strong>
-                          <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                          <span>{metaLine(m)}</span>
                           <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
+                          {directionsLink(m)}
                         </div>
                         {isMutual
                           ? <span className="rv-partner-tag rv-partner-tag--match">✓ Both</span>
@@ -833,7 +880,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                 : <div className="rv-match-thumb rv-match-thumb-empty">{emoji}</div>}
               <div className="rv-match-info">
                 <strong>{m.title}</strong>
-                <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
+                <span>{metaLine(m)}</span>
                 <PlatformBadges platforms={m.platforms} />
                 {m.isOpen != null && (
                   <span className={`rv-hours ${m.isOpen ? 'rv-hours--open' : 'rv-hours--closed'}`}>
@@ -865,8 +912,9 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
                   : <div className="rv-match-thumb rv-match-thumb-empty">{emoji}</div>}
                 <div className="rv-match-info">
                   <strong>{m.title}</strong>
-                  <span>{m.year}{m.rating ? ` · ⭐ ${m.rating}` : ''}</span>
-                    <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
+                  <span>{metaLine(m)}</span>
+                  <PlatformBadges platforms={m.platforms} title={m.title} roomType={room.type} />
+                  {directionsLink(m)}
                 </div>
                 {isMatch && <span className="rv-selection-match-badge">✓ Match</span>}
               </div>

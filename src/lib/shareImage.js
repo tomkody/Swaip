@@ -79,6 +79,31 @@ function loadIcon() {
   return _iconPromise
 }
 
+// The share cards were built before the sunset palette and still used a plum
+// background with a violet orb — nothing the app itself looks like. One helper
+// now paints all three: the app's dark ground with coral and amber glows.
+const SHARE_BG_TOP = '#10121C'
+const SHARE_BG_BOTTOM = '#1A1520'
+function drawShareBackground(ctx, W, H) {
+  const bg = ctx.createLinearGradient(0, 0, W, H)
+  bg.addColorStop(0, SHARE_BG_TOP)
+  bg.addColorStop(1, SHARE_BG_BOTTOM)
+  ctx.fillStyle = bg
+  ctx.fillRect(0, 0, W, H)
+
+  const coral = ctx.createRadialGradient(W * 0.88, H * 0.04, 0, W * 0.88, H * 0.04, 720)
+  coral.addColorStop(0, 'rgba(255,94,98,0.30)')
+  coral.addColorStop(1, 'rgba(255,94,98,0)')
+  ctx.fillStyle = coral
+  ctx.fillRect(0, 0, W, H)
+
+  const amber = ctx.createRadialGradient(W * 0.12, H * 0.84, 0, W * 0.12, H * 0.84, 660)
+  amber.addColorStop(0, 'rgba(255,179,71,0.22)')
+  amber.addColorStop(1, 'rgba(255,179,71,0)')
+  ctx.fillStyle = amber
+  ctx.fillRect(0, 0, W, H)
+}
+
 async function drawLogo(ctx, W, H) {
   const logoY = H - 200
   const lS = 88
@@ -97,10 +122,12 @@ async function drawLogo(ctx, W, H) {
     ctx.drawImage(icon, lX + pad, logoY + pad, lS - pad * 2, lS - pad * 2)
   }
 
-  ctx.fillStyle = 'rgba(255,255,255,0.5)'
-  ctx.font = `500 36px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
+  // "swaip.app" alone told nobody what to do with it. The card is shared to
+  // get the other person to play, so say that.
+  ctx.fillStyle = 'rgba(255,255,255,0.92)'
+  ctx.font = `700 40px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`
   ctx.textAlign = 'center'
-  ctx.fillText('swaip.app', W / 2, logoY + lS + 52)
+  ctx.fillText('Swipe together at swaip.app', W / 2, logoY + lS + 56)
 }
 
 // ── Single-match share (food / single movie) ──────────────────────
@@ -110,19 +137,7 @@ async function generateSingleMatchImage({ title, posterUrl, emoji, swipeCount, p
   canvas.width = W; canvas.height = H
   const ctx = canvas.getContext('2d')
 
-  // Background
-  const bg = ctx.createLinearGradient(0, 0, 0, H)
-  bg.addColorStop(0, '#0D0B1A')
-  bg.addColorStop(1, '#1E1535')
-  ctx.fillStyle = bg
-  ctx.fillRect(0, 0, W, H)
-
-  // Orb
-  const orb = ctx.createRadialGradient(W * 0.8, H * 0.1, 0, W * 0.8, H * 0.1, 500)
-  orb.addColorStop(0, 'rgba(247,79,94,0.25)')
-  orb.addColorStop(1, 'rgba(247,79,94,0)')
-  ctx.fillStyle = orb
-  ctx.fillRect(0, 0, W, H)
+  drawShareBackground(ctx, W, H)
 
   let posterBottom = H * 0.52
 
@@ -230,26 +245,7 @@ async function generateMatchesImage({ items, typeLabel, recommendation, solo = f
   canvas.width = W; canvas.height = H
   const ctx = canvas.getContext('2d')
 
-  // Background — deep warm-tinted plum
-  const bg = ctx.createLinearGradient(0, 0, W, H)
-  bg.addColorStop(0, '#141019')
-  bg.addColorStop(1, '#241528')
-  ctx.fillStyle = bg
-  ctx.fillRect(0, 0, W, H)
-
-  // Warm orb top-right
-  const orb = ctx.createRadialGradient(W * 0.9, H * 0.02, 0, W * 0.9, H * 0.02, 720)
-  orb.addColorStop(0, 'rgba(247,120,74,0.28)')
-  orb.addColorStop(1, 'rgba(247,120,74,0)')
-  ctx.fillStyle = orb
-  ctx.fillRect(0, 0, W, H)
-
-  // Cool orb bottom-left
-  const orb2 = ctx.createRadialGradient(W * 0.12, H * 0.82, 0, W * 0.12, H * 0.82, 620)
-  orb2.addColorStop(0, 'rgba(120,92,231,0.20)')
-  orb2.addColorStop(1, 'rgba(120,92,231,0)')
-  ctx.fillStyle = orb2
-  ctx.fillRect(0, 0, W, H)
+  drawShareBackground(ctx, W, H)
 
   // Header
   const headerY = 150
@@ -386,18 +382,7 @@ async function generateConversationImage({ items, solo = false }) {
   canvas.width = W; canvas.height = H
   const ctx = canvas.getContext('2d')
 
-  // Background — deep plum, same family as the matches card
-  const bg = ctx.createLinearGradient(0, 0, W, H)
-  bg.addColorStop(0, '#141019')
-  bg.addColorStop(1, '#241528')
-  ctx.fillStyle = bg
-  ctx.fillRect(0, 0, W, H)
-  const orb = ctx.createRadialGradient(W * 0.9, H * 0.02, 0, W * 0.9, H * 0.02, 720)
-  orb.addColorStop(0, 'rgba(247,79,158,0.26)'); orb.addColorStop(1, 'rgba(247,79,158,0)')
-  ctx.fillStyle = orb; ctx.fillRect(0, 0, W, H)
-  const orb2 = ctx.createRadialGradient(W * 0.12, H * 0.85, 0, W * 0.12, H * 0.85, 640)
-  orb2.addColorStop(0, 'rgba(120,92,231,0.22)'); orb2.addColorStop(1, 'rgba(120,92,231,0)')
-  ctx.fillStyle = orb2; ctx.fillRect(0, 0, W, H)
+  drawShareBackground(ctx, W, H)
 
   // Header
   const headerY = 150
