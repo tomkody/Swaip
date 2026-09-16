@@ -70,8 +70,8 @@ export function formatAccuracy(accuracy) {
 }
 
 // ── Platform-aware guidance ───────────────────────────────────────────────────
-// The "turn on Precise Location" path only exists on iOS; showing it on Android
-// or desktop is just confusing, and desktops have no GPS at all.
+// Desktops have no GPS at all, so they get a different reason and a different
+// way out. Phones get the same one either way.
 export function platformTag() {
   const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || ''
   if (/iPhone|iPad|iPod/.test(ua)) return 'ios'
@@ -79,15 +79,19 @@ export function platformTag() {
   return 'desktop'
 }
 
+// Why the fix is poor, in three words. A number on its own reads like the app's
+// fault; "weak GPS" tells people it's the building they're standing in.
+export function accuracyReason() {
+  return platformTag() === 'desktop' ? 'no GPS' : 'weak GPS'
+}
+
+// What to do about it. The iOS Settings path used to be here - five levels of
+// menu that nobody is going to walk through to pick a bar. Two things people
+// will actually do, and the first one is right there on screen.
 export function accuracyAdvice() {
-  switch (platformTag()) {
-    case 'ios':
-      return 'Turn on Settings → Privacy & Security → Location Services → Safari Websites → Precise Location, step outside for a moment, or type your city below.'
-    case 'android':
-      return 'Make sure precise location is allowed for your browser, step outside for a moment, or type your city below.'
-    default:
-      return 'Desktop browsers locate by Wi-Fi/IP, which is often kilometres off - type your city below for accurate results.'
-  }
+  return platformTag() === 'desktop'
+    ? 'Type where you are - computers locate by Wi-Fi, which is often kilometres off.'
+    : 'Type where you are, or step outside for a minute.'
 }
 
 // Coarse buckets for analytics: enough to see the real-world distribution of fix

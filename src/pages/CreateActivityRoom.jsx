@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createActivityRoom, getUserToken } from '../lib/room'
 import { geocodeLocation, reverseGeocode } from '../lib/placesApi'
-import { getBestPosition, accuracyLevel, formatAccuracy, accuracyAdvice, accuracyBucket, platformTag } from '../lib/geo'
+import { getBestPosition, accuracyLevel, formatAccuracy, accuracyAdvice, accuracyReason, accuracyBucket, platformTag } from '../lib/geo'
 import ModeToggle from '../components/ModeToggle'
 import { track } from '../lib/analytics'
 import './CreateActivityRoom.css'
@@ -71,12 +71,12 @@ export default function CreateActivityRoom() {
         track('geo_fix', { level, bucket: accuracyBucket(accuracy), platform: platformTag() })
         if (level === 'bad') {
           setError(
-            `⚠️ Your location is only accurate to ${formatAccuracy(accuracy)}, so "nearby" results and distances would be way off. ` +
-            accuracyAdvice()
+            `⚠️ ${accuracyReason()} - you're placed to within ${formatAccuracy(accuracy)}, ` +
+            `so distances would be way off. ${accuracyAdvice()}`
           )
         } else if (level === 'rough') {
           setError(
-            `Heads up: location accurate to ${formatAccuracy(accuracy)} - distances may be off by about that much.`
+            `${accuracyReason()} - you're placed to within ${formatAccuracy(accuracy)}, so distances may be off by about that much.`
           )
         }
       })
@@ -215,7 +215,7 @@ export default function CreateActivityRoom() {
           {pinnedCoords && geoAccuracy != null && (
             <p className={`geo-accuracy geo-accuracy--${accuracyLevel(geoAccuracy)}`}>
               {accuracyLevel(geoAccuracy) === 'good' ? '🎯' : '⚠️'} Located to {formatAccuracy(geoAccuracy)}
-              {accuracyLevel(geoAccuracy) !== 'good' && ' - type a city for better results'}
+              {accuracyLevel(geoAccuracy) !== 'good' && ` · ${accuracyReason()}`}
             </p>
           )}
 
