@@ -14,11 +14,19 @@ const OPEN = 120       // dot stretches back to a line
 const EXPAND = 180     // line opens into a picture
 
 // ── Sound ────────────────────────────────────────────────────────────────────
-// Synthesised rather than shipped as a file: it's a few oscillators, and an
-// audio asset for a 200ms blip isn't worth the download. One context, created
-// on the first toggle - a click is a user gesture, which is what browsers
-// require before any audio can start.
+// A CRT switching off is three things at once: the crack of static as the
+// charge lets go, the flyback whine sliding down as it loses power, and a soft
+// thump when the picture finally dies. Switching on runs it backwards and adds
+// the degauss - that low wobbling hum the coil makes as it demagnetises the
+// shadow mask, which is the sound people actually remember.
+//
+// Synthesised rather than shipped as a file: it's a few oscillators and a
+// buffer of noise, and an audio asset for half a second of blip isn't worth
+// the download. One context, created on the first toggle - a click is a user
+// gesture, which is what browsers require before any audio can start.
 let audio = null
+let noiseBuffer = null
+
 function ctx() {
   if (audio) return audio
   const AC = window.AudioContext || window.webkitAudioContext
@@ -27,24 +35,94 @@ function ctx() {
   return audio
 }
 
-function thunk(down) {
+// White noise, made once and reused. The real thing is a broadband crackle;
+// a band-pass over noise is a close enough impression of it.
+function noise(ac) {
+  if (noiseBuffer) return noiseBuffer
+  const len = Math.floor(ac.sampleRate * 0.4)
+  const buf = ac.createBuffer(1, len, ac.sampleRate)
+  const data = buf.getChannelData(0)
+  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1
+  noiseBuffer = buf
+  return buf
+}
+
+// A burst of static: sharp attack, quick decay, band-passed so it reads as an
+// electrical crack rather than a hiss.
+function crack(ac, at, { peak = 0.05, decay = 0.05, freq = 3200, q = 0.8 } = {}) {
+  const src = ac.createBufferSource()
+  src.buffer = noise(ac)
+  const band = ac.createBiquadFilter()
+  band.type = 'bandpass'
+  band.frequency.value = freq
+  band.Q.value = q
+  const gain = ac.createGain()
+  gain.gain.setValueAtTime(0.0001, at)
+  gain.gain.exponentialRampToValueAtTime(peak, at + 0.006)
+  gain.gain.exponentialRampToValueAtTime(0.0001, at + decay)
+  src.connect(band).connect(gain).connect(ac.destination)
+  src.start(at)
+  src.stop(at + decay + 0.05)
+}
+
+// The flyback whine. The real one sits around 15kHz, which is either piercing
+// or inaudible depending on your ears and your speakers, so this sweeps across
+// a range everyone can actually hear.
+function whine(ac, at, from, to, dur, peak = 0.028) {
+  const osc = ac.createOscillator()
+  const gain = ac.createGain()
+  osc.type = 'triangle'
+  osc.frequency.setValueAtTime(from, at)
+  osc.frequency.exponentialRampToValueAtTime(to, at + dur)
+  gain.gain.setValueAtTime(0.0001, at)
+  gain.gain.exponentialRampToValueAtTime(peak, at + 0.02)
+  gain.gain.exponentialRampToValueAtTime(0.0001, at + dur)
+  osc.connect(gain).connect(ac.destination)
+  osc.start(at)
+  osc.stop(at + dur + 0.05)
+}
+
+// The degauss: a low hum that swells and dies, wobbling as it goes. That
+// wobble is the whole character of it, so it gets its own oscillator driving
+// the gain rather than a plain envelope.
+function degauss(ac, at, dur = 0.42) {
+  const osc = ac.createOscillator()
+  const gain = ac.createGain()
+  osc.type = 'sine'
+  osc.frequency.setValueAtTime(62, at)
+  osc.frequency.exponentialRampToValueAtTime(44, at + dur)
+  gain.gain.setValueAtTime(0.0001, at)
+  gain.gain.exponentialRampToValueAtTime(0.055, at + 0.05)
+  gain.gain.exponentialRampToValueAtTime(0.0001, at + dur)
+
+  const lfo = ac.createOscillator()
+  const lfoGain = ac.createGain()
+  lfo.type = 'sine'
+  lfo.frequency.setValueAtTime(18, at)
+  lfo.frequency.linearRampToValueAtTime(7, at + dur)
+  lfoGain.gain.value = 0.022
+  lfo.connect(lfoGain).connect(gain.gain)
+
+  osc.connect(gain).connect(ac.destination)
+  osc.start(at); lfo.start(at)
+  osc.stop(at + dur + 0.05); lfo.stop(at + dur + 0.05)
+}
+
+function tvSound(off) {
   const ac = ctx()
   if (!ac) return
   try {
     if (ac.state === 'suspended') ac.resume()
     const t = ac.currentTime
-    const osc = ac.createOscillator()
-    const gain = ac.createGain()
-    osc.type = 'sine'
-    // Falling for off, rising for on - the pitch is the whole character of it.
-    osc.frequency.setValueAtTime(down ? 620 : 90, t)
-    osc.frequency.exponentialRampToValueAtTime(down ? 70 : 520, t + 0.13)
-    gain.gain.setValueAtTime(0.0001, t)
-    gain.gain.exponentialRampToValueAtTime(0.05, t + 0.012)
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.18)
-    osc.connect(gain).connect(ac.destination)
-    osc.start(t)
-    osc.stop(t + 0.2)
+    if (off) {
+      crack(ac, t, { peak: 0.06, decay: 0.045, freq: 3600 })   // the charge letting go
+      whine(ac, t, 3800, 140, 0.24)                            // flyback sliding down
+      crack(ac, t + 0.2, { peak: 0.03, decay: 0.09, freq: 700, q: 1.6 })  // the picture dying
+    } else {
+      degauss(ac, t)                                           // the coil, the sound you remember
+      crack(ac, t + 0.04, { peak: 0.035, decay: 0.06, freq: 2600 })
+      whine(ac, t + 0.06, 170, 3400, 0.26, 0.022)              // flyback spinning up
+    }
   } catch { /* audio is a bonus, never a requirement */ }
 }
 
@@ -74,7 +152,7 @@ export async function crtSwitch(swap, { sound = true } = {}) {
   const line = stage.querySelector('.crt-line')
 
   try {
-    if (sound) thunk(true)
+    if (sound) tvSound(true)
 
     // Picture squashes: the bars close in and the line brightens between them.
     await Promise.all([
@@ -88,13 +166,16 @@ export async function crtSwitch(swap, { sound = true } = {}) {
     swap()   // the screen is dark; nothing is seen to change
 
     await run(line, [{ transform: 'scaleX(0.015)' }, { transform: 'scaleX(1)' }], OPEN)
-    if (sound) thunk(false)
+    if (sound) tvSound(false)
     await Promise.all([
       run(top, [{ transform: 'scaleY(1)' }, { transform: 'scaleY(0)' }], EXPAND),
       run(bottom, [{ transform: 'scaleY(1)' }, { transform: 'scaleY(0)' }], EXPAND),
       run(line, [{ opacity: 1 }, { opacity: 0 }], EXPAND),
     ])
-  } catch {
+  } catch (err) {
+    // Swallowing this silently once hid a broken half of the sequence, so it
+    // gets said out loud even though it's never fatal.
+    console.warn('[crtSwitch] interrupted:', err)
     swap()   // an interrupted animation must never leave the old theme on screen
   } finally {
     stage.remove()
