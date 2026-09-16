@@ -33,6 +33,10 @@
 
   /* Gradients — near-flat coral; the landing uses a solid pill, the app a
      hint of warmth on the same hue so both read as one button. */
+  /* Every rule painting a gradient also sets `background-origin: border-box`.
+     A gradient is sized to the padding box but clipped to the border box, so
+     any border — even a transparent one — leaves a ring the gradient fills by
+     repeating: a hairline of the START colour around the whole element. */
   --gradient-primary: linear-gradient(135deg, #FF5E62 0%, #FF8A47 60%, #FFB347 100%);
   --gradient-warm:    linear-gradient(135deg, #FF5E62 0%, #FF8A47 60%, #FFB347 100%);
 
@@ -186,6 +190,7 @@ h1, h2, h3, h4 {
 /* Primary — gradient */
 .btn-primary {
   background: var(--gradient-primary);
+  background-origin: border-box;
   color: var(--brand-ink);
   text-shadow: 0 1px 2px rgba(120, 30, 20, 0.22);
   box-shadow: 0 6px 18px rgba(255,122,74,0.30);
@@ -265,6 +270,7 @@ h1, h2, h3, h4 {
 /* ── Gradient text utility ───────────────────────────────────────────────── */
 .gradient-text {
   background: var(--gradient-primary);
+  background-origin: border-box;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -282,6 +288,7 @@ h1, h2, h3, h4 {
   place-items: center;
   margin: 0 auto;
   background: var(--gradient-primary);
+  background-origin: border-box;
   box-shadow: 0 8px 24px rgba(255, 107, 107, 0.32);
   animation: celebratePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
@@ -318,6 +325,7 @@ h1, h2, h3, h4 {
   inset: 0;
   transform: translateX(-100%);
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+  background-origin: border-box;
   animation: shimmer 1.3s ease-in-out infinite;
 }
 

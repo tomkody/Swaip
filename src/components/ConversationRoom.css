@@ -98,6 +98,7 @@
   right: 0;
   padding: 16px 20px;
   background: linear-gradient(transparent, var(--bg) 30%);
+  background-origin: border-box;
   z-index: 20;
 }
 
@@ -184,6 +185,7 @@
   font-weight: 800;
   margin: 0 0 4px;
   background: var(--gradient-warm);
+  background-origin: border-box;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -238,6 +240,7 @@
    the one place wearing a green that appears in no other screen. */
 .result-chip.matched {
   background: var(--gradient-primary);
+  background-origin: border-box;
   color: var(--brand-ink, #FFFFFF);
   border: 1px solid transparent;
   margin-bottom: 8px;

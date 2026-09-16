@@ -117,6 +117,7 @@
   font-weight: 800;
   margin: 0 0 12px;
   background: linear-gradient(135deg, #00B894, #55efc4);
+  background-origin: border-box;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -128,6 +129,7 @@
   font-weight: 800;
   margin: 0 0 12px;
   background: linear-gradient(135deg, #00B894, #55efc4);
+  background-origin: border-box;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -285,6 +287,7 @@
   font-weight: 800;
   margin: 0 0 4px;
   background: linear-gradient(135deg, #00B894, #55efc4);
+  background-origin: border-box;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

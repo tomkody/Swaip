@@ -154,6 +154,7 @@
   font-weight: 700;
   color: #fff;
   background: var(--gradient-warm, linear-gradient(135deg, #F74F5E, #F5B83A));
+  background-origin: border-box;
   border: none;
   border-radius: 9px;
   padding: 8px 12px;

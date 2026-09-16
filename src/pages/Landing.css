@@ -81,6 +81,7 @@
   padding: 0 22px;
   border-radius: 999px;
   background: var(--lp-grad);
+  background-origin: border-box;
   color: var(--lp-accent-ink);
   text-shadow: 0 1px 2px rgba(120, 30, 20, 0.22);
   font-family: inherit;
@@ -162,6 +163,7 @@
     radial-gradient(50% 55% at 86% 66%, rgba(255, 128, 88, 0.30), transparent 65%),
     radial-gradient(40% 40% at 50% 100%, rgba(255, 116, 110, 0.10), transparent 70%),
     linear-gradient(180deg, #151826 0%, #10121C 100%);
+  background-origin: border-box;
 }
 .lp-hero-photo {
   position: absolute;
@@ -181,6 +183,7 @@
     rgba(16, 18, 28, 0.55) 30%,
     rgba(16, 18, 28, 0.35) 55%,
     var(--lp-bg) 100%);
+  background-origin: border-box;
 }
 .lp--light .lp-hero-shade {
   background: linear-gradient(180deg,
@@ -188,12 +191,14 @@
     rgba(247, 247, 249, 0.82) 30%,
     rgba(247, 247, 249, 0.72) 55%,
     var(--lp-bg) 100%);
+  background-origin: border-box;
 }
 .lp--light .lp-hero-fallback {
   background:
     radial-gradient(55% 60% at 14% 70%, rgba(255, 170, 90, 0.22), transparent 65%),
     radial-gradient(50% 55% at 86% 66%, rgba(255, 128, 88, 0.18), transparent 65%),
     linear-gradient(180deg, #EEEFF3 0%, #F7F7F9 100%);
+  background-origin: border-box;
 }
 
 .lp-hero-inner { position: relative; }
@@ -218,6 +223,7 @@
   font-style: normal;
   color: var(--lp-accent);
   background: var(--lp-grad);
+  background-origin: border-box;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -312,6 +318,7 @@
   background:
     radial-gradient(60% 50% at 30% 20%, rgba(255, 170, 90, 0.45), transparent 70%),
     linear-gradient(160deg, #3A2A2C 0%, #1B1E2A 100%);
+  background-origin: border-box;
 }
 .lp-card-caption {
   position: absolute;
@@ -319,6 +326,7 @@
   padding: 28px 12px 12px;
   text-align: left;
   background: linear-gradient(0deg, rgba(10, 11, 18, 0.9) 0%, rgba(10, 11, 18, 0.55) 60%, transparent 100%);
+  background-origin: border-box;
   color: #F6F5F2;
 }
 .lp-card-title {
@@ -383,6 +391,7 @@
   padding: 10px 16px;
   border-radius: 999px;
   background: var(--lp-grad);
+  background-origin: border-box;
   color: var(--lp-accent-ink);
   text-shadow: 0 1px 2px rgba(120, 30, 20, 0.22);
   font-family: 'Manrope', sans-serif;
@@ -419,7 +428,8 @@
   border: 1px solid var(--lp-line-strong);
 }
 .lp--light .lp-card-btn--no { background: #FFFFFF; color: #15171F; }
-.lp-card-btn--yes { background: var(--lp-grad); color: var(--lp-accent-ink); }
+.lp-card-btn--yes { background: var(--lp-grad);
+ background-origin: border-box; color: var(--lp-accent-ink); }
 .lp-card-btn--yes.is-pressed { transform: scale(0.9); background: var(--lp-accent-hi); }
 .lp-card-btn--no.is-pressed { transform: scale(0.9); border-color: #ff5c6a; color: #ff5c6a; }
 .lp-visually-hidden {
@@ -496,6 +506,7 @@
 /* Movies + TV Series: coral heroes, ink text for contrast */
 .lp-catcard--primary {
   background: var(--lp-grad);
+  background-origin: border-box;
   border-color: transparent;
   color: #FFFFFF;
   text-shadow: 0 1px 2px rgba(120, 30, 20, 0.25);

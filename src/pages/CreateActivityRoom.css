@@ -148,6 +148,7 @@
 .radius-chip:active { transform: scale(0.94); }
 .radius-chip.active {
   background: var(--gradient-primary);
+  background-origin: border-box;
   border-color: transparent;
   color: var(--brand-ink);
   text-shadow: 0 1px 1px rgba(120, 30, 20, 0.25);
@@ -200,6 +201,7 @@
   text-transform: uppercase;
   color: #fff;
   background: linear-gradient(135deg, #F74F5E, #F5B83A);
+  background-origin: border-box;
   padding: 3px 7px;
   border-radius: 6px;
   box-shadow: 0 1px 4px rgba(247, 79, 94, 0.35);

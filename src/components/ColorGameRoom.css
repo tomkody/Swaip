@@ -95,6 +95,7 @@
   background:
     radial-gradient(circle closest-side, #fff 0%, rgba(255, 255, 255, 0) 92%),
     conic-gradient(#f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  background-origin: border-box;
 }
 .cg-wheel-marker {
   position: absolute;
@@ -136,6 +137,7 @@
 }
 .cg-slider--hue {
   background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  background-origin: border-box;
 }
 .cg-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
