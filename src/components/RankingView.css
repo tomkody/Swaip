@@ -948,3 +948,21 @@ a.rv-plat:active { transform: scale(0.96); }
   text-decoration: none;
 }
 .rv-directions:hover { text-decoration: underline; }
+
+/* Where saved matches live, said at the moment people wonder about it. */
+.rv-saved-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 14px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+.rv-saved-link {
+  color: var(--accent-coral, #FF6B6B);
+  font-weight: 600;
+  text-decoration: none;
+}
+.rv-saved-link:hover { text-decoration: underline; }

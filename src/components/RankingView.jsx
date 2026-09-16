@@ -818,6 +818,18 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
             Start New Room
           </button>
         </div>
+
+        {/* Matches are written to the saved list as they happen, but the only
+            way in was the menu on the home page — which is not where anyone is
+            standing when they finish a room. Together mode only: solo picks
+            never went to that list, so saying "saved" there would be a lie. */}
+        {!isSolo && matches.length > 0 && (
+          <p className="rv-saved-note">
+            <Icon name="bookmark" size={14} />
+            Saved automatically.{' '}
+            <a className="rv-saved-link" href="/?saved=1">See all saved matches</a>
+          </p>
+        )}
       </div>
     )
   }

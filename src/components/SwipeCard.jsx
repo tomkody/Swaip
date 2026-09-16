@@ -37,8 +37,22 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
 
   // ── Drag handlers (swipe detection only) ──────────────────────────
 
+  // Where the description was scrolled to when this gesture began — a scroll
+  // shouldn't end in a flip when the finger lifts.
+  const scrollAtStart = useRef(null)
+
+  function scrollableBack(target) {
+    const el = target?.closest?.('.card-back-content')
+    return el && el.scrollHeight > el.clientHeight + 1 ? el : null
+  }
+
   function handleStart(e) {
     if (!active) return
+    const scroller = flipped ? scrollableBack(e.target) : null
+    scrollAtStart.current = scroller ? { el: scroller, top: scroller.scrollTop } : null
+    // Reading the description: let the browser scroll it instead of dragging
+    // the card out from under the finger.
+    if (scroller) return
     const point = e.touches ? e.touches[0] : e
     startPos.current = { x: point.clientX, y: point.clientY }
     hasMoved.current = false
@@ -92,6 +106,9 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
     if (!active) return
     if (isLeavingRef.current) return  // card is flying off
     if (hasMoved.current) return      // was a drag, not a tap
+    const s = scrollAtStart.current
+    scrollAtStart.current = null
+    if (s && Math.abs(s.el.scrollTop - s.top) > 2) return   // they scrolled, not tapped
     setFlipped(f => !f)
   }
 

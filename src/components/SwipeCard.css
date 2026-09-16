@@ -287,7 +287,15 @@
   gap: 14px;
   padding: 28px 22px 20px;
   height: 100%;
-  justify-content: center;
+  justify-content: flex-start;
+  /* The description used to be clamped at six lines with the rest simply gone.
+     The back scrolls instead — pan-y hands the vertical gesture to the browser,
+     and handleStart in SwipeCard.jsx leaves it alone so the scroll isn't
+     fighting a card drag. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 .card-back-title {
@@ -388,13 +396,11 @@
   line-height: 1.6;
   color: rgba(255,255,255,0.72);
   margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 6;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .card-back-hint {
+  margin-top: auto;   /* stays at the foot of the back, above the fold or below */
+  padding-top: 6px;
   font-size: 11px;
   color: rgba(255,255,255,0.3);
   margin: 0;

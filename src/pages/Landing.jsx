@@ -82,7 +82,22 @@ function Chevron() {
 }
 
 export default function Landing() {
-  const [drawerOpen, setDrawerOpen] = useState(false)
+  // The results screen links here with ?saved=1 — matches are stored as they
+  // happen, but until now the only way to see them was the menu on this page,
+  // which nobody finishes a room on.
+  const [drawerOpen, setDrawerOpen] = useState(() => {
+    try { return new URLSearchParams(window.location.search).get('saved') === '1' } catch { return false }
+  })
+  useEffect(() => {
+    if (!drawerOpen) return
+    try {
+      const u = new URL(window.location.href)
+      if (u.searchParams.has('saved')) {
+        u.searchParams.delete('saved')
+        window.history.replaceState({}, '', u.pathname + u.search + u.hash)
+      }
+    } catch { /* leave the URL alone */ }
+  }, [drawerOpen])
 
   // Theme: honour a saved choice; first-time visitors default to light, same
   // as the rest of the app (ThemeToggle.jsx) — the landing used to default
