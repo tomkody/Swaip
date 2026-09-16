@@ -42,6 +42,14 @@ function noise(ac) {
   return buf
 }
 
+// An exponential ramp can only approach zero, never reach it, so every voice
+// ends on a short linear slide to true silence before it is stopped. Without
+// it the node is still moving when it's cut, and a cut mid-waveform is a click.
+const TAIL = 0.03
+function silence(gain, from) {
+  gain.gain.linearRampToValueAtTime(0, from + TAIL)
+}
+
 // The bed the whole thing sits on: low-passed noise, brought in and taken away
 // gently. This is the soft crackle of a tube, and it's what stops the effect
 // from being a bare tone - the piercing version had the sweep and nothing
@@ -58,9 +66,10 @@ function hiss(ac, at, dur, peak = 0.02, cutoff = 900) {
   gain.gain.setValueAtTime(0.0001, at)
   gain.gain.exponentialRampToValueAtTime(peak, at + dur * 0.28)
   gain.gain.exponentialRampToValueAtTime(0.0001, at + dur)
+  silence(gain, at + dur)
   src.connect(low).connect(gain).connect(ac.destination)
   src.start(at)
-  src.stop(at + dur + 0.05)
+  src.stop(at + dur + TAIL)
 }
 
 // A burst of static: sharp attack, quick decay, band-passed so it reads as an
@@ -76,9 +85,10 @@ function crack(ac, at, { peak = 0.05, decay = 0.05, freq = 3200, q = 0.8 } = {})
   gain.gain.setValueAtTime(0.0001, at)
   gain.gain.exponentialRampToValueAtTime(peak, at + 0.014)   // not instant: a click, not a spike
   gain.gain.exponentialRampToValueAtTime(0.0001, at + decay)
+  silence(gain, at + decay)
   src.connect(band).connect(gain).connect(ac.destination)
   src.start(at)
-  src.stop(at + decay + 0.05)
+  src.stop(at + decay + TAIL)
 }
 
 // The flyback whine. The real one sits around 15kHz, which is either piercing
@@ -93,9 +103,10 @@ function whine(ac, at, from, to, dur, peak = 0.028) {
   gain.gain.setValueAtTime(0.0001, at)
   gain.gain.exponentialRampToValueAtTime(peak, at + 0.02)
   gain.gain.exponentialRampToValueAtTime(0.0001, at + dur)
+  silence(gain, at + dur)
   osc.connect(gain).connect(ac.destination)
   osc.start(at)
-  osc.stop(at + dur + 0.05)
+  osc.stop(at + dur + TAIL)
 }
 
 // The degauss: a low hum that swells and dies, wobbling as it goes. That
@@ -103,25 +114,37 @@ function whine(ac, at, from, to, dur, peak = 0.028) {
 // the gain rather than a plain envelope.
 function degauss(ac, at, dur = 0.42) {
   const osc = ac.createOscillator()
-  const gain = ac.createGain()
   osc.type = 'sine'
   osc.frequency.setValueAtTime(62, at)
   osc.frequency.exponentialRampToValueAtTime(44, at + dur)
-  gain.gain.setValueAtTime(0.0001, at)
-  gain.gain.exponentialRampToValueAtTime(0.055, at + 0.05)
-  gain.gain.exponentialRampToValueAtTime(0.0001, at + dur)
 
+  // Two gains, not one. The wobble is modulation, which ADDS to whatever the
+  // parameter already is - so an LFO wired straight onto the envelope's gain
+  // meant the hum never reached silence, it settled into a steady ±0.022
+  // wobble and then got chopped off when the oscillator stopped. That cut was
+  // the click at the end. Modulate first, then put the envelope after it, so
+  // the envelope multiplies the wobble and takes it all the way down.
+  const wobble = ac.createGain()
+  wobble.gain.value = 0.62
   const lfo = ac.createOscillator()
-  const lfoGain = ac.createGain()
+  const lfoDepth = ac.createGain()
   lfo.type = 'sine'
   lfo.frequency.setValueAtTime(18, at)
   lfo.frequency.linearRampToValueAtTime(7, at + dur)
-  lfoGain.gain.value = 0.022
-  lfo.connect(lfoGain).connect(gain.gain)
+  lfoDepth.gain.value = 0.38
+  lfo.connect(lfoDepth).connect(wobble.gain)
 
-  osc.connect(gain).connect(ac.destination)
+  const env = ac.createGain()
+  env.gain.setValueAtTime(0.0001, at)
+  // Higher than the old 0.055: the wobble now multiplies instead of adding, so
+  // the average gain sits below the peak rather than on it.
+  env.gain.exponentialRampToValueAtTime(0.088, at + 0.05)
+  env.gain.exponentialRampToValueAtTime(0.0001, at + dur)
+  silence(env, at + dur)
+
+  osc.connect(wobble).connect(env).connect(ac.destination)
   osc.start(at); lfo.start(at)
-  osc.stop(at + dur + 0.05); lfo.stop(at + dur + 0.05)
+  osc.stop(at + dur + TAIL); lfo.stop(at + dur + TAIL)
 }
 
 function tvSound(off) {
