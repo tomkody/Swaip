@@ -109,7 +109,7 @@ export default function MatchModal({ item, roomType, swipeCount = 0, matchCount 
           <h2 className="match-item-title">{item.title}</h2>
           {(item.year || item.rating) && (
             <p className="match-meta">
-              {item.year}{item.rating ? ` · ${item.lat ? '⭐' : 'TMDB'} ${item.rating}` : ''}
+              {item.year}{item.rating ? ` · ⭐ ${item.rating}` : ''}
             </p>
           )}
           <WhereToWatch platforms={item.platforms} title={item.title} className="wtw--center" />

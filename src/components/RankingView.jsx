@@ -402,10 +402,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
   // leading " · " for every restaurant. Build the line from what exists.
   const metaLine = m => [
     m.year || null,
-    // TMDB's numbers run well above IMDB/ČSFD for the same title (its own users
-    // vote, and they vote generously). Name the source rather than let a bare
-    // star read as "the" rating — see also the card back.
-    m.rating ? (isPlaceRoom ? `⭐ ${m.rating}` : `TMDB ${m.rating}`) : null,
+    m.rating ? `⭐ ${m.rating}` : null,
     isPlaceRoom ? (m.distance || null) : (m.runtime || null),
   ].filter(Boolean).join(' · ')
   // Places can't be "watched" — the useful action on a result is getting there.

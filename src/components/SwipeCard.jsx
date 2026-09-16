@@ -183,11 +183,7 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
             <div className="card-info">
               <div className="card-meta">
                 {item.year && <span className="card-year">{item.year}</span>}
-                {item.rating && (
-                  <span className="card-rating">
-                    {item.lat ? '★' : 'TMDB'} {item.rating}
-                  </span>
-                )}
+                {item.rating && <span className="card-rating">★ {item.rating}</span>}
                 {item.runtime && <span className="card-runtime">{item.runtime}</span>}
                 {item.distance && <span className="card-distance">📍 {item.distance}</span>}
               </div>
@@ -235,7 +231,7 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
                     <span className="card-back-score">{item.rating}</span>
                     {item.ratingCount
                       ? <span className="card-back-max"> ({item.ratingCount.toLocaleString()} reviews)</span>
-                      : <span className="card-back-max"> / 10 on TMDB</span>}
+                      : <span className="card-back-max"> / 10</span>}
                   </div>
                 )}
 
