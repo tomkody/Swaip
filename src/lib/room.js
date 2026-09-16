@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase, ensureSession } from './supabase'
 import { v4 as uuidv4 } from 'uuid'
 import { detectRegion } from './tmdb'
 import { track } from './analytics'
@@ -133,6 +133,31 @@ export function getUserToken() {
   return token
 }
 
+// ── Room membership ───────────────────────────────────────────────────────────
+// Under the row-level security policies (supabase/rls.sql) you can only read a
+// room, its swipes and its rankings if you are a member of it, and the only way
+// to become one is to name a room id — which is exactly what the invite link
+// gives you. So joining is: claim membership, then read.
+//
+// Best-effort on purpose: while sign-ins or the policies aren't live yet this is
+// a no-op that costs one cached round-trip per room.
+const joinedRooms = new Set()
+export async function ensureRoomMembership(roomId) {
+  if (!supabase || !roomId || joinedRooms.has(roomId)) return
+  const session = await ensureSession()
+  const userId = session?.user?.id
+  if (!userId) return
+  joinedRooms.add(roomId)          // one attempt per room per page load
+  const { error } = await supabase
+    .from('room_members')
+    .upsert({ room_id: roomId, user_id: userId }, { onConflict: 'room_id,user_id', ignoreDuplicates: true })
+  if (error) {
+    joinedRooms.delete(roomId)     // let the next call retry
+    // PGRST205 = the table isn't there yet (policies not rolled out) — expected.
+    if (error.code !== 'PGRST205') console.warn('[room] could not register membership:', error.message)
+  }
+}
+
 // Identity for ONE room, remembered across tabs of this browser.
 //
 // getUserToken alone is per-tab, which is right for keeping two test tabs (or
@@ -182,6 +207,7 @@ export async function createMovieRoom(platforms = [], genres = [], { solo = fals
     .select().single()
 
   if (error) throw error
+  await ensureRoomMembership(roomId)
   return { ...data, platforms: filters }
 }
 
@@ -219,6 +245,7 @@ export async function createConversationRoom(topicIds, topicNames, { solo = fals
     .single()
 
   if (error) throw error
+  await ensureRoomMembership(roomId)
   return data
 }
 
@@ -241,6 +268,7 @@ export async function createSeriesRoom(platforms = [], genres = [], { solo = fal
     .select().single()
 
   if (error) throw error
+  await ensureRoomMembership(roomId)
   return { ...data, platforms: filters }
 }
 
@@ -300,6 +328,7 @@ export async function createFoodRoom({ lat, lng, locationName, radius, countryCo
     .insert({ id: roomId, type: 'food', topic_id: locationData, status: 'waiting' })
     .select().single()
   if (error) throw error
+  await ensureRoomMembership(roomId)
   return data
 }
 
@@ -333,6 +362,7 @@ export async function createActivityRoom({ lat, lng, locationName, radius, solo 
     .single()
 
   if (error) throw error
+  await ensureRoomMembership(roomId)
   return data
 }
 
@@ -353,6 +383,7 @@ export async function createColorGameRoom({ solo = false } = {}) {
     .insert({ id: roomId, type: 'colorgame', topic_id: topicId, status: 'waiting' })
     .select().single()
   if (error) throw error
+  await ensureRoomMembership(roomId)
   return data
 }
 
@@ -487,6 +518,10 @@ export async function getRoom(roomId) {
     const room = localStorage.getItem(`swaip_room_${roomId}`)
     return room ? JSON.parse(room) : null
   }
+
+  // Every path into a room goes through here, so this is where a joiner claims
+  // membership — before the read that membership authorises.
+  await ensureRoomMembership(roomId)
 
   const { data, error } = await supabase
     .from('rooms')

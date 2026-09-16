@@ -19,8 +19,11 @@ function esc(s) {
 }
 
 async function fetchRoomType(id) {
-  const base = process.env.VITE_SUPABASE_URL
-  const key = process.env.VITE_SUPABASE_ANON_KEY
+  const base = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+  // Service role, because row-level security now scopes rooms to their members
+  // (supabase/rls.sql) and a crawler is nobody's member. Falls back to the anon
+  // key, which is all this needed before the policies landed.
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY
   if (!base || !key || !id) return null
   try {
     const res = await fetch(`${base}/rest/v1/rooms?id=eq.${encodeURIComponent(id)}&select=type`, {
