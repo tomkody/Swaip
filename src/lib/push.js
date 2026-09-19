@@ -9,7 +9,9 @@ import { supabase } from './supabase'
 // iOS note: Safari only delivers web push to apps added to the Home Screen
 // (iOS 16.4+). Desktop and Android Chrome/Firefox work in the normal browser.
 
-const PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY
+// Trimmed for the same reason as the Supabase key (see supabase.js): a key
+// pasted into Vercel with a line break would fail base64 decoding below.
+const PUBLIC_KEY = (import.meta.env.VITE_VAPID_PUBLIC_KEY || '').trim()
 
 export function isPushSupported() {
   return Boolean(

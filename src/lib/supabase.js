@@ -1,7 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// Trimmed: the production bundle shipped the anon key with a newline on the
+// end (pasted into the Vercel env var with a line break). Browsers strip
+// whitespace from HTTP header values, so every REST call worked, but the
+// realtime WebSocket sends the key as a query parameter, got 401, and every
+// match arrived only through the polling reconcile. Found 2026-09-19.
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim()
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim()
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn(
