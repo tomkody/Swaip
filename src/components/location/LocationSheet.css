@@ -1,0 +1,508 @@
+/* ── "Choose an area" sheet ─────────────────────────────────────────────────
+   Full screen on a phone: an inline map inside a scrolling form either traps
+   one-finger scrolling or needs two-finger panning nobody discovers. */
+
+.loc-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  height: 100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  /* On a short screen (landscape, an in-app browser's toolbars, a long hint)
+     the whole sheet scrolls rather than pushing the button out of reach. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  animation: locSheetIn 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes locSheetIn {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.loc-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 56px;
+  padding: 0 60px;
+  flex-shrink: 0;
+}
+.loc-title {
+  font-size: 17px;
+  font-weight: 800;
+  margin: 0;
+  outline: none;
+}
+.loc-close {
+  position: absolute;
+  right: 10px;
+  top: 6px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+}
+.loc-close:active { transform: scale(0.94); }
+
+/* ── Search ── */
+.loc-search {
+  position: relative;
+  margin: 4px 16px 12px;
+  flex-shrink: 0;
+}
+.loc-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.loc-search-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 44px 0 42px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 16px; /* 16px or iOS zooms the page on focus */
+  font-family: inherit;
+  box-shadow: var(--shadow-xs);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.loc-search-input::-webkit-search-cancel-button { display: none; }
+.loc-search-input::placeholder { color: var(--text-muted); }
+.loc-search-input:focus {
+  border-color: var(--accent-orange);
+  box-shadow: 0 0 0 3px rgba(255,138,76,0.14), var(--shadow-xs);
+}
+.loc-search-clear {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.loc-search-spinner,
+.loc-locate-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent-orange);
+  border-radius: 50%;
+  animation: locSpin 0.7s linear infinite;
+}
+.loc-search-spinner {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+}
+.loc-locate-spinner { width: 20px; height: 20px; }
+@keyframes locSpin { to { transform: rotate(360deg); } }
+
+/* The list covers the map, so the iOS keyboard never hides the results. */
+.loc-results {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  max-height: min(56dvh, 420px, var(--loc-results-room, 420px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+}
+.loc-results ul {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+.loc-result {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 48px;
+  justify-content: center;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+.loc-result + .loc-result { border-top: 1px solid var(--separator); }
+.loc-result:hover { background: var(--bg-card-hover); }
+.loc-result.is-active {
+  background: var(--bg-card-hover);
+  outline: 2px solid var(--text);
+  outline-offset: -2px;
+}
+.loc-result-name {
+  font-size: 15px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.loc-result-detail {
+  font-size: 13px;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.loc-results-note {
+  margin: 0;
+  padding: 14px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.loc-results-credit {
+  display: block;
+  padding: 8px 14px 10px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  text-align: right;
+  text-decoration: none;
+}
+
+/* ── Map ── */
+.loc-map {
+  position: relative;
+  isolation: isolate; /* keeps Leaflet's z-indexes inside the box */
+  flex: 1 1 auto;
+  min-height: 220px;
+  margin: 0 16px; /* also keeps drags away from the iOS back-swipe edge */
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-secondary);
+  box-shadow: var(--shadow-xs);
+}
+.loc-map-canvas {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  background: var(--bg-secondary);
+  font-family: inherit;
+}
+[data-theme="dark"] .loc-map-canvas .leaflet-tile-pane { filter: brightness(0.86) contrast(1.04); }
+
+.loc-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+}
+.loc-circle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  border-radius: 50%;
+  border: 2px solid var(--accent-coral);
+  background: rgba(255, 94, 98, 0.10);
+  transition: background-color 0.15s;
+}
+.loc-map.is-moving .loc-circle { background: rgba(255, 94, 98, 0.05); }
+
+/* Tip of the pin sits exactly on the centre of the map. */
+.loc-pin {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -100%;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.28));
+  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.loc-pin-shadow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 4px;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.28);
+  transition: opacity 0.15s;
+}
+.loc-map.is-moving .loc-pin { transform: translateY(-6px); }
+.loc-map.is-moving .loc-pin-shadow { opacity: 0.5; }
+
+.loc-map-skeleton {
+  position: absolute;
+  inset: 0;
+  z-index: 450;
+  border-radius: 0;
+  pointer-events: none;
+}
+.loc-map-error {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 600;
+  margin: 0;
+  padding: 12px 14px;
+  text-align: center;
+  font-size: 14px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+}
+.loc-chip {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  translate: -50% 0;
+  z-index: 600;
+  max-width: calc(100% - 120px);
+  padding: 7px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-glass);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+.loc-locate {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 600;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--bg-card);
+  color: #2F7BF6;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+}
+.loc-locate:active { transform: scale(0.94); }
+
+/* Leaflet controls in Swaip's clothes. */
+.loc-map .leaflet-control-zoom {
+  border: none;
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin: 12px 12px 0 0;
+}
+.loc-map .leaflet-control-zoom a {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+  font-size: 22px;
+  background: var(--bg-card);
+  color: var(--text);
+  border-bottom-color: var(--border);
+}
+.loc-map .leaflet-control-zoom a:focus-visible { outline-offset: -4px; border-radius: 0; }
+.loc-results-logo { height: 14px; width: auto; vertical-align: middle; margin-right: 6px; }
+.loc-map .leaflet-control-attribution {
+  font-size: 10.5px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #333;
+  border-top-right-radius: 6px;
+}
+.loc-map .leaflet-control-attribution a { color: #1d4ed8; }
+.loc-mapy-logo { display: block; margin: 0 0 4px 6px !important; line-height: 0; }
+.loc-map .leaflet-container:focus-visible { outline: 3px solid var(--accent-orange); outline-offset: -3px; }
+
+/* ── Panel under the map ── */
+.loc-panel {
+  flex-shrink: 0;
+  padding: 14px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.loc-range-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.loc-range-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.loc-range-value {
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 17px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.loc-range {
+  --loc-fill: 50%;
+  width: 100%;
+  height: 32px;
+  margin: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+.loc-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-coral), var(--accent-orange)) 0 / var(--loc-fill) 100% no-repeat, var(--bg-secondary);
+}
+.loc-range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+}
+.loc-range::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-coral), var(--accent-orange));
+}
+.loc-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px;
+  height: 28px;
+  margin-top: -11px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--accent-orange);
+  box-shadow: var(--shadow);
+}
+.loc-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--accent-orange);
+  box-shadow: var(--shadow);
+}
+.loc-range:disabled { opacity: 0.5; cursor: not-allowed; }
+.loc-range:focus-visible { outline: none; }
+.loc-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px rgba(255,138,76,0.35); }
+.loc-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px rgba(255,138,76,0.35); }
+
+/* Labels under the steps, inset by half a thumb so they line up. */
+.loc-ticks {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 11px;
+  margin-top: -6px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-soft);
+}
+.loc-ticks span { width: 0; display: flex; justify-content: center; }
+.loc-ticks span.is-on { color: var(--text); font-weight: 700; }
+
+.loc-help {
+  font-size: 13.5px;
+  line-height: 1.4;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+}
+.loc-help p { margin: 0; }
+.loc-help--ok { background: rgba(52, 199, 89, 0.12); }
+.loc-help-why { margin-top: 6px !important; color: var(--text-muted); }
+.loc-why {
+  font: inherit;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--primary);
+  text-underline-offset: 2px;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+}
+.loc-help-action {
+  margin-top: 8px;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  font: inherit;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  min-height: 40px;
+}
+
+.loc-place {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  min-height: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.loc-place svg { color: var(--accent-coral); flex-shrink: 0; }
+.loc-place span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.loc-place.is-hint { color: var(--text-muted); font-weight: 500; }
+
+.loc-confirm { margin-top: 2px; }
+
+.loc-debug {
+  margin: 4px 0 0;
+  max-height: 120px;
+  overflow: auto;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+}
+
+.loc-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Short screens (landscape, in-app browsers with big toolbars): tighter panel. */
+@media (max-height: 640px) {
+  .loc-head { height: 48px; }
+  .loc-close { top: 2px; }
+  .loc-panel { padding-top: 10px; gap: 6px; }
+  .loc-map { min-height: 140px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loc-sheet { animation: none; }
+  .loc-pin, .loc-pin-shadow, .loc-circle { transition: none; }
+  .loc-map.is-moving .loc-pin { transform: none; }
+  .loc-search-spinner, .loc-locate-spinner { animation-duration: 1.6s; }
+}

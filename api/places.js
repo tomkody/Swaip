@@ -1,4 +1,4 @@
-// Server-side proxy for Google Places (New) + Geocoding.
+// Server-side proxy for Google Places (New): nearby search and photos.
 //
 // Why: the browser must never carry the Maps API key — a key shipped in the
 // bundle can be lifted and billed against by anyone. This function holds the
@@ -60,16 +60,16 @@ async function cachePut(key, payload) {
 // places_cache table, so it survives an instance recycling and every instance
 // sees the same number.
 //
-// Only the two search SKUs are capped — they are the expensive ones. Photos and
-// reverse geocoding are an order of magnitude cheaper, and a photo can only be
-// requested with a name that came from a search that was already counted.
+// Only nearby search is capped: it is the expensive SKU. Photos are an order
+// of magnitude cheaper, and a photo can only be requested with a name that came
+// from a search that was already counted. (Place search and naming for the area
+// picker moved off Google on 2026-09-30, see src/lib/mapConfig.js.)
 //
-// Tune without a deploy: PLACES_NEARBY_DAILY_MAX / PLACES_GEOCODE_DAILY_MAX.
+// Tune without a deploy: PLACES_NEARBY_DAILY_MAX.
 // Read per call, not at module load: a changed value on Vercel then takes
 // effect without waiting for a cold start.
 const dailyMax = op => ({
   nearby: Number(process.env.PLACES_NEARBY_DAILY_MAX || 500),
-  geocode: Number(process.env.PLACES_GEOCODE_DAILY_MAX || 200),
 }[op] || 0)
 
 const usageKey = op => `usage:${op}:${new Date().toISOString().slice(0, 10)}`
@@ -137,7 +137,7 @@ function fromOurSite(req) {
 // when a serverless instance recycles and doesn't see other instances — it
 // blunts a burst from one client, it is not the hard cap. That one belongs in
 // the Google Cloud console as a daily quota.
-const PAID_OPS = new Set(['nearby', 'geocode', 'revgeo', 'photo'])
+const PAID_OPS = new Set(['nearby', 'photo'])
 const RATE_WINDOW_MS = 60_000
 const RATE_MAX = 60             // per IP per minute, across all paid ops
 const hits = new Map()
@@ -216,36 +216,6 @@ export default async function handler(req, res) {
       if (r.ok) await cachePut(cacheKey, data)   // awaited: serverless may kill post-response work
       // 15 min: fresh enough for open/closed, still collapses repeat searches.
       return send(res, r.ok ? 200 : r.status, 900, data)
-    }
-
-    // ── Text search → geocode a city/address (city coords are stable) ──
-    if (op === 'geocode') {
-      const query = (q.q || '').toString()
-      if (!query) return send(res, 400, 0, { error: 'geocode needs q' })
-      if (!(await reserveDailyCall('geocode'))) {
-        res.setHeader('Retry-After', '3600')
-        return send(res, 429, 0, { error: "Today's location lookups are used up. Try again tomorrow." })
-      }
-      const r = await fetch(`${BASE}/places:searchText`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': API_KEY,
-          'X-Goog-FieldMask': 'places.id,places.displayName,places.location',
-        },
-        body: JSON.stringify({ textQuery: query, languageCode: lang }),
-      })
-      const data = await r.json().catch(() => ({}))
-      return send(res, r.ok ? 200 : r.status, 604800, data) // 1 week
-    }
-
-    // ── Reverse geocode (coords → area name + country) ──
-    if (op === 'revgeo') {
-      const lat = Number(q.lat), lng = Number(q.lng)
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return send(res, 400, 0, { error: 'revgeo needs lat, lng' })
-      const r = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=${lang}&key=${API_KEY}`)
-      const data = await r.json().catch(() => ({}))
-      return send(res, r.ok ? 200 : r.status, 86400, data) // 1 day
     }
 
     // ── Photo → resolve to the keyless googleusercontent URL, then redirect ──

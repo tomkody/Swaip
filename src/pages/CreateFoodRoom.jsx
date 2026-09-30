@@ -1,150 +1,33 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createFoodRoom, getUserToken } from '../lib/room'
-import { geocodeLocation, reverseGeocode } from '../lib/placesApi'
-import { getBestPosition, accuracyLevel, formatAccuracy, accuracyAdvice, accuracyReason, accuracyBucket, platformTag } from '../lib/geo'
+import LocationField from '../components/location/LocationField'
 import ModeToggle from '../components/ModeToggle'
-import { track } from '../lib/analytics'
 import './CreateActivityRoom.css'
 import AppHeader from '../components/AppHeader'
 
-const RADIUS_OPTIONS = [
-  { label: '1 km', value: 1000 },
-  { label: '3 km', value: 3000 },
-  { label: '5 km', value: 5000 },
-  { label: '10 km', value: 10000 },
-  { label: '20 km', value: 20000 },
-]
-
-// Reverse-geocode coordinates → ISO country code (via Nominatim, non-blocking)
-async function detectCountryCode(lat, lng) {
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-      { headers: { 'Accept-Language': 'en' } }
-    )
-    const data = await res.json()
-    return (data.address?.country_code || '').toUpperCase() || null
-  } catch {
-    return null
-  }
-}
-
 export default function CreateFoodRoom() {
   const navigate = useNavigate()
-  const [locationText, setLocationText] = useState('')
-  const [pinnedCoords, setPinnedCoords] = useState(null)
-  const [geoAccuracy, setGeoAccuracy] = useState(null)   // metres, from the GPS fix
-  const [pinnedCountryCode, setPinnedCountryCode] = useState(null)
-  const [radius, setRadius] = useState(5000)
+  const [area, setArea] = useState(null)   // { lat, lng, radius, locationName, countryCode }
+  const [areaMissing, setAreaMissing] = useState(false)
+  const locationRef = useRef(null)
   const [loading, setLoading] = useState(false)
-  const [geoLoading, setGeoLoading] = useState(false)
-  const [geoProgress, setGeoProgress] = useState('')   // what the GPS is doing while we wait
   const [error, setError] = useState(null)
   const [solo, setSolo] = useState(false)
   const [playerCount, setPlayerCount] = useState(2)
   const [showPlayerPicker, setShowPlayerPicker] = useState(false)
 
-  function handleUseMyLocation() {
-    setGeoLoading(true)
-    setError(null)
-
-    // Safari on iOS requires explicit permission — if denied, GPS fails and
-    // IP-based fallbacks can be 50–200 km off. We no longer silently fall back.
-    function onDenied() {
-      setGeoLoading(false)
-      track('geo_denied', { platform: platformTag() })
-      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
-      setError(
-        isIOS
-          ? 'Location access denied. Go to Settings → Safari → Location → Allow, then try again. Or type your city below.'
-          : 'Location access denied. Please allow it in your browser settings, or type your city below.'
-      )
-    }
-
-    // After GPS succeeds: reverse-geocode for human label + country code
-    function applyCoords(latitude, longitude) {
-      setPinnedCoords({ lat: latitude, lng: longitude })
-      reverseGeocode(latitude, longitude)
-        .then(({ name, countryCode }) => { setLocationText(name); setPinnedCountryCode(countryCode) })
-        .catch(() => { setLocationText('My Location'); setPinnedCountryCode(null) })
-        .finally(() => setGeoLoading(false))
-    }
-
-    if (!navigator.geolocation) {
-      setGeoLoading(false)
-      setError('Geolocation is not supported by this browser. Please type your city below.')
-      return
-    }
-
-    // Wait for the best fix we can get (iOS hands over a coarse one first),
-    // then be explicit about how good it actually is.
-    setGeoProgress('Finding you…')
-    getBestPosition({
-      onFix: acc => setGeoProgress(
-        accuracyLevel(acc) === 'good'
-          ? 'Got a precise fix'
-          : `Placed you to ${formatAccuracy(acc)} - holding on for a better fix…`
-      ),
-    })
-      .then(({ lat, lng, accuracy }) => {
-        setGeoAccuracy(accuracy)
-        applyCoords(lat, lng)
-        const level = accuracyLevel(accuracy)
-        // Fix quality only — a bucket and the platform, never a position.
-        track('geo_fix', { level, bucket: accuracyBucket(accuracy), platform: platformTag() })
-        if (level === 'bad') {
-          setError(
-            `⚠️ ${accuracyReason()} - you're placed to within ${formatAccuracy(accuracy)}, ` +
-            `so distances would be way off. ${accuracyAdvice()}`
-          )
-        } else if (level === 'rough') {
-          setError(
-            `${accuracyReason()} - you're placed to within ${formatAccuracy(accuracy)}, so distances may be off by about that much.`
-          )
-        }
-      })
-      .catch(onDenied)
-      .finally(() => setGeoProgress(''))
-  }
-
   async function handleCreate() {
-    if (!locationText.trim() && !pinnedCoords) {
-      setError('Please enter a location.')
+    if (!area) {
+      setAreaMissing(true)
+      locationRef.current?.open()
       return
     }
     setLoading(true)
     setError(null)
     try {
       getUserToken()
-      let lat, lng, locationName, countryCode
-
-      if (pinnedCoords) {
-        lat = pinnedCoords.lat
-        lng = pinnedCoords.lng
-        locationName = locationText.trim() || 'My Location'
-        countryCode = pinnedCountryCode // already fetched during GPS lookup
-      } else {
-        try {
-          const geo = await geocodeLocation(locationText.trim())
-          lat = geo.lat
-          lng = geo.lng
-          locationName = geo.name
-        } catch (geoErr) {
-          const msg = geoErr.message || ''
-          if (msg.includes('No results')) {
-            setError(`Couldn't find "${locationText.trim()}". Try a different city name.`)
-          } else {
-            setError(`Location search failed: ${msg}`)
-          }
-          setLoading(false)
-          return
-        }
-        // Detect country from the resolved coordinates (non-blocking — null is fine)
-        countryCode = await detectCountryCode(lat, lng)
-      }
-
-      const room = await createFoodRoom({ lat, lng, locationName, radius, countryCode, solo, playerCount })
+      const room = await createFoodRoom({ ...area, solo, playerCount })
       navigate(`/room/${room.id}`, { state: { isCreator: true, isSolo: solo } })
     } catch (err) {
       console.error('Failed to create room:', err)
@@ -216,57 +99,20 @@ export default function CreateFoodRoom() {
         </p>
 
         <div className="activity-form">
-          <label className="form-label">Where are you?</label>
-          <div className="location-input-row">
-            <input
-              className="location-input"
-              type="text"
-              placeholder="City or address…"
-              value={locationText}
-              onChange={e => { setLocationText(e.target.value); setPinnedCoords(null); setGeoAccuracy(null); setPinnedCountryCode(null); setError(null) }}
-              onKeyDown={e => e.key === 'Enter' && handleCreate()}
-            />
-            <button
-              className="geo-btn"
-              onClick={handleUseMyLocation}
-              disabled={geoLoading}
-              title="Use my location"
-            >
-              {geoLoading ? <span className="geo-spinner" /> : '📍'}
-            </button>
-          </div>
-
-          {geoLoading && geoProgress && (
-            <p className="geo-accuracy geo-accuracy--progress">{geoProgress}</p>
-          )}
-
-          {/* Be upfront about fix quality — a coarse fix makes every "nearby"
-              distance wrong, so the user should see it before creating a room. */}
-          {pinnedCoords && geoAccuracy != null && (
-            <p className={`geo-accuracy geo-accuracy--${accuracyLevel(geoAccuracy)}`}>
-              {accuracyLevel(geoAccuracy) === 'good' ? '🎯' : '⚠️'} Located to {formatAccuracy(geoAccuracy)}
-              {accuracyLevel(geoAccuracy) !== 'good' && ` · ${accuracyReason()}`}
-            </p>
-          )}
-
-          <label className="form-label" style={{ marginTop: 20 }}>Search radius</label>
-          <div className="radius-chips">
-            {RADIUS_OPTIONS.map(opt => (
-              <button
-                key={opt.value}
-                className={`radius-chip ${radius === opt.value ? 'active' : ''}`}
-                onClick={() => setRadius(opt.value)}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+          <p className="form-label" id="search-area-label">Search area</p>
+          <LocationField
+            ref={locationRef}
+            labelId="search-area-label"
+            value={area}
+            invalid={areaMissing && !area}
+            onChange={a => { setArea(a); setAreaMissing(false); setError(null) }}
+          />
 
           {error && <p className="create-error">{error}</p>}
 
           <button
             className="btn btn-primary create-btn"
-            disabled={loading || geoLoading}
+            disabled={loading}
             onClick={handleCreate}
           >
             {loading ? 'Creating…' : solo ? 'Start Now' : 'Create Room'}

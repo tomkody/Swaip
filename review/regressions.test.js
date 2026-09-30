@@ -100,7 +100,7 @@ it('rejects a Places request that does not come from our site before invoking Go
   const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ places: [] }) })
   vi.stubGlobal('fetch', fetchMock)
   const res = response()
-  await places({ method: 'GET', headers: {}, query: { op: 'geocode', q: 'Synthetic review location' } }, res)
+  await places({ method: 'GET', headers: {}, query: { op: 'nearby', lat: '50.08', lng: '14.42', types: 'restaurant' } }, res)
   expect(res.code).toBe(403)
   expect(fetchMock).not.toHaveBeenCalled()
 })
@@ -110,9 +110,21 @@ it('serves a Places request from swaip.app', async () => {
   const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ places: [] }) })
   vi.stubGlobal('fetch', fetchMock)
   const res = response()
-  await places({ method: 'GET', headers: { referer: 'https://swaip.app/create/food' }, query: { op: 'geocode', q: 'Prague' } }, res)
+  await places({ method: 'GET', headers: { referer: 'https://swaip.app/create/food' }, query: { op: 'nearby', lat: '50.08', lng: '14.42', types: 'restaurant' } }, res)
   expect(res.code).toBe(200)
   expect(fetchMock).toHaveBeenCalledTimes(1)
+})
+
+it('no longer spends Google money on geocoding, which moved to the area picker', async () => {
+  vi.stubEnv('GOOGLE_MAPS_API_KEY', 'fake')
+  const fetchMock = vi.fn()
+  vi.stubGlobal('fetch', fetchMock)
+  for (const query of [{ op: 'geocode', q: 'Prague' }, { op: 'revgeo', lat: '50.08', lng: '14.42' }]) {
+    const res = response()
+    await places({ method: 'GET', headers: { referer: 'https://swaip.app/create/food' }, query }, res)
+    expect(res.code).toBe(400)
+  }
+  expect(fetchMock).not.toHaveBeenCalled()
 })
 
 it('preserves the existing catalog when all TMDB detail requests fail', async () => {

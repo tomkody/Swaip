@@ -6,7 +6,7 @@ export default function Privacy() {
     <div className="legal-page">
       <AppHeader />
       <h1>Privacy Policy</h1>
-      <p className="legal-updated">Last updated: 23 August 2026</p>
+      <p className="legal-updated">Last updated: 30 September 2026</p>
 
       <p>
         Swaip helps you and a partner or friends decide what to watch, eat, or do by swiping
@@ -25,7 +25,8 @@ export default function Privacy() {
       <h2>What we process</h2>
       <ul>
         <li><strong>Room activity</strong> - the room code, the options you swipe left/right on, and your ranked top picks. This is what lets two devices match.</li>
-        <li><strong>Approximate location</strong> - only for Food and Activities, and only if you grant your browser's location permission. It's used to find places near you and is not stored as a profile.</li>
+        <li><strong>Search area</strong> - only for Food and Activities. You pick it on a map or by searching for a place. If you tap Use my location, your browser asks for permission first, and the position only moves the pin on the map; it becomes the room's centre only if you confirm it. The room keeps the chosen centre (rounded to about 100 m), the radius and the area's name. It is not stored as a profile.</li>
+        <li><strong>Map and place search</strong> - our map providers (OpenStreetMap and Photon by komoot, or Mapy.com by Seznam.cz) receive the map tiles you view, the text you type into the place search, and the pin's position rounded to about 100 m, so they can name the area and rank results. Your browser remembers your last chosen area (the point and the radius) on this device only.</li>
         <li><strong>Usage analytics</strong> - anonymous, aggregated events (e.g. a room was created, results were shared) via a cookieless analytics provider. No cross-site tracking and no advertising profiles.</li>
         <li><strong>Error diagnostics</strong> - if something crashes, we may collect technical error details to fix bugs. These contain no personal information.</li>
       </ul>
@@ -41,7 +42,7 @@ export default function Privacy() {
       <p>
         To run Swaip we rely on a small number of trusted third-party providers that process data
         on our behalf under contract. These fall into categories such as cloud hosting and
-        database services, a maps and places service (used only for Food and Activities), a
+        database services, maps, place search and places services (used only for Food and Activities), a
         privacy-friendly analytics service, and an error-diagnostics service. We share only what's
         needed for the service to work, and we never sell your data. A more detailed list of the
         processors we use is available on request.
@@ -50,7 +51,8 @@ export default function Privacy() {
       <h2>Cookies</h2>
       <p>
         Swaip does not use advertising or tracking cookies. We use your browser's local storage
-        for essential things like your anonymous device ID and your theme preference.
+        for essential things like your anonymous device ID, your theme preference and the last
+        search area you chose.
       </p>
 
       <h2>Data retention</h2>
