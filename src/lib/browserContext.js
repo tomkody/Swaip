@@ -95,7 +95,7 @@ export function openInSafari(ctx, url = window.location.href) {
 // One short sentence for what happened with "Use my location", plus an
 // optional settings path (shown only on request - nobody walks five menus to
 // pick a bar) and an optional action.
-// outcome: 'approximate' | 'rough' | 'denied' | 'denied-earlier' | 'unavailable' | 'no-response' | 'unsupported'
+// outcome: 'approximate' | 'rough' | 'denied' | 'dismissed' | 'denied-earlier' | 'unavailable' | 'no-response' | 'unsupported'
 export function locationHelp(ctx, outcome, { accuracy = '' } = {}) {
   const kind = ctx?.kind
   const app = ctx?.app
@@ -158,6 +158,10 @@ export function locationHelp(ctx, outcome, { accuracy = '' } = {}) {
     // a reload changes nothing and the way out is another browser.
     if (iab) return locationHelp(ctx, 'denied')
     return { text: 'Location was blocked on this page. Reload to try again, or search instead.' }
+  }
+
+  if (outcome === 'dismissed') {
+    return { text: "Location wasn't shared. Tap Use my location to try again, or search instead." }
   }
 
   if (outcome === 'unsupported') {

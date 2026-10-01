@@ -17,17 +17,26 @@ export default function CreateFoodRoom() {
   const [playerCount, setPlayerCount] = useState(2)
   const [showPlayerPicker, setShowPlayerPicker] = useState(false)
 
-  async function handleCreate() {
+  // Create Room without an area opens the map on the user's position, and
+  // confirming it there creates the room straight away: one tap, not two.
+  const createAfterPick = useRef(false)
+
+  function handleCreate() {
     if (!area) {
       setAreaMissing(true)
-      locationRef.current?.open()
+      createAfterPick.current = true
+      locationRef.current?.open({ confirmLabel: solo ? 'Start here' : 'Create room here' })
       return
     }
+    createRoom(area)
+  }
+
+  async function createRoom(where) {
     setLoading(true)
     setError(null)
     try {
       getUserToken()
-      const room = await createFoodRoom({ ...area, solo, playerCount })
+      const room = await createFoodRoom({ ...where, solo, playerCount })
       navigate(`/room/${room.id}`, { state: { isCreator: true, isSolo: solo } })
     } catch (err) {
       console.error('Failed to create room:', err)
@@ -35,6 +44,16 @@ export default function CreateFoodRoom() {
       setError(`Failed to create room: ${msg}`)
     } finally {
       setLoading(false)
+    }
+  }
+
+  function handleAreaChange(a) {
+    setArea(a)
+    setAreaMissing(false)
+    setError(null)
+    if (createAfterPick.current) {
+      createAfterPick.current = false
+      createRoom(a)
     }
   }
 
@@ -105,10 +124,11 @@ export default function CreateFoodRoom() {
             labelId="search-area-label"
             value={area}
             invalid={areaMissing && !area}
-            onChange={a => { setArea(a); setAreaMissing(false); setError(null) }}
+            onChange={handleAreaChange}
+            onCancel={() => { createAfterPick.current = false }}
           />
 
-          {error && <p className="create-error">{error}</p>}
+          {error && <p className="create-error" role="alert">{error}</p>}
 
           <button
             className="btn btn-primary create-btn"

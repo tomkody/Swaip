@@ -294,16 +294,27 @@
   right: 12px;
   bottom: 12px;
   z-index: 600;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--bg-card);
-  color: #2F7BF6;
-  box-shadow: var(--shadow-md);
+  height: 44px;
+  /* Clear of the Mapy logo at the bottom left (6-106 px) on narrow screens. */
+  max-width: calc(100% - 124px);
+  padding: 0 16px 0 12px;
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #1A5FD6; /* white text at 15px needs 4.5:1; #1A5FD6 gives 5.7 */
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(26, 95, 214, 0.35), var(--shadow);
   cursor: pointer;
 }
+.loc-locate > svg, .loc-locate-spinner { flex-shrink: 0; }
+.loc-locate > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.loc-locate.is-busy { background: var(--bg-card); color: var(--text); box-shadow: var(--shadow-md); }
+.loc-locate:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
 .loc-locate:active { transform: scale(0.94); }
 
 /* Leaflet controls in Swaip's clothes. */

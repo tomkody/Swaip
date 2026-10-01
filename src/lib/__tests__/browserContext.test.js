@@ -79,6 +79,9 @@ describe('locationHelp', () => {
     expect(h.action).toBe('open-safari')
     expect(h.why).toContain('Location Services > Messenger')
   })
+  it('does not call a dismissed prompt a block', () => {
+    expect(locationHelp(ctx(UA.androidChrome), 'dismissed').text).not.toMatch(/blocked/i)
+  })
   it('falls back to copying the link where Safari cannot be opened', () => {
     expect(locationHelp(ctx(UA.tiktok), 'denied').action).toBe('copy-link')
   })
@@ -94,7 +97,7 @@ describe('locationHelp', () => {
     }
   })
   it('never uses an em dash', () => {
-    const outcomes = ['approximate', 'rough', 'denied', 'denied-earlier', 'unavailable', 'no-response', 'unsupported']
+    const outcomes = ['approximate', 'rough', 'denied', 'dismissed', 'denied-earlier', 'unavailable', 'no-response', 'unsupported']
     for (const ua of Object.values(UA)) {
       for (const o of outcomes) {
         const h = locationHelp(ctx(ua), o, { accuracy: '±1 km' })

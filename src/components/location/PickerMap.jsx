@@ -39,6 +39,7 @@ export default function PickerMap({
   const radiusRef = useRef(radius)
   const animatingZoomRef = useRef(false)
   const pendingRef = useRef(null)          // a move asked for mid-zoom, done at zoomend
+  const steeredRef = useRef(false)         // a search, fix or the user has moved the map
   const handlers = useRef({})
   handlers.current = { onMoveStart, onMoveEnd, onReady, onError }
 
@@ -73,6 +74,7 @@ export default function PickerMap({
   }
 
   const apply = (map, { c, animate, fit }) => {
+    if (c) steeredRef.current = true
     const target = c || map.getCenter()
     const z = fit ? fitZoom(map, target.lat, radiusRef.current) : map.getZoom()
     map.setView([target.lat, target.lng], z, { animate })
@@ -197,29 +199,40 @@ export default function PickerMap({
     let pointerDown = false
     let lastInput = 0
     let moveByUser = false
+    let zoomOnly = false       // every zoom here is anchored on the centre, so it never moves the pin
+    let zoomStarting = false
     const markInput = () => { lastInput = Date.now() }
     const onPointerDown = () => { pointerDown = true; markInput() }
-    const onPointerUp = () => { pointerDown = false; markInput() }
+    // Only a press that started on the map counts; a tap on the search box or
+    // the slider must not turn the next GPS move into "the user's".
+    const onPointerUp = () => { if (!pointerDown) return; pointerDown = false; markInput() }
     el.addEventListener('pointerdown', onPointerDown, true)
     el.addEventListener('wheel', markInput, { capture: true, passive: true })
     el.addEventListener('keydown', markInput, true)
     window.addEventListener('pointerup', onPointerUp, true)
     window.addEventListener('pointercancel', onPointerUp, true)
 
+    map.on('zoomstart', () => { zoomStarting = true })   // Leaflet fires it just before movestart
     map.on('movestart', () => {
       if (disposed) return
+      zoomOnly = zoomStarting
+      zoomStarting = false
       moveByUser = pointerDown || Date.now() - lastInput < USER_INPUT_WINDOW_MS
+      if (moveByUser && !zoomOnly) steeredRef.current = true
       boxRef.current?.classList.add('is-moving')
-      handlers.current.onMoveStart?.({ byUser: moveByUser })
+      handlers.current.onMoveStart?.({ byUser: moveByUser, zoomOnly })
     })
     map.on('moveend', () => {
       if (disposed) return
       boxRef.current?.classList.remove('is-moving')
       // A moveend without its own movestart (a resize) reports false.
       const byUser = moveByUser
+      const wasZoomOnly = zoomOnly
       moveByUser = false
+      zoomOnly = false
+      zoomStarting = false
       const c = map.getCenter()
-      handlers.current.onMoveEnd?.({ center: { lat: c.lat, lng: c.lng }, zoom: map.getZoom(), byUser })
+      handlers.current.onMoveEnd?.({ center: { lat: c.lat, lng: c.lng }, zoom: map.getZoom(), byUser, zoomOnly: wasZoomOnly })
     })
     map.on('zoomanim', e => { animatingZoomRef.current = true; sizeCircle(e.zoom, e.center.lat, true) })
     map.on('zoom', () => { if (!animatingZoomRef.current) sizeCircle(map.getZoom(), map.getCenter().lat) })
@@ -252,9 +265,12 @@ export default function PickerMap({
     ro?.observe(el)
 
     // The sheet may still be settling into its final size: measure again and
-    // re-fit the circle to what the map box really is.
+    // re-fit the circle to what the map box really is. This frame can come
+    // late (a busy phone, a background tab), after a fast GPS fix has already
+    // started moving the map, so it only measures then and never re-centres.
     const raf = requestAnimationFrame(() => {
       if (disposed) return
+      if (steeredRef.current) { fitToBox(); return }
       map.invalidateSize()
       map.setView(map.getCenter(), fitZoom(map, map.getCenter().lat, radiusRef.current), { animate: false })
     })
@@ -275,6 +291,7 @@ export default function PickerMap({
       // with the flag cleared it returns early instead of reading the gone pane.
       map._animatingZoom = false
       mapRef.current = null
+      steeredRef.current = false
       pendingRef.current = null
       animatingZoomRef.current = false
     }

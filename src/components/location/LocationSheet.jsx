@@ -17,7 +17,6 @@ import './LocationSheet.css'
 //
 // Nothing in here calls Google: see lib/mapConfig.js for why.
 
-const LAST_AREA_KEY = 'swaip_last_area'
 const MAX_LABEL_LOOKUPS = 12
 
 // Where the map opens when we know nothing yet. The pin can't be confirmed
@@ -41,31 +40,30 @@ function homeCenter() {
   }
 }
 
-// This device only, rounded like the rooms are (~110 m). Just the point and
-// the radius: the area's name comes from the geocoder, whose terms don't allow
-// keeping its answers, so it is looked up again next time.
-function loadLastArea() {
-  try {
-    const a = JSON.parse(localStorage.getItem(LAST_AREA_KEY) || 'null')
-    if (a && Number.isFinite(a.lat) && Number.isFinite(a.lng) && RADIUS_STEPS.includes(a.radius)) {
-      return { lat: a.lat, lng: a.lng, radius: a.radius }
-    }
-  } catch { /* private mode, bad JSON */ }
-  return null
-}
-
-function saveLastArea(area) {
-  try {
-    const round = n => Math.round(n * 1000) / 1000
-    localStorage.setItem(LAST_AREA_KEY, JSON.stringify({ lat: round(area.lat), lng: round(area.lng), radius: area.radius }))
-  } catch { /* storage full or blocked: not worth a word */ }
+// An earlier version remembered the last confirmed area on the device. That
+// opened the map in Olomouc for someone now in Prague, so the sheet locates
+// the user instead, and the old entry is cleared.
+const OLD_LAST_AREA_KEY = 'swaip_last_area'
+// Someone who said no (or dismissed the prompt) when the map opened is not
+// asked again on every open: Chrome blocks a site for a week after three
+// dismissals. The button still asks, and a yes there clears this.
+const AUTO_REFUSED_KEY = 'swaip_auto_locate_refused'
+const storage = {
+  get(k) { try { return localStorage.getItem(k) } catch { return null } },
+  set(k, v) { try { localStorage.setItem(k, v) } catch { /* blocked storage */ } },
+  del(k) { try { localStorage.removeItem(k) } catch { /* blocked storage */ } },
 }
 
 const nearestStep = r => RADIUS_STEPS.reduce((best, s) => (Math.abs(s - r) < Math.abs(best - r) ? s : best), RADIUS_STEPS[0])
 const kmWords = r => (r >= 1000 ? `${r / 1000} kilometre${r === 1000 ? '' : 's'}` : `${r} metres`)
 const touchDevice = () => Boolean(window.matchMedia?.('(pointer: coarse)').matches)
 
-export default function LocationSheet({ initialArea, defaultRadius = DEFAULT_RADIUS, onConfirm, onCancel }) {
+// autoLocate: start "Use my location" as soon as the sheet opens. Off when the
+// user already chose an area and is coming back to adjust it.
+export default function LocationSheet({
+  initialArea, defaultRadius = DEFAULT_RADIUS, autoLocate = !initialArea,
+  confirmLabel = 'Use this area', onConfirm, onCancel,
+}) {
   const titleId = useId()
   const listId = useId()
   const sheetRef = useRef(null)
@@ -79,7 +77,7 @@ export default function LocationSheet({ initialArea, defaultRadius = DEFAULT_RAD
   }, [])
 
   const init = useMemo(() => {
-    const from = initialArea || loadLastArea()
+    const from = initialArea
     if (from) {
       return {
         center: { lat: from.lat, lng: from.lng },
@@ -127,6 +125,9 @@ export default function LocationSheet({ initialArea, defaultRadius = DEFAULT_RAD
   const safariTimer = useRef(null)
   const announceTimer = useRef(null)
   const lookups = useRef(0)
+  const labelPending = useRef(null)     // the point a name lookup is running for
+  const steerTo = useRef(null)          // where search or GPS last sent the map; the user's own move clears it
+  const locateGotFix = useRef(false)    // the running locate has produced a fix
 
   const updateLabel = l => { labelRef.current = l; setLabel(l) }
 
@@ -137,7 +138,9 @@ export default function LocationSheet({ initialArea, defaultRadius = DEFAULT_RAD
     announceTimer.current = setTimeout(() => setAnnounce(msg), 60)
   }
 
-  useDialogFocus(sheetRef, { onClose: onCancel })
+  // If the button that opened the sheet is disabled by then (Create Room while
+  // the room is being created), focus goes to the area row instead of <body>.
+  useDialogFocus(sheetRef, { onClose: onCancel, fallbackFocus: '.lf-row' })
 
   // The page behind stays put and out of reach while the sheet is open.
   // Layout effect: its cleanup runs before useDialogFocus hands focus back.
@@ -150,6 +153,22 @@ export default function LocationSheet({ initialArea, defaultRadius = DEFAULT_RAD
       document.body.style.overflow = prevOverflow
       root?.removeAttribute('inert')
     }
+  }, [])
+
+  // Open on the user's real position, now. iOS shows its permission prompt
+  // here, right after the tap that asked for an area.
+  useEffect(() => {
+    storage.del(OLD_LAST_AREA_KEY)
+    if (!autoLocate || storage.get(AUTO_REFUSED_KEY) === '1') return
+    let alive = true
+    // Skip a request the browser would refuse anyway. iOS answers 'prompt'
+    // even after a refusal, so only a clear 'denied' counts.
+    Promise.resolve(navigator.permissions?.query?.({ name: 'geolocation' }))
+      .catch(() => null)
+      .then(p => { if (alive && p?.state !== 'denied') handleLocate({ auto: true }) })
+    return () => { alive = false }
+    // Once per open; handleLocate reads everything else through refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => () => {
@@ -191,37 +210,61 @@ export default function LocationSheet({ initialArea, defaultRadius = DEFAULT_RAD
     labelAbort.current?.abort()
     const ctrl = new AbortController()
     labelAbort.current = ctrl
+    labelPending.current = c
     setLabelBusy(true)
     try {
       const r = await reverse(c.lat, c.lng, { signal: ctrl.signal })
-      if (r && !ctrl.signal.aborted) {
+      // The map may have moved on while we asked (a stopped pan reports where
+      // it was). A name for a spot the pin has left would label the wrong place.
+      const now = mapRef.current?.getCenter() || centerRef.current
+      const stale = !force && distanceM(c, now) > Math.max(250, 0.25 * radiusRef.current)
+      if (r && !ctrl.signal.aborted && !stale) {
         const l = { ...r, lat: c.lat, lng: c.lng }
         updateLabel(l)
         return l
       }
     } catch { /* the name is a nicety; the pin still works */ }
-    finally { if (labelAbort.current === ctrl) setLabelBusy(false) }
+    finally {
+      if (labelAbort.current === ctrl) {
+        labelPending.current = null
+        setLabelBusy(false)
+      }
+    }
     return null
   }
 
   function scheduleLabel(c) {
     clearTimeout(labelTimer.current)
     if (labelFits(labelRef.current, c, radiusRef.current)) return
-    labelTimer.current = setTimeout(() => lookupLabel(c), 1000)
+    // Already asking about this spot (a resize nudged the map a few metres).
+    if (labelFits(labelPending.current, c, radiusRef.current)) return
+    labelTimer.current = setTimeout(() => {
+      // Ask about where the pin is now, not where it was a second ago.
+      const now = mapRef.current?.getCenter() || c
+      if (labelFits(labelRef.current, now, radiusRef.current)) return
+      if (labelFits(labelPending.current, now, radiusRef.current)) return
+      lookupLabel(now)
+    }, 1000)
   }
 
   // ── Map events ────────────────────────────────────────────────────────────
-  function handleMoveStart({ byUser }) {
+  function handleMoveStart({ byUser, zoomOnly }) {
     if (!byUser) return
-    followGps.current = false
     cancelEnterSearch()
     if (listOpen) setListOpen(false)
+    // Zooming keeps the pin where it is, so it doesn't count as placing it.
+    if (zoomOnly) return
+    followGps.current = false
+    steerTo.current = null
+    // Still waiting on a prompt the user has moved past (Firefox never answers
+    // a dismissed one): stop, rather than spin and then report a failure.
+    if (!locateGotFix.current) locateAbort.current?.abort()
   }
 
-  function handleMoveEnd({ center: c, byUser }) {
+  function handleMoveEnd({ center: c, byUser, zoomOnly }) {
     centerRef.current = c
     setCenter(c)
-    if (byUser) {
+    if (byUser && !zoomOnly) {
       if (!touched) setTouched(true)
       if (help?.tone === 'ok') setHelp(null)
     }
@@ -234,23 +277,26 @@ export default function LocationSheet({ initialArea, defaultRadius = DEFAULT_RAD
     const r = RADIUS_STEPS[Number(e.target.value)] ?? DEFAULT_RADIUS
     radiusRef.current = r
     setRadius(r)
-    mapRef.current?.fitRadius(null, r)
+    // Fit around where the map is heading, so a radius change mid-pan doesn't
+    // park the pin halfway.
+    mapRef.current?.fitRadius(steerTo.current, r)
   }
 
   // ── Use my location ───────────────────────────────────────────────────────
   const pushDebug = ev => setDebugLines(lines => [...lines.slice(-30), ev])
 
-  async function handleLocate() {
+  async function handleLocate({ auto = false } = {}) {
     locateAbort.current?.abort()
     cancelEnterSearch()
     const ctrl = new AbortController()
     locateAbort.current = ctrl
     followGps.current = true
+    locateGotFix.current = false
     setLocating(true)
     setHelp(null)
     setShowWhy(false)
     say('Finding your location…')
-    if (debug) setDebugLines([{ tMs: 0, type: `context ${ctx.kind}${ctx.app ? ` (${ctx.app})` : ''}` }])
+    if (debug) setDebugLines([{ tMs: 0, type: `context ${ctx.kind}${ctx.app ? ` (${ctx.app})` : ''}${auto ? ' auto' : ''}` }])
     try {
       const fix = await getBestPosition({
         signal: ctrl.signal,
@@ -258,35 +304,60 @@ export default function LocationSheet({ initialArea, defaultRadius = DEFAULT_RAD
         rememberDenial: ctx.ios,
         onEvent: debug ? pushDebug : undefined,
         onFix: f => {
+          locateGotFix.current = true
           setGpsFix(f)
-          if (followGps.current && !f.stale) mapRef.current?.setCenter(f)
+          if (followGps.current && !f.stale) {
+            steerTo.current = { lat: f.lat, lng: f.lng }
+            mapRef.current?.setCenter(f)
+          }
         },
       })
-      setGpsFix({ lat: fix.lat, lng: fix.lng, accuracy: fix.accuracy })
-      if (followGps.current) {
-        mapRef.current?.setCenter(fix)
-        centerRef.current = { lat: fix.lat, lng: fix.lng }
-        setTouched(true)
-        lookupLabel(centerRef.current, { force: true })
-      }
+      storage.del(AUTO_REFUSED_KEY)
+      const point = { lat: fix.lat, lng: fix.lng }
+      setGpsFix({ ...point, accuracy: fix.accuracy })
       const acc = formatAccuracy(fix.accuracy)
       let h
-      if (fix.approximate) {
-        h = { ...locationHelp(ctx, 'approximate', { accuracy: acc }), tone: 'warn' }
+      if (!followGps.current) {
+        // The user placed the pin themselves while we waited. Say how far
+        // their pin is from them, and let them jump to the fix if they want.
+        const pin = mapRef.current?.getCenter() || centerRef.current
+        const away = distanceM(point, pin)
+        h = away > Math.max(fix.accuracy, 500)
+          ? { text: `Your location is ${formatRadius(Math.round(away / 100) * 100)} from the pin.`, action: 'move-pin', tone: 'warn' }
+          : { text: `Located to ${acc}.`, tone: 'ok' }
       } else if (fix.stale) {
+        // An old cached fix is shown as the blue dot only. It must never
+        // become a room's centre by a single tap.
         const mins = Math.max(1, Math.round(fix.ageMs / 60000))
         const ago = mins >= 90 ? `${Math.round(mins / 60)} h` : `${mins} min`
-        h = { text: `This is where your phone last knew it was, ${ago} ago. Move the map to where you are.`, tone: 'warn' }
-      } else if (accuracyLevel(fix.accuracy, radiusRef.current) !== 'good') {
-        h = { ...locationHelp(ctx, 'rough', { accuracy: acc }), tone: 'warn' }
+        h = { text: `Your phone only knows where it was ${ago} ago (the blue dot). Move the map to where you are.`, tone: 'warn' }
       } else {
-        h = { text: `Located to ${acc}.`, tone: 'ok' }
+        steerTo.current = point
+        mapRef.current?.setCenter(fix)
+        centerRef.current = point
+        lookupLabel(point, { force: true })
+        if (fix.approximate) {
+          // A point kilometres off is where to start dragging, not a centre:
+          // the button waits until the user has moved the map or searched.
+          h = { ...locationHelp(ctx, 'approximate', { accuracy: acc }), tone: 'warn' }
+        } else {
+          setTouched(true)
+          h = accuracyLevel(fix.accuracy, radiusRef.current) !== 'good'
+            ? { ...locationHelp(ctx, 'rough', { accuracy: acc }), tone: 'warn' }
+            : { text: `Located to ${acc}.`, tone: 'ok' }
+        }
       }
       setHelp(h)
       say(h.text)
     } catch (e) {
       if (e?.kind === 'aborted') return
-      const outcome = e?.kind === 'denied' ? (e.earlier ? 'denied-earlier' : 'denied') : (e?.kind || 'unavailable')
+      let outcome = e?.kind === 'denied' ? (e.earlier ? 'denied-earlier' : 'denied') : (e?.kind || 'unavailable')
+      if (outcome === 'denied' && !ctx.ios) {
+        // Chrome reports a dismissed prompt as a denial, but nothing is blocked.
+        const p = await Promise.resolve(navigator.permissions?.query?.({ name: 'geolocation' })).catch(() => null)
+        if (p?.state === 'prompt') outcome = 'dismissed'
+      }
+      if (auto && (outcome === 'denied' || outcome === 'dismissed' || outcome === 'denied-earlier')) storage.set(AUTO_REFUSED_KEY, '1')
       const h = locationHelp(ctx, outcome)
       setHelp({ ...h, tone: 'warn' })
       say(h.text)
@@ -296,6 +367,17 @@ export default function LocationSheet({ initialArea, defaultRadius = DEFAULT_RAD
   }
 
   async function handleHelpAction() {
+    if (help?.action === 'move-pin' && gpsFix) {
+      const point = { lat: gpsFix.lat, lng: gpsFix.lng }
+      steerTo.current = point
+      centerRef.current = point
+      mapRef.current?.setCenter(point)
+      setTouched(true)
+      lookupLabel(point, { force: true })
+      setHelp(null)
+      say('Pin moved to your location.')
+      return
+    }
     if (help?.action === 'open-safari') {
       if (!openInSafari(ctx)) { setHelp(h => h && { ...h, action: 'copy-link' }); return }
       // The hand-off fails silently when an app update breaks it. If we are
@@ -389,6 +471,7 @@ export default function LocationSheet({ initialArea, defaultRadius = DEFAULT_RAD
     labelAbort.current?.abort()
     updateLabel({ name: r.label, countryCode: r.countryCode, lat: r.lat, lng: r.lng })
     centerRef.current = { lat: r.lat, lng: r.lng }
+    steerTo.current = { lat: r.lat, lng: r.lng }
     setTouched(true)
     setHelp(null)
     mapRef.current?.setCenter(r)
@@ -447,7 +530,8 @@ export default function LocationSheet({ initialArea, defaultRadius = DEFAULT_RAD
   // ── Confirm ───────────────────────────────────────────────────────────────
   async function handleConfirm() {
     if (!touched || confirming) return
-    const c = mapRef.current?.getCenter() || centerRef.current
+    // Mid-pan the map reports a point in between; confirm where it is going.
+    const c = steerTo.current || mapRef.current?.getCenter() || centerRef.current
     const r = radiusRef.current
     let l = labelRef.current
     if (!l || distanceM(l, c) > Math.max(250, 0.25 * r)) {
@@ -474,7 +558,6 @@ export default function LocationSheet({ initialArea, defaultRadius = DEFAULT_RAD
       locationName: (d <= r && l?.name) || 'Selected area',
       countryCode: (d <= 50000 && l?.countryCode) || null,
     }
-    saveLastArea(area)
     onConfirm(area)
   }
 
@@ -589,24 +672,21 @@ export default function LocationSheet({ initialArea, defaultRadius = DEFAULT_RAD
         {mapStatus === 'error' && (
           <p className="loc-map-error">The map didn't load. You can still search for a place.</p>
         )}
-        {(!touched || locating) && (
-          <span className="loc-chip" aria-hidden="true">
-            {locating ? 'Finding you…' : 'Move the map to place the pin'}
-          </span>
+        {!touched && !locating && (
+          <span className="loc-chip" aria-hidden="true">Move the map to place the pin</span>
         )}
         <button
           type="button"
           className={`loc-locate${locating ? ' is-busy' : ''}`}
-          aria-label="Use my location"
           aria-busy={locating || undefined}
-          title="Use my location"
-          onClick={handleLocate}
+          onClick={() => handleLocate()}
         >
           {locating ? <span className="loc-locate-spinner" aria-hidden="true" /> : (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M12 2v3M12 19v3M2 12h3M19 12h3" /><circle cx="12" cy="12" r="6.5" /><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none" />
             </svg>
           )}
+          <span>{locating ? 'Finding you…' : 'Use my location'}</span>
         </button>
       </PickerMap>
 
@@ -648,7 +728,7 @@ export default function LocationSheet({ initialArea, defaultRadius = DEFAULT_RAD
             {help.why && showWhy && <p className="loc-help-why">{help.why}</p>}
             {help.action && (
               <button type="button" className="loc-help-action" onClick={handleHelpAction}>
-                {help.action === 'open-safari' ? 'Open in Safari' : 'Copy link'}
+                {help.action === 'move-pin' ? 'Move the pin here' : help.action === 'open-safari' ? 'Open in Safari' : 'Copy link'}
               </button>
             )}
           </div>
@@ -670,7 +750,7 @@ export default function LocationSheet({ initialArea, defaultRadius = DEFAULT_RAD
           disabled={!touched || confirming}
           onClick={handleConfirm}
         >
-          {confirming ? 'Setting area…' : 'Use this area'}
+          {confirming ? 'Setting area…' : confirmLabel}
         </button>
 
         {debug && (

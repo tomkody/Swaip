@@ -46,11 +46,15 @@ function SheetLoading({ onCancel }) {
   )
 }
 
-export default function LocationField({ ref, value, onChange, labelId, invalid = false, defaultRadius = DEFAULT_RADIUS }) {
+// open({ confirmLabel }) lets a page reuse the sheet as the last step of
+// "Create Room", with a button that says what happens next.
+export default function LocationField({ ref, value, onChange, onCancel, labelId, invalid = false, defaultRadius = DEFAULT_RADIUS }) {
   const [open, setOpen] = useState(false)
+  const [confirmLabel, setConfirmLabel] = useState(null)
   const textId = useId()
 
-  useImperativeHandle(ref, () => ({ open: () => setOpen(true) }), [])
+  const show = (opts = {}) => { setConfirmLabel(opts.confirmLabel || null); setOpen(true) }
+  useImperativeHandle(ref, () => ({ open: show }), [])
 
   useEffect(() => {
     const idle = window.requestIdleCallback || (fn => setTimeout(fn, 1500))
@@ -60,6 +64,7 @@ export default function LocationField({ ref, value, onChange, labelId, invalid =
   }, [])
 
   const close = () => setOpen(false)
+  const cancel = () => { close(); onCancel?.() }
 
   return (
     <>
@@ -71,7 +76,7 @@ export default function LocationField({ ref, value, onChange, labelId, invalid =
         aria-labelledby={[labelId, `${textId}-title`, `${textId}-sub`].filter(Boolean).join(' ')}
         aria-invalid={invalid || undefined}
         onPointerDown={() => { loadSheet().catch(() => {}) }}
-        onClick={() => setOpen(true)}
+        onClick={() => show()}
       >
         <span className="lf-thumb" aria-hidden="true">
           <svg width="56" height="56" viewBox="0 0 56 56">
@@ -95,12 +100,13 @@ export default function LocationField({ ref, value, onChange, labelId, invalid =
       </button>
 
       {open && (
-        <Suspense fallback={<SheetLoading onCancel={close} />}>
+        <Suspense fallback={<SheetLoading onCancel={cancel} />}>
           <LocationSheet
             initialArea={value}
             defaultRadius={defaultRadius}
-            onConfirm={area => { onChange(area); close() }}
-            onCancel={close}
+            confirmLabel={confirmLabel || undefined}
+            onConfirm={area => { close(); onChange(area) }}
+            onCancel={cancel}
           />
         </Suspense>
       )}
