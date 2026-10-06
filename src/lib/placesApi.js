@@ -92,6 +92,49 @@ function placesLang() {
   return (typeof navigator !== 'undefined' && navigator.language ? navigator.language : 'en').split('-')[0]
 }
 
+// Turn coordinates into a short place name + country code for display. Tries
+// Google Geocoding (needs the Geocoding API enabled on the key), then falls back
+// to OpenStreetMap Nominatim, then to a safe default. Never blocks room creation.
+// Returns { name, countryCode }.
+export async function reverseGeocode(lat, lng) {
+  const lang = placesLang()
+  // 1) Google Geocoding (direct in dev, via proxy in prod — same response shape)
+  {
+    try {
+      const r = DEV_KEY
+        ? await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=${lang}&key=${DEV_KEY}`)
+        : await fetch(`${PROXY}?op=revgeo&lat=${lat}&lng=${lng}&lang=${lang}`)
+      const d = await r.json()
+      if (d.status === 'OK' && d.results?.length) {
+        const comps = d.results[0].address_components || []
+        const find = (...types) => comps.find(c => types.some(t => c.types.includes(t)))?.long_name
+        const country = comps.find(c => c.types.includes('country'))?.short_name || null
+        const name = find('neighborhood') || find('sublocality', 'sublocality_level_1') ||
+          find('locality') || find('postal_town') || find('administrative_area_level_2')
+        if (name) return { name, countryCode: country ? country.toUpperCase() : null }
+      }
+    } catch { /* fall through to Nominatim */ }
+  }
+  // 2) Nominatim fallback
+  try {
+    const ctrl = new AbortController()
+    const t = setTimeout(() => ctrl.abort(), 6000)
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+      { headers: { 'Accept-Language': lang }, signal: ctrl.signal }
+    )
+    clearTimeout(t)
+    const d = await r.json()
+    const a = d.address || {}
+    return {
+      name: a.neighbourhood || a.suburb || a.city_district || a.city || a.town || a.village || 'My Location',
+      countryCode: (a.country_code || '').toUpperCase() || null,
+    }
+  } catch {
+    return { name: 'My Location', countryCode: null }
+  }
+}
+
 // Haversine distance in km between two lat/lng points
 function haversine(lat1, lng1, lat2, lng2) {
   const R = 6371
@@ -222,6 +265,36 @@ function formatPlace(place, centerLat, centerLng) {
     closesAt,
     lat: loc.latitude ?? null,
     lng: loc.longitude ?? null,
+  }
+}
+
+// Geocode a city/address text → { lat, lng, name }
+export async function geocodeLocation(query) {
+  const res = DEV_KEY
+    ? await fetch(`${BASE}/places:searchText`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': DEV_KEY,
+          'X-Goog-FieldMask': 'places.id,places.displayName,places.location',
+        },
+        body: JSON.stringify({ textQuery: query, languageCode: placesLang() }),
+      })
+    : await fetch(`${PROXY}?op=geocode&q=${encodeURIComponent(query)}&lang=${placesLang()}`)
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(errorMessage(err) || `Geocode failed: ${res.status}`)
+  }
+
+  const data = await res.json()
+  const place = data.places?.[0]
+  if (!place) throw new Error(`No results found for "${query}"`)
+
+  return {
+    lat: place.location.latitude,
+    lng: place.location.longitude,
+    name: place.displayName?.text || query,
   }
 }
 

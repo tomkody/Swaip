@@ -30,9 +30,7 @@ export function useDialogFocus(ref, { open = true, onClose, fallbackFocus } = {}
     document.addEventListener('keydown', onKey)
     return () => {
       document.removeEventListener('keydown', onKey)
-      // A disabled opener can't take focus (e.g. Create Room while the room
-      // is being created), so use the fallback rather than drop to <body>.
-      const back = opener && opener.isConnected && opener !== document.body && !opener.disabled
+      const back = opener && opener.isConnected && opener !== document.body
         ? opener
         : (fallbackFocus ? document.querySelector(fallbackFocus) : null)
       back?.focus?.({ preventScroll: true })
