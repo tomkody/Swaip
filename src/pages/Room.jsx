@@ -20,7 +20,15 @@ import { ACTIVITY_CATEGORIES } from '../lib/activities'
 import { FOOD_CATEGORIES } from '../lib/foodCategories'
 import { track } from '../lib/analytics'
 import { isPushSupported, enablePushForRoom, notifyRoom } from '../lib/push'
+import { buildInvitePayload, INVITE_MESSAGES } from '../lib/invite'
 import './Room.css'
+
+// Room types where the creator starts swiping straight after sending the
+// invite instead of sitting on "Waiting for your partner" until they join.
+// Swipes are append-only and matches are computed from both players' votes in
+// any order, so the partner simply catches up. (Conversations and Color Duel
+// keep the old waiting screen.)
+const QUICK_START = new Set(['movies', 'series', 'food', 'activities'])
 
 // Centred room states (join, waiting, transitions, errors) share one shell:
 // the app header on top, the content centred in the remaining height.
@@ -68,6 +76,35 @@ function loadProgress(id) {
   try { return JSON.parse(sessionStorage.getItem(progressKey(id)) || 'null') } catch { return null }
 }
 
+// One line above the deck while the partner is on their way: it says why
+// there are no matches yet and resends the link in one tap.
+function InviteNudge({ roomId, type, group, onEnablePush }) {
+  const [copied, setCopied] = useState(false)
+  const url = `${window.location.origin}/room/${roomId}`
+  const send = () => {
+    track('invite_shared', { type, from: 'deck' })
+    if (navigator.share) {
+      navigator.share(buildInvitePayload(INVITE_MESSAGES[type] || 'Swipe with me on Swaip', url)).catch(() => {})
+      return
+    }
+    navigator.clipboard?.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) }).catch(() => {})
+  }
+  return (
+    <div className="invite-nudge">
+      <span className="invite-nudge-dot" aria-hidden="true" />
+      <span className="invite-nudge-text">{group ? 'Waiting for the others to join' : 'Waiting for your partner to join'}</span>
+      {onEnablePush && (
+        <button type="button" className="invite-nudge-bell" onClick={onEnablePush} aria-label="Notify me when they join or we match" title="Notify me when they join or we match">
+          <Icon name="bell" size={15} />
+        </button>
+      )}
+      <button type="button" className="invite-nudge-btn" onClick={send}>
+        {copied ? 'Link copied' : 'Send link'}
+      </button>
+    </div>
+  )
+}
+
 export default function Room() {
   const { roomId } = useParams()
   const navigate = useNavigate()
@@ -95,18 +132,31 @@ export default function Room() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [partnerJoined, setPartnerJoined] = useState(!isCreator || (location.state?.isSolo || false) || Boolean(saved?.partnerIn))
-  const [partnerJustJoined, setPartnerJustJoined] = useState(false)
+  const [partnerJustJoined, setPartnerJustJoined] = useState(false)  // a toast, not a screen
+  // The creator has left the invite screen and is swiping while the partner
+  // is on their way.
+  const [started, setStarted] = useState(Boolean(saved?.started))
   const [hasJoined, setHasJoined] = useState(isCreator || Boolean(saved?.joined))
   const [invited, setInvited] = useState(false)       // shared / copied / showed QR at least once
   const [remindSolo, setRemindSolo] = useState(false) // one-time nudge before going solo
   const [pushState, setPushState] = useState('idle')  // idle | enabled | denied
   const [othersProgress, setOthersProgress] = useState(null) // invitee: how many picks the creator already made
   const userToken = useRef(getRoomToken(roomId))
+  const qrOpenRef = useRef(false)
+  const shareAttemptRef = useRef(false)
+  const copyTimerRef = useRef(null)
+  useEffect(() => () => clearTimeout(copyTimerRef.current), [])
 
   useEffect(() => {
     async function init() {
       try {
-        const roomData = await getRoom(roomId)
+        // The create page hands over the row it just inserted, saving a round
+        // trip on the creator's way in. Only right after creating: history
+        // keeps the state, and on a later reload the row could be out of date
+        // (a food room that has moved on to places).
+        const handed = location.state?.room
+        const fresh = handed?.id === roomId && Date.now() - (location.state?.handedAt || 0) < 15000
+        const roomData = fresh ? handed : await getRoom(roomId)
         if (!roomData) {
           setError('Room not found')
           setLoading(false)
@@ -147,6 +197,9 @@ export default function Room() {
   // Detect the partner joining (creator only, non-solo). Realtime fires instantly
   // when the joiner flips the room to 'active'; a slow poll is kept only as a
   // fallback in case a realtime event is missed.
+  // The creator is never held up by this any more: the join shows as a short
+  // toast over whatever they are doing. Realtime does not replay an event
+  // missed while the phone was in WhatsApp, so coming back checks at once.
   useEffect(() => {
     if (!isCreator || partnerJoined || isSolo) return
     let fired = false
@@ -154,19 +207,40 @@ export default function Room() {
     const trigger = () => {
       if (fired || !active) return
       fired = true
+      setPartnerJoined(true)
       setPartnerJustJoined(true)
-      setTimeout(() => {
-        setPartnerJustJoined(false)
-        setPartnerJoined(true)
-      }, 2500)
+    }
+    const check = async () => {
+      const latest = await getRoom(roomId).catch(() => null)
+      if (latest?.status === 'active') trigger()
     }
     const unsub = subscribeToRoomActive(roomId, trigger)
-    const interval = setInterval(async () => {
-      const latest = await getRoom(roomId)
-      if (latest?.status === 'active') trigger()
-    }, 5000)
-    return () => { active = false; unsub(); clearInterval(interval) }
+    const interval = setInterval(check, 5000)
+    const onVisible = () => { if (document.visibilityState === 'visible') check() }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+    return () => {
+      active = false
+      unsub()
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+    }
   }, [isCreator, partnerJoined, isSolo, roomId])
+
+  useEffect(() => {
+    if (!partnerJustJoined) return
+    const t = setTimeout(() => setPartnerJustJoined(false), 3000)
+    return () => clearTimeout(t)
+  }, [partnerJustJoined])
+
+  // Fetch the next few posters before their cards mount, so each swipe lands
+  // on a ready image instead of a blank one.
+  useEffect(() => {
+    for (const m of movies.slice(currentIndex + 1, currentIndex + 4)) {
+      if (m?.poster) { const img = new Image(); img.src = m.poster }
+    }
+  }, [movies, currentIndex])
 
   // ── Invite funnel: the invitee just opened the link ──────────────────────
   // 64% of rooms never get a second swiper and today we can't tell whether the
@@ -368,12 +442,13 @@ export default function Room() {
         // the join screen, which is what actually calls markRoomActive.
         joined: hasJoined,
         partnerIn: isCreator && partnerJoined,
+        started: isCreator && (started || shareAttemptRef.current),
         index: currentIndex,
         liked: liked.map(m => m.id),
         done: isDone,
       }))
     } catch { /* storage blocked — progress just won't survive a reload */ }
-  }, [room, roomId, isCreator, partnerJoined, hasJoined, currentIndex, liked, isDone])
+  }, [room, roomId, isCreator, partnerJoined, started, hasJoined, currentIndex, liked, isDone])
 
   if (loading) {
     return (
@@ -458,67 +533,112 @@ export default function Room() {
     )
   }
 
-  // Partner just joined — show transition screen to creator
-  if (partnerJustJoined) {
-    return (
-      <RoomShell>
-        <div className="partner-joined">
-          <div className="partner-joined-icon">🎉</div>
-          <h2>Your friend joined!</h2>
-          <p>Starting now…</p>
-          <div className="partner-joined-bar"><div className="partner-joined-fill" /></div>
-        </div>
-      </RoomShell>
-    )
+  const quickStart = QUICK_START.has(room.type)
+  const enablePush = async () => {
+    const result = await enablePushForRoom(roomId, userToken.current)
+    setPushState(result === 'enabled' ? 'enabled' : result)
+    if (result === 'enabled') track('push_enabled', { type: room.type })
   }
+  // While the partner is on their way: say so and resend the link in one tap,
+  // on the deck and on the results if the creator finishes first.
+  const nudge = isCreator && !isSolo && !partnerJoined && (
+    <div className="room-banner">
+      <InviteNudge
+        roomId={roomId}
+        type={room.type}
+        group={getRoomPlayerCount(room) > 2}
+        onEnablePush={isPushSupported() && pushState === 'idle' ? enablePush : null}
+      />
+    </div>
+  )
+  const toast = partnerJustJoined && (
+    <div className="partner-toast" role="status">
+      <span aria-hidden="true">🎉</span> Your friend joined!
+    </div>
+  )
 
-  // Creator waiting for partner — one primary action (send the invite), two
-  // equal secondary ones inside InvitePanel, then quiet text options.
-  if (isCreator && !partnerJoined) {
+  // Creator, before anyone joined: the invite step. For the quick-start types
+  // sending the invite IS the way forward; the deck opens right behind it.
+  if (isCreator && !partnerJoined && !started) {
     const pc = getRoomPlayerCount(room)
     const category = room.type === 'movies' ? '🎬 Movies' : room.type === 'series' ? '📺 TV Series' : room.type === 'activities' ? '🎯 Activities' : room.type === 'food' ? '🍽️ Food & Drinks' : room.type === 'colorgame' ? '🎨 Color Duel' : `💬 ${room.topic_name}`
+    const swipeWord = room.type === 'food' || room.type === 'activities' ? 'picking' : 'swiping'
     return (
       <RoomShell>
         <div className="waiting">
           <div className="waiting-category">{category}</div>
-          <div className="waiting-pulse" aria-hidden="true"><span></span><span></span><span></span></div>
-          <h1 className="waiting-title">{pc > 2 ? 'Waiting for your group' : 'Waiting for your partner'}</h1>
+          <h1 className="waiting-title">{pc > 2 ? 'Invite your group' : 'Invite your partner'}</h1>
           <p className="waiting-sub">
-            {pc > 2 ? 'Send everyone the link. You all swipe the same deck.' : 'Send them the link. You both swipe the same deck.'}
+            {quickStart
+              ? (pc > 2 ? `Send everyone the link and start ${swipeWord} right away. They catch up when they open it.` : `Send them the link and start ${swipeWord} right away. They catch up when they open it.`)
+              : (pc > 2 ? 'Send everyone the link. You all swipe the same deck.' : 'Send them the link. You both swipe the same deck.')}
           </p>
-          <InvitePanel roomId={roomId} type={room.type} onInteract={() => setInvited(true)} />
+          <InvitePanel
+            roomId={roomId}
+            type={room.type}
+            onInteract={(kind, detail) => {
+              setInvited(true)
+              // A QR code has to stay on screen until the partner scans it.
+              if (kind === 'qr') { qrOpenRef.current = detail; clearTimeout(copyTimerRef.current); return }
+              if (!quickStart || qrOpenRef.current) return
+              // iOS Safari may reload the tab behind the share sheet, and then
+              // the share's promise never settles. Remember the attempt so the
+              // reload lands on the deck rather than back on this screen.
+              if (kind === 'share-start' || kind === 'share-cancelled') {
+                shareAttemptRef.current = kind === 'share-start'
+                try {
+                  const key = progressKey(roomId)
+                  const p = JSON.parse(sessionStorage.getItem(key) || '{}')
+                  sessionStorage.setItem(key, JSON.stringify({ ...p, creator: true, started: shareAttemptRef.current }))
+                } catch { /* storage blocked */ }
+                return
+              }
+              // Sending the link moves the creator on; after a copy, leave
+              // "Link copied" up for a moment first.
+              if (kind === 'share') setStarted(true)
+              if (kind === 'copy') {
+                clearTimeout(copyTimerRef.current)
+                copyTimerRef.current = setTimeout(() => setStarted(true), 900)
+              }
+            }}
+          />
 
           <div className="waiting-quiet">
             {isPushSupported() && pushState !== 'enabled' && (
               <button
                 className="waiting-text-btn"
-                onClick={async () => {
-                  const result = await enablePushForRoom(roomId, userToken.current)
-                  setPushState(result === 'enabled' ? 'enabled' : result)
-                  if (result === 'enabled') track('push_enabled', { type: room.type })
-                }}
+                onClick={enablePush}
               >
                 <Icon name="bell" size={16} />
-                {pushState === 'denied' ? 'Notifications are blocked in your browser' : 'Notify me when they join'}
+                {pushState === 'denied' ? 'Notifications are blocked in your browser' : quickStart ? 'Notify me when they join or we match' : 'Notify me when they join'}
               </button>
             )}
             {pushState === 'enabled' && (
               <p className="push-enabled-note"><Icon name="check" size={15} /> We’ll ping you, feel free to close this tab.</p>
             )}
-            {remindSolo && !invited && (
-              <p className="skip-wait-reminder">Don’t forget to send the link to your partner.</p>
+            {quickStart ? (
+              <button className="btn btn-secondary waiting-start-btn" onClick={() => setStarted(true)}>
+                {invited ? `Start ${swipeWord}` : `Start ${swipeWord}, invite later`}
+                <Icon name="arrowRight" size={16} />
+              </button>
+            ) : (
+              <>
+                {remindSolo && !invited && (
+                  <p className="skip-wait-reminder">Don’t forget to send the link to your partner.</p>
+                )}
+                <button
+                  className="waiting-text-btn"
+                  onClick={() => {
+                    // First tap without ever sharing → gently remind, don't start yet.
+                    if (!invited && !remindSolo) { setRemindSolo(true); return }
+                    setStarted(true)
+                  }}
+                >
+                  {remindSolo && !invited ? 'Start solo anyway' : 'Start swiping on my own'}
+                  <Icon name="arrowRight" size={16} />
+                </button>
+              </>
             )}
-            <button
-              className="waiting-text-btn"
-              onClick={() => {
-                // First tap without ever sharing → gently remind, don't start yet.
-                if (!invited && !remindSolo) { setRemindSolo(true); return }
-                setPartnerJoined(true)
-              }}
-            >
-              {remindSolo && !invited ? 'Start solo anyway' : 'Start swiping on my own'}
-              <Icon name="arrowRight" size={16} />
-            </button>
           </div>
         </div>
       </RoomShell>
@@ -527,29 +647,29 @@ export default function Room() {
 
   // Conversation mode
   if (room.type === 'conversations') {
-    return <ConversationRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} />
+    return <>{toast}<ConversationRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} /></>
   }
 
   // Activities mode
   if (room.type === 'activities') {
-    return <ActivityRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} />
+    return <>{toast}<ActivityRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} /></>
   }
 
   // Food mode
   if (room.type === 'food') {
-    return <FoodRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} />
+    return <>{toast}<FoodRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} /></>
   }
 
   // Color Duel mini-game
   if (room.type === 'colorgame') {
-    return <ColorGameRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} />
+    return <>{toast}<ColorGameRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} /></>
   }
 
   if (isDone || currentIndex >= movies.length) {
     // Show the ranking straight away with what we already know; RankingView
     // reconciles with the database in the background.
     const matchesToShow = isSolo ? liked : matches
-    return <RankingView matches={matchesToShow} liked={liked} room={room} movies={movies} onDone={() => navigate('/')} isSolo={isSolo} />
+    return <>{toast}<RankingView banner={nudge || null} matches={matchesToShow} liked={liked} room={room} movies={movies} onDone={() => navigate('/')} isSolo={isSolo} /></>
   }
 
   // Movie mode — swipe UI
@@ -573,6 +693,9 @@ export default function Room() {
         )}
         <span className="room-progress">{currentIndex + 1} / {movies.length}</span>
       </AppHeader>
+
+      {toast}
+      {nudge}
 
       {partnerDone && !isSolo && currentIndex >= partnerStop && (() => {
         // "They're done" on its own reads like "you may as well stop too". Say

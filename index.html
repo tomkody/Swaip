@@ -77,6 +77,11 @@
     <meta name="twitter:image" content="https://swaip.app/og-image.png" />
     <meta name="twitter:image:alt" content="Swaip couple decision app" />
 
+    <!-- Open the connections a room needs while the app is still downloading:
+         the database (an invited partner's first stop) and the poster host. -->
+    <link rel="preconnect" href="%VITE_SUPABASE_URL%" crossorigin />
+    <link rel="preconnect" href="https://image.tmdb.org" />
+
     <!-- Fonts — preconnect first, then stylesheet -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

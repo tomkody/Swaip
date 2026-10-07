@@ -19,7 +19,7 @@ test('two players match on the first card', async ({ browser }) => {
   const b = await partner.newPage()
 
   const url = await createMovieRoom(a)
-  await expect(a.getByText('Waiting for your partner')).toBeVisible()
+  await expect(a.getByText('Invite your partner')).toBeVisible()
 
   await b.goto(url)
   await b.getByRole('button', { name: /Start swiping/i }).click()
@@ -39,6 +39,38 @@ test('two players match on the first card', async ({ browser }) => {
   // Whoever swiped second gets it via recordSwipe, the other via realtime.
   await expect(a.getByText("It's a Match!")).toBeVisible()
   await expect(b.getByText("It's a Match!")).toBeVisible()
+
+  await creator.close()
+  await partner.close()
+})
+
+// The creator no longer waits for the partner: they swipe first, the partner
+// joins later and catches up, and the match still lands for both.
+test('the creator swipes before the partner joins and they still match', async ({ browser }) => {
+  const creator = await browser.newContext()
+  const partner = await browser.newContext()
+  const a = await creator.newPage()
+  const b = await partner.newPage()
+
+  const url = await createMovieRoom(a)
+  await a.getByRole('button', { name: /Start swiping, invite later/i }).click()
+  await expect(a.getByText('Waiting for your partner to join')).toBeVisible()
+  const likeA = a.getByRole('button', { name: 'Like' })
+  await expect(likeA).toBeVisible()
+  const titleA = await a.locator('.card-title').first().textContent()
+  await likeA.click()
+
+  await b.goto(url)
+  await b.getByRole('button', { name: /Start swiping/i }).click()
+  await expect(a.getByText('Your friend joined!')).toBeVisible()
+  const likeB = b.getByRole('button', { name: 'Like' })
+  await expect(likeB).toBeVisible()
+  const titleB = await b.locator('.card-title').first().textContent()
+  expect(titleB).toBe(titleA)
+  await likeB.click()
+
+  await expect(b.getByText("It's a Match!")).toBeVisible()
+  await expect(a.getByText("It's a Match!")).toBeVisible()
 
   await creator.close()
   await partner.close()

@@ -9,7 +9,9 @@
 // So: watch the position for a few seconds, keep the most accurate fix seen,
 // and return early once it's good enough.
 
-const TARGET_ACCURACY_M = 60      // good enough to stop waiting
+// 100, not 60: an indoor Wi-Fi fix reports about 65 m, so a 60 m target made
+// nearly every attempt indoors sit out the full wait for nothing.
+const TARGET_ACCURACY_M = 100     // good enough to stop waiting
 const MAX_WAIT_MS = 9000          // ceiling before we take the best we have
 
 // `onFix` is called with the accuracy of each better fix as it arrives. A weak
@@ -25,12 +27,15 @@ export function getBestPosition({ maxWaitMs = MAX_WAIT_MS, targetAccuracy = TARG
     let watchId = null
     let timer = null
     let settled = false
+    let grace = null      // after "no fix yet", how long to keep hoping
+    let lastErr = null
 
     const finish = () => {
       if (settled) return
       settled = true
       if (watchId != null) navigator.geolocation.clearWatch(watchId)
       clearTimeout(timer)
+      clearTimeout(grace)
       if (best) resolve({ lat: best.coords.latitude, lng: best.coords.longitude, accuracy: best.coords.accuracy })
       else reject(new Error('timeout'))
     }
@@ -46,12 +51,29 @@ export function getBestPosition({ maxWaitMs = MAX_WAIT_MS, targetAccuracy = TARG
         if (best.coords.accuracy <= targetAccuracy) finish()
       },
       (err) => {
+        // POSITION_UNAVAILABLE (2) is often iOS saying "no fix yet, still
+        // trying", so give it a few seconds to turn into a fix. A device that
+        // simply has no location (a laptop with Wi-Fi off) still fails in 3 s,
+        // not after the full wait.
+        if (err?.code === 2 && !settled) {
+          if (best) return               // keep improving; the timer above ends it
+          lastErr = err
+          if (!grace) grace = setTimeout(() => {
+            if (settled || best) return
+            settled = true
+            if (watchId != null) navigator.geolocation.clearWatch(watchId)
+            clearTimeout(timer)
+            reject(lastErr)
+          }, 3000)
+          return
+        }
         // Keep waiting if we already have something usable; otherwise fail.
         if (best) { finish(); return }
         if (settled) return
         settled = true
         if (watchId != null) navigator.geolocation.clearWatch(watchId)
         clearTimeout(timer)
+        clearTimeout(grace)
         reject(err)
       },
       { enableHighAccuracy: true, maximumAge: 0, timeout: maxWaitMs }

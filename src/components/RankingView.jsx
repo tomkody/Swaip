@@ -100,7 +100,9 @@ function PlatformBadges({ platforms, title, roomType }) {
   )
 }
 
-export default function RankingView({ matches: initialMatches, liked = [], room, movies = [], onDone, isSolo = false, playerCount = 2, voteCounts = {}, isFallback = false }) {
+// banner: optional node shown under the header (the room passes an invite
+// nudge while the partner hasn't joined yet).
+export default function RankingView({ matches: initialMatches, liked = [], room, movies = [], onDone, isSolo = false, playerCount = 2, voteCounts = {}, isFallback = false, banner = null }) {
   const userToken = useRef(getRoomToken(room.id))
   // Movie/series rooms may legitimately contain TMDB ids 1999/2999 — only treat
   // the real DONE sentinel as one there (undefined → the default set elsewhere).
@@ -448,6 +450,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
     return (
       <div className="rv-page">
         <div className="rv-header"><AppHeader /></div>
+        {banner}
 
         {/* Hero */}
         <div className="rv-results-hero">
@@ -849,6 +852,7 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
   return (
     <div className="rv-page">
       <div className="rv-header"><AppHeader /></div>
+        {banner}
       <div className="rv-ranking-header">
         <h2>{maxPicks > 0 ? `Pick Your Top ${maxPicks}` : 'Nothing to rank yet'}</h2>
         <p>{maxPicks > 0

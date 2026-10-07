@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { accuracyLevel, formatAccuracy, accuracyBucket } from '../geo'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { accuracyLevel, formatAccuracy, accuracyBucket, getBestPosition } from '../geo'
 
 describe('accuracyLevel', () => {
   it('treats a normal GPS fix as good', () => {
@@ -31,5 +31,45 @@ describe('accuracyBucket', () => {
     expect(accuracyBucket(3000)).toBe('1-5km')
     expect(accuracyBucket(20000)).toBe('5km+')
     expect(accuracyBucket(null)).toBe('unknown')
+  })
+})
+
+describe('getBestPosition', () => {
+  let geo
+  beforeEach(() => {
+    vi.useFakeTimers()
+    geo = { watchPosition(ok, err) { geo.ok = ok; geo.err = err; return 1 }, clearWatch: vi.fn() }
+    vi.stubGlobal('navigator', { geolocation: geo })
+  })
+  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
+  const fix = accuracy => ({ coords: { latitude: 50, longitude: 14, accuracy } })
+
+  it('stops at once on a typical indoor Wi-Fi fix (~65 m)', async () => {
+    const p = getBestPosition()
+    geo.ok(fix(65))
+    await expect(p).resolves.toMatchObject({ accuracy: 65 })
+  })
+
+  it('treats "no fix yet" (code 2) as still trying when a fix follows', async () => {
+    const p = getBestPosition()
+    geo.err({ code: 2 })
+    await vi.advanceTimersByTimeAsync(1500)
+    geo.ok(fix(40))
+    await expect(p).resolves.toMatchObject({ accuracy: 40 })
+  })
+
+  it('gives up on a device with no location after 3 s, not the full wait', async () => {
+    const p = getBestPosition()
+    const check = expect(p).rejects.toMatchObject({ code: 2 })
+    geo.err({ code: 2 })
+    await vi.advanceTimersByTimeAsync(3000)
+    await check
+    expect(geo.clearWatch).toHaveBeenCalled()
+  })
+
+  it('still fails at once when location is refused', async () => {
+    const p = getBestPosition()
+    geo.err({ code: 1 })
+    await expect(p).rejects.toMatchObject({ code: 1 })
   })
 })

@@ -84,13 +84,33 @@ async function loadStreamable(region) {
   return streamable.length ? streamable : null
 }
 
+// The streamable pool for a region, cached for the session like the movie
+// pool: the create page starts the read and the room reuses it. Resolves to
+// null when there is no catalog to use (the caller falls back to the static list).
+const poolCache = new Map()
+export function loadSeriesPool(region) {
+  const reg = region || detectRegion()
+  const key = CATALOG_REGIONS.includes(reg) ? reg : 'US'
+  if (poolCache.has(key)) return poolCache.get(key)
+  const promise = (async () => {
+    let streamable = await loadStreamable(key)
+    if (!streamable && key !== 'US') streamable = await loadStreamable('US')
+    return streamable
+  })()
+  poolCache.set(key, promise)
+  // Keep only a pool that loaded. A failed early read (a blip while the create
+  // page opened) must not pin this tab to the static list for the session,
+  // while the partner's phone reads the catalog: two different decks.
+  const evict = () => { if (poolCache.get(key) === promise) poolCache.delete(key) }
+  promise.then(pool => { if (!pool) evict() }, evict)
+  return promise
+}
+
 export async function fetchTopRatedSeries(roomId, platforms = [], genres = [], region) {
   if (!supabase) return fetchStaticSeries(roomId, platforms, genres)
   try {
     // Prefer the room's pinned region so both partners swipe the SAME deck.
-    const reg = (region || detectRegion())
-    let streamable = await loadStreamable(CATALOG_REGIONS.includes(reg) ? reg : 'US')
-    if (!streamable && reg !== 'US') streamable = await loadStreamable('US')
+    const streamable = await loadSeriesPool(region)
     if (!streamable) return fetchStaticSeries(roomId, platforms, genres)
 
     const pool = filterPool(streamable, platforms, genres)

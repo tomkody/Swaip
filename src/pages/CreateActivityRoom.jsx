@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { prefetchRoomPage } from '../lib/prefetch'
 import { createActivityRoom, getUserToken } from '../lib/room'
 import { geocodeLocation, reverseGeocode } from '../lib/placesApi'
 import { getBestPosition, accuracyLevel, formatAccuracy, accuracyAdvice, accuracyReason, accuracyBucket, platformTag } from '../lib/geo'
@@ -17,7 +18,13 @@ const RADIUS_OPTIONS = [
 ]
 
 export default function CreateActivityRoom() {
+  // Download the room page (and the deck) while options are being picked.
+  useEffect(() => {
+    prefetchRoomPage()
+  }, [])
+
   const navigate = useNavigate()
+  const labelPending = useRef(null)   // the reverse geocode still on its way, if any
   const [locationText, setLocationText] = useState('')
   const [pinnedCoords, setPinnedCoords] = useState(null)
   const [geoAccuracy, setGeoAccuracy] = useState(null)   // metres, from the GPS fix
@@ -47,12 +54,22 @@ export default function CreateActivityRoom() {
       )
     }
 
+    // The room can be created right away; the area name fills in when the
+    // reverse geocode answers (Create waits for it briefly if needed).
     function applyCoords(latitude, longitude) {
       setPinnedCoords({ lat: latitude, lng: longitude })
-      reverseGeocode(latitude, longitude)
-        .then(({ name }) => setLocationText(name))
-        .catch(() => setLocationText('My Location'))
-        .finally(() => setGeoLoading(false))
+      setLocationText('')          // drop anything typed before the pin; the area name replaces it
+      setGeoLoading(false)
+      const pending = reverseGeocode(latitude, longitude)
+        .then(({ name }) => {
+          if (labelPending.current === pending) setLocationText(name)
+          return { name }
+        })
+        .catch(() => {
+          if (labelPending.current === pending) setLocationText('My Location')
+          return null
+        })
+      labelPending.current = pending
     }
 
     if (!navigator.geolocation) {
@@ -106,7 +123,11 @@ export default function CreateActivityRoom() {
       if (pinnedCoords) {
         lat = pinnedCoords.lat
         lng = pinnedCoords.lng
-        locationName = locationText.trim() || 'My Location'
+        // The area name may still be on its way: give it a moment, not forever.
+        const label = !locationText.trim() && labelPending.current
+          ? await Promise.race([labelPending.current, new Promise(r => setTimeout(() => r(null), 1500))])
+          : null
+        locationName = locationText.trim() || label?.name || 'My Location'
       } else {
         try {
           const geo = await geocodeLocation(locationText.trim())
@@ -128,7 +149,7 @@ export default function CreateActivityRoom() {
       }
 
       const room = await createActivityRoom({ lat, lng, locationName, radius, solo, playerCount })
-      navigate(`/room/${room.id}`, { state: { isCreator: true, isSolo: solo } })
+      navigate(`/room/${room.id}`, { state: { isCreator: true, isSolo: solo, room, handedAt: Date.now() } })
     } catch (err) {
       console.error('Failed to create room:', err)
       const msg = err?.message || err?.details || err?.hint || JSON.stringify(err) || 'Unknown error'
@@ -206,7 +227,7 @@ export default function CreateActivityRoom() {
               type="text"
               placeholder="City or address…"
               value={locationText}
-              onChange={e => { setLocationText(e.target.value); setPinnedCoords(null); setGeoAccuracy(null); setError(null) }}
+              onChange={e => { labelPending.current = null; setLocationText(e.target.value); setPinnedCoords(null); setGeoAccuracy(null); setError(null) }}
               onKeyDown={e => e.key === 'Enter' && handleCreate()}
             />
             <button

@@ -112,26 +112,32 @@ async function loadStreamable(region) {
 }
 
 // The full streamable pool for a region (catalog → US catalog → static list).
-// Cached per region for the session: the create page loads it for the live
-// "N titles" count and the room reuses it seconds later without a second fetch.
+// Cached per region for the session: the create page starts the read while
+// people pick options, and the room reuses it without a second fetch.
 const poolCache = new Map()
 export async function loadMoviePool(region) {
   const reg = region || detectRegion()
   const key = CATALOG_REGIONS.includes(reg) ? reg : 'US'
   if (poolCache.has(key)) return poolCache.get(key)
+  let fellBack = false
   const promise = (async () => {
     if (!supabase) return loadStaticMovies()
     try {
       let streamable = await loadStreamable(key)
       if (!streamable && key !== 'US') streamable = await loadStreamable('US')
-      return streamable || loadStaticMovies()
+      if (streamable) return streamable
     } catch (e) {
       console.error('[tmdb] catalog read failed, using static list:', e)
-      return loadStaticMovies()
     }
+    fellBack = true
+    return loadStaticMovies()
   })()
   poolCache.set(key, promise)
-  promise.catch(() => poolCache.delete(key))
+  // Keep only a catalog that loaded. A failed early read (the create page now
+  // starts it) must not pin this tab to the static list while the partner's
+  // phone reads the catalog: two different decks, no matches.
+  const evict = () => { if (poolCache.get(key) === promise) poolCache.delete(key) }
+  promise.then(() => { if (fellBack) evict() }, evict)
   return promise
 }
 

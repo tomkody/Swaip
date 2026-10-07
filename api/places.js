@@ -78,9 +78,12 @@ const usageKey = op => `usage:${op}:${new Date().toISOString().slice(0, 10)}`
 // is spent. Counts before calling Google, so a failed call still costs a slot —
 // for a safety cap, erring high is the right direction.
 //
-// Read-then-write, so two simultaneous calls can both read the same number and
-// undercount by one. That doesn't matter for a cap whose job is to stop a
-// runaway, and avoiding it would mean a database function to install.
+// Compare-and-swap, so simultaneous calls can't all read the same number and
+// count as one. That used to be an occasional off-by-one between two users;
+// since one food room searches every matched category at once, it would have
+// let a single room's searches through as a single count. The UPDATE only
+// matches the count it read (Postgres re-checks the WHERE under the row lock),
+// so of several racers exactly one wins each value and the rest read again.
 async function reserveDailyCall(op) {
   const max = dailyMax(op)
   if (!max) return true
@@ -88,16 +91,28 @@ async function reserveDailyCall(op) {
   if (!sb) return true              // no counter available — the per-IP limit still applies
   try {
     const key = usageKey(op)
-    const { data, error } = await sb
-      .from('places_cache').select('payload').eq('cache_key', key).maybeSingle()
-    if (error) { if (error.code === 'PGRST205') cacheDead = true; return true }
-    const used = Number(data?.payload?.n || 0)
-    if (used >= max) return false
-    await sb.from('places_cache').upsert(
-      { cache_key: key, payload: { n: used + 1 }, created_at: new Date().toISOString() },
-      { onConflict: 'cache_key' }
-    )
-    return true
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const { data, error } = await sb
+        .from('places_cache').select('payload').eq('cache_key', key).maybeSingle()
+      if (error) { if (error.code === 'PGRST205') cacheDead = true; return true }
+      const used = Number(data?.payload?.n || 0)
+      if (used >= max) return false
+      const row = { payload: { n: used + 1 }, created_at: new Date().toISOString() }
+      if (!data) {
+        const { error: insertError } = await sb.from('places_cache').insert({ cache_key: key, ...row })
+        if (!insertError) return true
+        if (insertError.code === '23505') continue   // another call created today's row first
+        return true
+      }
+      const { data: won, error: updateError } = await sb
+        .from('places_cache').update(row)
+        .eq('cache_key', key).eq('payload->>n', String(used))
+        .select('cache_key')
+      if (updateError) return true
+      if (won && won.length > 0) return true
+      // Lost the race for this value: read the new count and try again.
+    }
+    return true                     // extreme contention: fail open, as before
   } catch {
     return true                     // never let the meter take the feature down
   }

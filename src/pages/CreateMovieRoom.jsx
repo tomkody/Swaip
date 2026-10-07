@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { prefetchRoomPage } from '../lib/prefetch'
+import { loadMoviePool } from '../lib/tmdb'
+import { detectRegion } from '../lib/regions'
 import { createMovieRoom, getUserToken } from '../lib/room'
 import { PLATFORMS, platformChipStyle } from '../lib/platforms'
 import ModeToggle from '../components/ModeToggle'
@@ -9,6 +12,12 @@ import Icon from '../components/Icon'
 import { GENRES } from '../lib/genres'
 
 export default function CreateMovieRoom() {
+  // Download the room page (and the deck) while options are being picked.
+  useEffect(() => {
+    prefetchRoomPage()
+    loadMoviePool(detectRegion()).catch(() => {})
+  }, [])
+
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [solo, setSolo] = useState(false)
@@ -48,7 +57,7 @@ export default function CreateMovieRoom() {
     try {
       getUserToken()
       const room = await createMovieRoom(platforms, genres, { solo })
-      navigate(`/room/${room.id}`, { state: { isCreator: true, isSolo: solo } })
+      navigate(`/room/${room.id}`, { state: { isCreator: true, isSolo: solo, room, handedAt: Date.now() } })
     } catch (err) {
       console.error('Failed to create room:', err)
       alert('Failed to create room. Please try again.')

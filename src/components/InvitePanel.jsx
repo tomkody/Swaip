@@ -19,22 +19,25 @@ export default function InvitePanel({ roomId, type = 'movies', onInteract }) {
       .then(setQr).catch(() => {})
   }, [showQr, qr, url])
 
+  // onInteract(kind, detail): 'share-start' as the share sheet opens, 'share'
+  // and 'copy' once the link really went out, 'share-cancelled' when the
+  // sheet was closed, and 'qr' with
+  // whether the code is now showing (it has to stay up for the partner).
   function handleShare() {
     track('invite_shared', { type })
-    onInteract?.()
-    if (navigator.share) {
-      navigator.share(buildInvitePayload(message, url)).catch(() => {})
-    } else {
-      handleCopy()
-    }
+    if (!navigator.share) { handleCopy(); return }
+    onInteract?.('share-start')
+    navigator.share(buildInvitePayload(message, url))
+      .then(() => onInteract?.('share'))
+      .catch(() => onInteract?.('share-cancelled'))
   }
 
   function handleCopy() {
     track('invite_copied', { type })
-    onInteract?.()
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+      onInteract?.('copy')
     }).catch(() => {})
   }
 
@@ -52,7 +55,7 @@ export default function InvitePanel({ roomId, type = 'movies', onInteract }) {
         </button>
         <button
           className="invite-secondary"
-          onClick={() => { setShowQr(v => !v); onInteract?.() }}
+          onClick={() => { const next = !showQr; setShowQr(next); onInteract?.('qr', next) }}
           aria-expanded={showQr}
         >
           <Icon name="qr" size={16} />

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import confetti from 'canvas-confetti'
 import { prefersReducedMotion } from '../lib/motion'
 import HomeLogo from './HomeLogo'
@@ -73,11 +73,15 @@ function parseRoomActivityData(room) {
 
 // ─── Main ActivityRoom component ──────────────────────────────────────────────
 
+const catsKey = id => `swaip_cats_${id}`
+
 export default function ActivityRoom({ room, onDone, isSolo = false }) {
   const userToken = useRef(getRoomToken(room.id))
-  const location = parseLocation(room.topic_id)
+  // Memoised: a fresh object every render changed fetchAndTransitionToPlaces'
+  // identity each time, which kept restarting the partner fallback poll.
+  const location = useMemo(() => parseLocation(room.topic_id), [room.topic_id])
 
-  const ACTIVITY_CATEGORIES = categoriesForRoom(room.id)
+  const ACTIVITY_CATEGORIES = useMemo(() => categoriesForRoom(room.id), [room.id])
 
   const initialData = parseRoomActivityData(room)
   const [phase, setPhase] = useState(initialData.phase)
@@ -89,8 +93,20 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   const [isCompromise, setIsCompromise] = useState(initialData.compromise)
   const playerCount = isSolo ? 1 : (initialData.playerCount || getRoomPlayerCount(room))
 
+  // A confirmed pick survives a reload. The creator now usually confirms
+  // before the partner arrives and then invites from the waiting screen, and
+  // iOS Safari can reload the tab behind the share sheet: without this they
+  // came back to an empty picker for a round they had already confirmed.
+  const [resumed] = useState(() => {
+    if (isSolo || initialData.phase !== 'categories') return null
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(catsKey(room.id)) || 'null')
+      return saved?.round === initialData.round && Array.isArray(saved.ids) ? saved.ids : null
+    } catch { return null }
+  })
+
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [selectedCats, setSelectedCats] = useState(new Set())
+  const [selectedCats, setSelectedCats] = useState(() => new Set(resumed || []))
   const [matches, setMatches] = useState([])
   const matchesRef = useRef([])
   useEffect(() => { matchesRef.current = matches }, [matches])
@@ -104,13 +120,18 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   const [transitioning, setTransitioning] = useState(false)
   const [fetchingPlaces, setFetchingPlaces] = useState(false)
   const [placesError, setPlacesError] = useState(null)
-  const [waitingForPartner, setWaitingForPartner] = useState(false)
+  const [waitingForPartner, setWaitingForPartner] = useState(Boolean(resumed))
 
   const isDoneRef = useRef(false)
   const placesTransitionFiredRef = useRef(false)
-  const waitStartRef = useRef(0)
+  const waitStartRef = useRef(resumed ? Date.now() : 0)
+  // When this client first saw that everyone had confirmed. The takeover clock
+  // runs from here: now that the creator picks before the partner even opens
+  // the link, timing it from our own confirm made the creator take over (and
+  // pay for a second Places search) while the partner was still fetching.
+  const allDoneSeenRef = useRef(0)
   const pendingSwipesRef = useRef([])
-  const likedCatIdsRef = useRef(new Set())
+  const likedCatIdsRef = useRef(new Set(resumed || []))
   const rejectedBrandsRef = useRef(new Set())
   const historyRef = useRef([])            // this session's place swipes, newest last (undo)
   const [canUndo, setCanUndo] = useState(false)
@@ -288,17 +309,16 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     let fetchError = null
     if (location?.lat != null && matchedCats.length > 0) {
       // Fetch per-category lists, then interleave round-robin (park, coffee, park, coffee…)
-      const perCat = []
-      for (const cat of matchedCats) {
-        try {
-          const fetched = await fetchNearbyPlaces(location.lat, location.lng, location.radius || 5000, cat.types, room.id)
-          perCat.push(fetched)
-        } catch (err) {
-          console.error('[ActivityRoom] fetch error for', cat.label, err)
-          fetchError = fetchError || err   // remember the first real API/network failure
-          perCat.push([])
-        }
-      }
+      // All categories at once: one after another cost a full round trip each.
+      // Results stay in matchedCats order, so the interleave is unchanged.
+      const settled = await Promise.allSettled(matchedCats.map(cat =>
+        fetchNearbyPlaces(location.lat, location.lng, location.radius || 5000, cat.types, room.id)))
+      const perCat = settled.map((r, i) => {
+        if (r.status === 'fulfilled') return r.value
+        console.error('[ActivityRoom] fetch error for', matchedCats[i].label, r.reason)
+        fetchError = fetchError || r.reason   // remember the first real API/network failure
+        return []
+      })
       const seenIds = new Set()
       const maxLen = Math.max(0, ...perCat.map(a => a.length))
       for (let i = 0; i < maxLen; i++) {
@@ -375,6 +395,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   // room row carries the round number, and each client resets when it sees a
   // higher one than its own.
   const startNewRound = useCallback((nextRound) => {
+    allDoneSeenRef.current = 0
     placesTransitionFiredRef.current = false
     likedCatIdsRef.current = new Set()
     setRound(nextRound)
@@ -405,6 +426,9 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       pendingSwipesRef.current = []
 
       const isAllDone = await recordSwipe(room.id, userToken.current, catDoneId, 'right', playerCount)
+      try {
+        sessionStorage.setItem(catsKey(room.id), JSON.stringify({ round: roundRef.current, ids: [...likedCatIdsRef.current] }))
+      } catch { /* storage blocked: a reload just shows the picker again */ }
       if (isAllDone) {
         const resolved = await resolveMatchedCategories()
         // Nothing to search for means the vote read came back empty — don't
@@ -453,14 +477,14 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
         setMatchedCategories(data.matchedCategories)
         setIsCompromise(data.compromise)
         setTransitioning(true)
-        // Brief celebration, then show places
+        // A short beat to read what you matched on, then the places
         setTimeout(() => {
           setPlaces(data.places)
           setPhase('places')
           setCurrentIndex(0)
           setTransitioning(false)
           setWaitingForPartner(false)
-        }, 2200)
+        }, 600)
       }
     })
     // Realtime can be missed (backgrounded phone). The empty-places screen is a
@@ -506,6 +530,9 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
             Date.now() - waitStartRef.current > takeoverAfter) {
           const likers = await countItemLikers(room.id, catDoneId)
           if (likers != null && likers >= playerCount) {
+            // Give the last confirmer their full head start to write the places.
+            if (!allDoneSeenRef.current) { allDoneSeenRef.current = Date.now(); return }
+            if (Date.now() - allDoneSeenRef.current <= takeoverAfter) return
             const resolved = await resolveMatchedCategories()
             if (resolved.cats.length > 0) {
               await fetchAndTransitionToPlaces(resolved.cats, { compromise: resolved.compromise })

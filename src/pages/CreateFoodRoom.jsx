@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { prefetchRoomPage } from '../lib/prefetch'
 import { createFoodRoom, getUserToken } from '../lib/room'
 import { geocodeLocation, reverseGeocode } from '../lib/placesApi'
 import { getBestPosition, accuracyLevel, formatAccuracy, accuracyAdvice, accuracyReason, accuracyBucket, platformTag } from '../lib/geo'
@@ -19,10 +20,14 @@ const RADIUS_OPTIONS = [
 // Reverse-geocode coordinates → ISO country code (via Nominatim, non-blocking)
 async function detectCountryCode(lat, lng) {
   try {
+    // Only feeds the local-cuisine tile, so it must never hold up Create.
+    const ctrl = new AbortController()
+    const t = setTimeout(() => ctrl.abort(), 1500)
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-      { headers: { 'Accept-Language': 'en' } }
+      { headers: { 'Accept-Language': 'en' }, signal: ctrl.signal }
     )
+    clearTimeout(t)
     const data = await res.json()
     return (data.address?.country_code || '').toUpperCase() || null
   } catch {
@@ -31,7 +36,13 @@ async function detectCountryCode(lat, lng) {
 }
 
 export default function CreateFoodRoom() {
+  // Download the room page (and the deck) while options are being picked.
+  useEffect(() => {
+    prefetchRoomPage()
+  }, [])
+
   const navigate = useNavigate()
+  const labelPending = useRef(null)   // the reverse geocode still on its way, if any
   const [locationText, setLocationText] = useState('')
   const [pinnedCoords, setPinnedCoords] = useState(null)
   const [geoAccuracy, setGeoAccuracy] = useState(null)   // metres, from the GPS fix
@@ -62,13 +73,24 @@ export default function CreateFoodRoom() {
       )
     }
 
-    // After GPS succeeds: reverse-geocode for human label + country code
+    // After GPS succeeds: the room can be created right away; the area name
+    // and country code fill in when the reverse geocode answers (Create waits
+    // for it briefly if it is still on its way).
     function applyCoords(latitude, longitude) {
       setPinnedCoords({ lat: latitude, lng: longitude })
-      reverseGeocode(latitude, longitude)
-        .then(({ name, countryCode }) => { setLocationText(name); setPinnedCountryCode(countryCode) })
-        .catch(() => { setLocationText('My Location'); setPinnedCountryCode(null) })
-        .finally(() => setGeoLoading(false))
+      setLocationText('')          // drop anything typed before the pin; the area name replaces it
+      setPinnedCountryCode(null)
+      setGeoLoading(false)
+      const pending = reverseGeocode(latitude, longitude)
+        .then(({ name, countryCode }) => {
+          if (labelPending.current === pending) { setLocationText(name); setPinnedCountryCode(countryCode) }
+          return { name, countryCode }
+        })
+        .catch(() => {
+          if (labelPending.current === pending) { setLocationText('My Location'); setPinnedCountryCode(null) }
+          return null
+        })
+      labelPending.current = pending
     }
 
     if (!navigator.geolocation) {
@@ -122,8 +144,12 @@ export default function CreateFoodRoom() {
       if (pinnedCoords) {
         lat = pinnedCoords.lat
         lng = pinnedCoords.lng
-        locationName = locationText.trim() || 'My Location'
-        countryCode = pinnedCountryCode // already fetched during GPS lookup
+        // The area name may still be on its way: give it a moment, not forever.
+        const label = !locationText.trim() && labelPending.current
+          ? await Promise.race([labelPending.current, new Promise(r => setTimeout(() => r(null), 1500))])
+          : null
+        locationName = locationText.trim() || label?.name || 'My Location'
+        countryCode = pinnedCountryCode || label?.countryCode || null
       } else {
         try {
           const geo = await geocodeLocation(locationText.trim())
@@ -145,7 +171,7 @@ export default function CreateFoodRoom() {
       }
 
       const room = await createFoodRoom({ lat, lng, locationName, radius, countryCode, solo, playerCount })
-      navigate(`/room/${room.id}`, { state: { isCreator: true, isSolo: solo } })
+      navigate(`/room/${room.id}`, { state: { isCreator: true, isSolo: solo, room, handedAt: Date.now() } })
     } catch (err) {
       console.error('Failed to create room:', err)
       const msg = err?.message || err?.details || err?.hint || JSON.stringify(err) || 'Unknown error'
@@ -223,7 +249,7 @@ export default function CreateFoodRoom() {
               type="text"
               placeholder="City or address…"
               value={locationText}
-              onChange={e => { setLocationText(e.target.value); setPinnedCoords(null); setGeoAccuracy(null); setPinnedCountryCode(null); setError(null) }}
+              onChange={e => { labelPending.current = null; setLocationText(e.target.value); setPinnedCoords(null); setGeoAccuracy(null); setPinnedCountryCode(null); setError(null) }}
               onKeyDown={e => e.key === 'Enter' && handleCreate()}
             />
             <button
