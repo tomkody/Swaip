@@ -28,21 +28,54 @@ const CATEGORIES = [
 //   { src: '/landing/hero.jpg', mobile: '/landing/hero-mobile.jpg' }
 const HERO_IMAGE = null
 
-// Hero demo: a three-card stack that plays itself on load — a film, a
-// series and a place, each swiped right with its own stamp — so the principle
-// is visible in a few seconds without a big interactive card. Posters come
-// from the bundled catalog; the two place photos are local files.
-const DEMO = [
-  { title: 'Forrest Gump',        meta: 'Film · Drama · 1994',          stamp: 'Want to watch',       poster: 'https://m.media-amazon.com/images/M/MV5BNDYwNzVjMTItZmU5YS00YjQ5LTljYjgtMjY2NDVmYWMyNWFmXkEyXkFqcGc@._V1_QL75_UX500' },
-  { title: 'Breaking Bad',        meta: 'Series · Drama · 2008',        stamp: 'Want to watch',       poster: 'https://m.media-amazon.com/images/M/MV5BMzU5ZGYzNmQtMTdhYy00OGRiLTg0NmQtYjVjNzliZTg1ZGE4XkEyXkFqcGc@._V1_QL75_UX500.jpg' },
-  // One pass so the demo shows both directions: Dexter goes left with the
-  // red NOPE-style stamp the app uses.
-  { title: 'Dexter',              meta: 'Series · Crime · 2006',        stamp: "Don't want to watch", no: true, poster: 'https://m.media-amazon.com/images/M/MV5BNTE5ZGI2N2UtYmFiMi00ZGIxLWI1ZTMtYWJkZDYxNDZiOTQwXkEyXkFqcGc@._V1_QL75_UX500.jpg' },
-  // Local photo slots — drop the files at these paths in public/landing/.
-  // Until a file exists the card shows a tinted tile with the emoji.
-  { title: 'Restaurant U Prince', meta: 'Place · Restaurant · Prague', stamp: 'Want to visit',       poster: '/landing/u-prince.jpg',      emoji: '🍽️', focus: '50% 55%' },
-  { title: 'Prague Castle',       meta: 'Place · Landmark · Prague',   stamp: 'Want to visit',       poster: '/landing/prague-castle.jpg', emoji: '🏰', focus: '35% 35%' },
-]
+// Hero demo: a small stack that plays itself on load, so the principle is
+// visible in a few seconds without a big interactive card. Every play deals a
+// fresh random hand from these well-known films and series (places stay out
+// of the demo for now). Posters come from TMDB, credited in the footer.
+const TMDB_IMG = 'https://image.tmdb.org/t/p/w500'
+const DEMO_POOL = [
+  ['Film',   'The Shawshank Redemption', 'Drama',     1994, '/9cqNxx0GxF0bflZmeSMuL5tnGzr.jpg'],
+  ['Film',   'The Godfather',            'Crime',     1972, '/3bhkrj58Vtu7enYsRolD1fZdja1.jpg'],
+  ['Film',   'Forrest Gump',             'Drama',     1994, '/Cw4hIUIAmSYfK9QfaUW5igp9La.jpg'],
+  ['Film',   'Pulp Fiction',             'Crime',     1994, '/vQWk5YBFWF4bZaofAbv0tShwBvQ.jpg'],
+  ['Film',   'The Dark Knight',          'Action',    2008, '/qJ2tW6WMUDux911r6m7haRef0WH.jpg'],
+  ['Film',   'Inception',                'Sci-Fi',    2010, '/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg'],
+  ['Film',   'Titanic',                  'Romance',   1997, '/9xjZS2rlVxm8SFx8kPC3aIGCOYQ.jpg'],
+  ['Film',   'Interstellar',             'Sci-Fi',    2014, '/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg'],
+  ['Film',   'The Matrix',               'Sci-Fi',    1999, '/dXNAPwY7VrqMAo51EKhhCJfaGb5.jpg'],
+  ['Film',   'Fight Club',               'Drama',     1999, '/jSziioSwPVrOy9Yow3XhWIBDjq1.jpg'],
+  ['Film',   'The Lion King',            'Animation', 1994, '/sKCr78MXSLixwmZ8DyJLrpMsd15.jpg'],
+  ['Series', 'Breaking Bad',             'Crime',     2008, '/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg'],
+  ['Series', 'Game of Thrones',          'Fantasy',   2011, '/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg'],
+  ['Series', 'Friends',                  'Comedy',    1994, '/2koX1xLkpTQM4IZebYvKysFW1Nh.jpg'],
+  ['Series', 'Stranger Things',          'Sci-Fi',    2016, '/uOOtwVbSr4QDjAGIifLDwpb2Pdl.jpg'],
+  ['Series', 'The Office',               'Comedy',    2005, '/7DJKHzAi83BmQrWLrYYOqcoKfhR.jpg'],
+  ['Series', 'Dexter',                   'Crime',     2006, '/i8ORB1biusVy703lGxUi5Rle6zA.jpg'],
+  ['Series', 'Sherlock',                 'Crime',     2010, '/7WTsnHkbA0FaG6R9twfFde0I9hl.jpg'],
+  ['Series', 'Money Heist',              'Crime',     2017, '/reEMJA1uzscCbkpeRJeTT2bjqUp.jpg'],
+  ['Series', 'Wednesday',                'Mystery',   2022, '/9PFonBhy4cQy7Jz20NpMygczOkv.jpg'],
+].map(([kind, title, genre, year, path]) => ({ kind, title, meta: `${kind} · ${genre} · ${year}`, poster: TMDB_IMG + path, emoji: kind === 'Series' ? '📺' : '🎬' }))
+const DEMO_SIZE = 4
+
+// One hand: DEMO_SIZE titles with at least one film and one series, none of
+// the previous hand's, and one pass (never the opening card) so the demo
+// shows both directions with the red stamp the app uses.
+function dealDemo(previous = []) {
+  const shown = new Set(previous.map(d => d.title))
+  const pool = DEMO_POOL.filter(d => !shown.has(d.title))
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[pool[i], pool[j]] = [pool[j], pool[i]]
+  }
+  const hand = pool.slice(0, DEMO_SIZE)
+  for (const kind of ['Film', 'Series']) {
+    if (hand.some(d => d.kind === kind)) continue
+    const swap = pool.find(d => d.kind === kind)
+    if (swap) hand[DEMO_SIZE - 1] = swap
+  }
+  const pass = 1 + Math.floor(Math.random() * (DEMO_SIZE - 1))
+  return hand.map((d, i) => ({ ...d, no: i === pass, stamp: i === pass ? "Don't want to watch" : 'Want to watch' }))
+}
 
 // Timeline per card (ms): card settles → stamp pops → card flies off → next.
 // After the last card an "It's a match" pill shows and the deck refills. On
@@ -52,8 +85,8 @@ const DEMO = [
 const DEMO_T = { stamp: 1100, out: 1000, next: 480, done: 1800, refill: 700, hide: 650 }
 const DEMO_PLAYS = 1
 
-// Demo poster; if the image can't load (e.g. the local slot is still empty)
-// the card shows a tinted tile with the item's emoji instead of a broken image.
+// Demo poster; if the image can't load the card shows a tinted tile with the
+// item's emoji instead of a broken image.
 function DemoPoster({ item, eager }) {
   const [failed, setFailed] = useState(false)
   if (failed) return <div className="lp-card-noimg" aria-hidden="true">{item.emoji || '🎬'}</div>
@@ -127,6 +160,14 @@ export default function Landing() {
   const [demoPlays, setDemoPlays] = useState(1)
   const [demoLoop] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.('(min-width: 1024px)').matches)
   const [demoStatic] = useState(() => prefersReducedMotion())   // static stack, stamp visible, nothing moves
+  // The hand on screen and the next one, dealt ahead so its posters are
+  // already loaded when the stack refills (only wide screens loop).
+  const [hands, setHands] = useState(() => { const first = dealDemo(); return [first, dealDemo(first)] })
+  const DEMO = hands[0]
+  useEffect(() => {
+    if (!demoLoop || demoStatic) return
+    for (const d of hands[1]) { const img = new Image(); img.src = d.poster }
+  }, [hands, demoLoop, demoStatic])
   useEffect(() => {
     if (demoStatic) return
     if (demoStage === 'removed') return
@@ -139,14 +180,17 @@ export default function Landing() {
         else setDemoStage('done')
       }
       else if (demoStage === 'done') {
-        if (demoLoop || demoPlays < DEMO_PLAYS) { setDemoPlays(n => n + 1); setDemoActive(0); setDemoStage('refill') }
+        if (demoLoop || demoPlays < DEMO_PLAYS) {
+          setDemoPlays(n => n + 1); setDemoActive(0); setDemoStage('refill')
+          setHands(([, next]) => [next, dealDemo(next)])
+        }
         else setDemoStage('hide')
       }
       else if (demoStage === 'refill') setDemoStage('in')
       else setDemoStage('removed')
     }, wait)
     return () => clearTimeout(t)
-  }, [demoActive, demoStage, demoPlays, demoLoop, demoStatic])
+  }, [demoActive, demoStage, demoPlays, demoLoop, demoStatic, DEMO.length])
 
   const demoPressed = demoStage === 'stamp' || demoStage === 'out'
 
@@ -190,7 +234,7 @@ export default function Landing() {
             <p className="lp-sub">A film worth watching. A table worth sharing. Find something you both want to do.</p>
             <div className="lp-hero-cta">
               <a className="lp-btn lp-btn--lg" href="#explore" onClick={() => cta('hero')}>Find our plan <Arrow /></a>
-              <p className="lp-fineprint">No sign-up. Send a link. Start swiping.</p>
+              <p className="lp-fineprint"><strong className="lp-free">Completely free.</strong> No sign-up. Send a link. Start swiping.</p>
             </div>
             </div>
 
@@ -252,7 +296,7 @@ export default function Landing() {
             </div>
             </div>
             )}
-            <p className="lp-visually-hidden">Swipe right on a film, a series or a place you want. When your partner swipes right too, it’s a match.</p>
+            <p className="lp-visually-hidden">Swipe right on a film or a series you want. When your partner swipes right too, it’s a match.</p>
           </div>
         </section>
 

@@ -244,8 +244,13 @@
 }
 .lp-fineprint {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--lp-soft);
+}
+/* The one thing people check before tapping: it costs nothing. */
+.lp-free {
+  color: var(--lp-text);
+  font-weight: 700;
 }
 
 /* Self-playing demo stack. The wrapper collapses (grid-row 1fr → 0fr) once
