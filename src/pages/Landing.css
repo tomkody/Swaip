@@ -341,6 +341,13 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.15;
+  /* Some real titles run long (The Curse of the Black Pearl): two lines at most. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  text-wrap: balance;
 }
 .lp-card-meta { margin: 0; font-size: 11px; color: rgba(246, 245, 242, 0.78); }
 /* "Want to watch / visit" stamp: same green as the in-app YES stamp

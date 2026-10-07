@@ -30,7 +30,7 @@ const HERO_IMAGE = null
 
 // Hero demo: a small stack that plays itself on load, so the principle is
 // visible in a few seconds without a big interactive card. Every play deals a
-// fresh random hand from these well-known films and series (places stay out
+// fresh random hand from these 50 well-known films and series (places stay out
 // of the demo for now). Posters come from TMDB, credited in the footer.
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w500'
 const DEMO_POOL = [
@@ -45,6 +45,21 @@ const DEMO_POOL = [
   ['Film',   'The Matrix',               'Sci-Fi',    1999, '/dXNAPwY7VrqMAo51EKhhCJfaGb5.jpg'],
   ['Film',   'Fight Club',               'Drama',     1999, '/jSziioSwPVrOy9Yow3XhWIBDjq1.jpg'],
   ['Film',   'The Lion King',            'Animation', 1994, '/sKCr78MXSLixwmZ8DyJLrpMsd15.jpg'],
+  ['Film',   'Star Wars',                'Sci-Fi',    1977, '/fai0rspsNeJCS69wHNjOdWxcI7P.jpg'],
+  ['Film',   'The Lord of the Rings: The Fellowship of the Ring', 'Fantasy', 2001, '/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg'],
+  ['Film',   "Harry Potter and the Philosopher's Stone", 'Fantasy', 2001, '/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg'],
+  ['Film',   'Avatar',                   'Sci-Fi',    2009, '/gKY6q7SjCkAU6FqvqWybDYgUKIF.jpg'],
+  ['Film',   'Avengers: Endgame',        'Action',    2019, '/ulzhLuWrPK07P1YkdWQLZnQh1JL.jpg'],
+  ['Film',   'Jurassic Park',            'Adventure', 1993, '/d9mtMGQDLANKieb9PbD3yK7xxzo.jpg'],
+  ['Film',   'Back to the Future',       'Adventure', 1985, '/vN5B5WgYscRGcQpVhHl6p9DDTP0.jpg'],
+  ['Film',   "Schindler's List",         'Drama',     1993, '/sF1U4EUQS8YHUYjNl3pMGNIQyr0.jpg'],
+  ['Film',   'Gladiator',                'Action',    2000, '/aDb548BOkFfI4nFm0kx8A3Ezh7H.jpg'],
+  ['Film',   'Toy Story',                'Animation', 1995, '/uXDfjJbdP4ijW5hWSBrPrlKpxab.jpg'],
+  ['Film',   'Joker',                    'Crime',     2019, '/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg'],
+  ['Film',   'The Silence of the Lambs', 'Thriller',  1991, '/uS9m8OBk1A8eM9I042bx8XXpqAq.jpg'],
+  ['Film',   'Pirates of the Caribbean: The Curse of the Black Pearl', 'Adventure', 2003, '/poHwCZeWzJCShH7tOjg8RIoyjcw.jpg'],
+  ['Film',   'Spirited Away',            'Animation', 2001, '/jUo8cNmU400WtZiJss45HNXlQ2e.jpg'],
+  ['Film',   'Oppenheimer',              'Drama',     2023, '/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg'],
   ['Series', 'Breaking Bad',             'Crime',     2008, '/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg'],
   ['Series', 'Game of Thrones',          'Fantasy',   2011, '/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg'],
   ['Series', 'Friends',                  'Comedy',    1994, '/2koX1xLkpTQM4IZebYvKysFW1Nh.jpg'],
@@ -54,6 +69,21 @@ const DEMO_POOL = [
   ['Series', 'Sherlock',                 'Crime',     2010, '/7WTsnHkbA0FaG6R9twfFde0I9hl.jpg'],
   ['Series', 'Money Heist',              'Crime',     2017, '/reEMJA1uzscCbkpeRJeTT2bjqUp.jpg'],
   ['Series', 'Wednesday',                'Mystery',   2022, '/9PFonBhy4cQy7Jz20NpMygczOkv.jpg'],
+  ['Series', 'The Crown',                'Drama',     2016, '/1M876KPjulVwppEpldhdc8V4o68.jpg'],
+  ['Series', 'The Sopranos',             'Crime',     1999, '/rTc7ZXdroqjkKivFPvCPX0Ru7uw.jpg'],
+  ['Series', 'Chernobyl',                'Drama',     2019, '/hlLXt2tOPT6RRnjiUmoxyG1LTFi.jpg'],
+  ['Series', 'Squid Game',               'Thriller',  2021, '/1QdXdRYfktUSONkl1oD5gc6Be0s.jpg'],
+  ['Series', 'The Last of Us',           'Drama',     2023, '/dmo6TYuuJgaYinXBPjrgG9mB5od.jpg'],
+  ['Series', 'Peaky Blinders',           'Crime',     2013, '/vUUqzWa2LnHIVqkaKVlVGkVcZIW.jpg'],
+  ['Series', 'Better Call Saul',         'Crime',     2015, '/fC2HDm5t0kHl7mTm7jxMR31b7by.jpg'],
+  ['Series', 'The Big Bang Theory',      'Comedy',    2007, '/euKFiO5M125rpngFRBbSW83beeI.jpg'],
+  ['Series', 'How I Met Your Mother',    'Comedy',    2005, '/b34jPzmB0wZy7EjUZoleXOl2RRI.jpg'],
+  ['Series', 'The Witcher',              'Fantasy',   2019, '/AoGsDM02UVt0npBA8OvpDcZbaMi.jpg'],
+  ['Series', 'House of the Dragon',      'Fantasy',   2022, '/7V0Ebks0GgpKvQ7QbLAIdX5dos4.jpg'],
+  ['Series', 'The Mandalorian',          'Sci-Fi',    2019, '/sWgBv7LV2PRoQgkxwlibdGXKz1S.jpg'],
+  ['Series', 'Black Mirror',             'Sci-Fi',    2011, '/seN6rRfN0I6n8iDXjlSMk1QjNcq.jpg'],
+  ['Series', 'Narcos',                   'Crime',     2015, '/rTmal9fDbwh5F0waol2hq35U4ah.jpg'],
+  ['Series', 'The Boys',                 'Action',    2019, '/in1R2dDc421JxsoRWaIIAqVI2KE.jpg'],
 ].map(([kind, title, genre, year, path]) => ({ kind, title, meta: `${kind} · ${genre} · ${year}`, poster: TMDB_IMG + path, emoji: kind === 'Series' ? '📺' : '🎬' }))
 const DEMO_SIZE = 4
 
