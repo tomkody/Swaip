@@ -9,20 +9,18 @@ import SwipeCard from '../components/SwipeCard'
 import MatchModal from '../components/MatchModal'
 import MatchBurst from '../components/MatchBurst'
 import ConversationRoom from '../components/ConversationRoom'
-import ActivityRoom from '../components/ActivityRoom'
-import FoodRoom from '../components/FoodRoom'
+import PlacesRoom from '../components/PlacesRoom'
 import ColorGameRoom from '../components/ColorGameRoom'
 import RankingView from '../components/RankingView'
 import InvitePanel from '../components/InvitePanel'
 import AppHeader from '../components/AppHeader'
 import Icon from '../components/Icon'
-import { seededShuffle } from '../lib/random'
-import { ACTIVITY_CATEGORIES } from '../lib/activities'
-import { FOOD_CATEGORIES } from '../lib/foodCategories'
+import { roomCategories } from '../lib/roomCategories'
 import { track } from '../lib/analytics'
 import { isPushSupported, enablePushForRoom, notifyRoom } from '../lib/push'
 import { buildInvitePayload, INVITE_MESSAGES } from '../lib/invite'
 import { removeMatch } from '../lib/savedMatches'
+import { useMatchMoments, useSaveMatches, reconcileMatches } from '../lib/useMatchMoments'
 import './Room.css'
 
 // Room types where the creator starts swiping straight after sending the
@@ -119,10 +117,6 @@ export default function Room() {
   const [movies, setMovies] = useState([])
   const moviesRef = useRef([])
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [matchItem, setMatchItem] = useState(null)   // first match: the full modal
-  const [burstItem, setBurstItem] = useState(null)   // every later one: a short animation, nothing to close
-  const [bumpKey, setBumpKey] = useState(0)          // replays the counter bump once per burst
-  const [matchAnnounce, setMatchAnnounce] = useState('')
   const [matches, setMatches] = useState([])
   const [partnerDone, setPartnerDone] = useState(false)
   const [partnerStop, setPartnerStop] = useState(Infinity)  // partner's last-swiped deck position
@@ -265,23 +259,26 @@ export default function Room() {
   }, [isCreator, hasJoined, room, roomId])
 
   // Keep refs in sync so subscription callbacks always see current values
-  useEffect(() => { isDoneRef.current = isDone }, [isDone])
+  // On the results either way: "I'm done" or the deck ran out. A partner's
+  // match after that is counted and saved, but not celebrated or tracked.
+  useEffect(() => { isDoneRef.current = isDone || (movies.length > 0 && currentIndex >= movies.length) }, [isDone, movies.length, currentIndex])
   useEffect(() => { moviesRef.current = movies }, [movies])
   const matchesRef = useRef([])
   useEffect(() => { matchesRef.current = matches }, [matches])
+  // What the database check must not undo yet (see reconcileMatches).
+  const recentMatchRef = useRef(new Map())
+  const takingBackRef = useRef(new Set())
+  // Bumped by every local change to the matches; a database read that started
+  // before one is out of date and is thrown away.
+  const matchEditRef = useRef(0)
 
   // The first match of the room gets the full moment; after that a dialog to
   // close on every match got in the way, so later ones are a short animation.
-  // Reads refs and setters only, so the subscription's copy never goes stale.
-  const showMatch = item => {
-    if (matchesRef.current.some(m => m.id !== item.id)) {
-      setBurstItem(item)
-      setBumpKey(k => k + 1)
-      setMatchAnnounce(`It's a match: ${item.title}`)
-    } else {
-      setMatchItem(item)
-    }
-  }
+  // Same rule and same pieces as the food and activity rooms.
+  const moments = useMatchMoments(matchesRef)
+  const { show: showMatch, drop: dropMatch } = moments
+  const isDeckRoom = room?.type === 'movies' || room?.type === 'series'
+  useSaveMatches(matches, room?.type || 'movies', isDeckRoom && !isSolo)
 
   useEffect(() => {
     if (!room || (room.type !== 'movies' && room.type !== 'series') || isSolo) return
@@ -291,6 +288,8 @@ export default function Room() {
       if (matched) {
         // Always update real-time matches list (deduped). RankingView also
         // listens and polls, so a match landing after "I'm done" still shows.
+        matchEditRef.current++
+        recentMatchRef.current.set(matched.id, Date.now())
         setMatches((prev) => prev.find(m => m.id === matched.id) ? prev : [...prev, matched])
         // Only show match-modal overlay while still actively swiping
         if (!isDoneRef.current) {
@@ -302,14 +301,16 @@ export default function Room() {
       // Partner took back a like with undo: the match is gone for us too.
       isMatched: id => matchesRef.current.some(m => m.id === id),
       onUnmatch: id => {
+        matchEditRef.current++
+        recentMatchRef.current.delete(id)   // its grace period would bring it back
         setMatches(prev => prev.filter(m => m.id !== id))
-        setMatchItem(cur => (cur && cur.id === id ? null : cur))
-        setBurstItem(cur => (cur && cur.id === id ? null : cur))
+        dropMatch(id)
+        removeMatch(id, room.type)
       },
     })
 
     return () => unsubSwipes()
-  }, [room, roomId, isSolo])
+  }, [room, roomId, isSolo, showMatch, dropMatch])
 
   // The counter above the deck was built purely from realtime events, so a
   // dropped socket or a backgrounded tab left it under-reporting for the rest
@@ -319,12 +320,17 @@ export default function Room() {
     if (isSolo || !room || (room.type !== 'movies' && room.type !== 'series')) return
     let active = true
     const reconcile = async () => {
+      const edit = matchEditRef.current
       const ids = await fetchRoomMatches(roomId, userToken.current, 2, MOVIE_SENTINELS)
-      if (!active || !ids) return          // null = read failed; keep what we have
-      const fresh = moviesRef.current.filter(m => ids.includes(m.id))
-      setMatches(prev =>
-        prev.length === fresh.length && prev.every(p => ids.includes(p.id)) ? prev : fresh
-      )
+      if (!active || !ids || edit !== matchEditRef.current) return   // null = read failed; keep what we have
+      const prev = matchesRef.current
+      const next = reconcileMatches(prev, moviesRef.current, ids, {
+        recent: recentMatchRef.current, takingBack: takingBackRef.current,
+      })
+      if (next === prev) return
+      // Gone from the database: a take-back realtime never delivered.
+      for (const m of prev) if (!next.some(n => n.id === m.id)) removeMatch(m.id, room.type)
+      setMatches(next)
     }
     reconcile()
     const poll = setInterval(reconcile, 8000)
@@ -391,6 +397,8 @@ export default function Room() {
           entry.pending = recordSwipe(roomId, userToken.current, movie.id, direction)
           const isMatch = await entry.pending
           if (isMatch && !entry.undone) {
+            matchEditRef.current++
+            recentMatchRef.current.set(movie.id, Date.now())
             track('match', { type: room.type })
             notifyRoom(roomId, 'match', { from: userToken.current, itemId: movie.id })
             showMatch(movie)
@@ -401,7 +409,7 @@ export default function Room() {
         }
       }
     },
-    [movies, currentIndex, roomId, isSolo, room?.type]
+    [movies, currentIndex, roomId, isSolo, room?.type, showMatch]
   )
 
   // Step back one card. Taking back a like writes a newer 'left' vote (swipes
@@ -418,20 +426,27 @@ export default function Room() {
     const wasMatch = matchesRef.current.some(m => m.id === last.movie.id)
     setMatches(prev => prev.filter(m => m.id !== last.movie.id))
     // The burst takes no taps, so undo stays reachable while it plays.
-    setBurstItem(cur => (cur && cur.id === last.movie.id ? null : cur))
+    dropMatch(last.movie.id)
     if (isSolo) return
     if (wasMatch) removeMatch(last.movie.id, room?.type || 'movies')
+    matchEditRef.current++
+    recentMatchRef.current.delete(last.movie.id)
+    takingBackRef.current.add(last.movie.id)
     try {
       await last.pending?.catch(() => {})
       await recordSwipe(roomId, userToken.current, last.movie.id, 'left')
     } catch (err) {
       console.error('Failed to take back a like:', err)
+    } finally {
+      takingBackRef.current.delete(last.movie.id)
     }
-  }, [isSolo, roomId, room?.type])
+  }, [isSolo, roomId, room?.type, dropMatch])
 
   // Tell the room this user finished swiping (sentinel row, ignored as a pick).
   // Lets the partner's results screen show "finished" vs "still swiping".
-  const doneSignalledRef = useRef(false)
+  // Restored with the progress, so a reload of a finished deck doesn't log
+  // swiping_done a second time.
+  const doneSignalledRef = useRef(Boolean(saved?.signalled))
   const signalDone = useCallback(async () => {
     if (isSolo || doneSignalledRef.current) return
     doneSignalledRef.current = true
@@ -469,6 +484,7 @@ export default function Room() {
         index: currentIndex,
         liked: liked.map(m => m.id),
         done: isDone,
+        signalled: doneSignalledRef.current,
       }))
     } catch { /* storage blocked — progress just won't survive a reload */ }
   }, [room, roomId, isCreator, partnerJoined, started, hasJoined, currentIndex, liked, isDone])
@@ -506,11 +522,12 @@ export default function Room() {
     const teaser = (room.type === 'movies' || room.type === 'series')
       ? movies.slice(0, 3).filter(m => m.poster)
       : []
-    const tiles = room.type === 'food'
-      ? seededShuffle(FOOD_CATEGORIES, room.id).slice(0, 3)
-      : room.type === 'activities'
-        ? seededShuffle(ACTIVITY_CATEGORIES, room.id).slice(0, 3)
-        : []
+    // The first three tiles of the very grid they're about to see.
+    let countryCode = null
+    try { countryCode = JSON.parse(room.topic_id || '{}')?.countryCode || null } catch { /* not JSON */ }
+    const tiles = (room.type === 'food' || room.type === 'activities')
+      ? roomCategories(room.type, room.id, countryCode).slice(0, 3)
+      : []
     const join = () => { markRoomActive(roomId); notifyRoom(roomId, 'joined', { from: userToken.current }); track('joined', { type: room.type }); setHasJoined(true) }
 
     return (
@@ -536,7 +553,8 @@ export default function Room() {
           )}
           <p className="join-invited">{group ? 'You’ve been invited to a group' : 'Your friend invited you'}</p>
           <h1 className="join-title">{info.title}</h1>
-          <p className="join-desc">{info.desc}</p>
+          {/* Only food and activity rooms take more than two players. */}
+          <p className="join-desc">{group ? info.desc.replace('When you both say yes', 'When everyone says yes') : info.desc}</p>
           <ol className="join-steps">
             <li><span>1</span>You swipe on your phone</li>
             <li><span>2</span>{group ? 'Everyone swipes on theirs' : 'They swipe on theirs'}</li>
@@ -673,14 +691,9 @@ export default function Room() {
     return <>{toast}<ConversationRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} /></>
   }
 
-  // Activities mode
-  if (room.type === 'activities') {
-    return <>{toast}<ActivityRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} /></>
-  }
-
-  // Food mode
-  if (room.type === 'food') {
-    return <>{toast}<FoodRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} /></>
+  // Food & Drinks and Activities: one component, the same rules as the deck
+  if (room.type === 'activities' || room.type === 'food') {
+    return <>{toast}<PlacesRoom kind={room.type} room={room} banner={nudge || null} partnerJoined={partnerJoined} onDone={() => navigate('/')} isSolo={isSolo} /></>
   }
 
   // Color Duel mini-game
@@ -688,11 +701,41 @@ export default function Room() {
     return <>{toast}<ColorGameRoom room={room} onDone={() => navigate('/')} isSolo={isSolo} /></>
   }
 
+  // The first match opens the dialog, every later one flies into the counter.
+  // Also over the results: a like on the very last card that makes a match
+  // lands there (a partner's match on the results is not celebrated).
+  const canKeepSwiping = !isDone && currentIndex < movies.length
+  const matchLayer = !isSolo && (
+    <>
+      {/* Stays mounted, so a screen reader hears each later match. */}
+      <div className="room-sr-only" role="status" aria-live="polite"><span key={moments.bumpKey}>{moments.announce}</span></div>
+      {moments.burstItem && (
+        <MatchBurst key={moments.burstItem.id} item={moments.burstItem} roomType={room.type} onDone={moments.endBurst} />
+      )}
+      {moments.modalItem && (
+        <MatchModal
+          item={moments.modalItem}
+          roomType={room.type}
+          swipeCount={currentIndex}
+          // Only ever the room's first match now (later ones are a burst), so
+          // its heading must not follow matches.length while it is open.
+          matchCount={1}
+          onContinue={canKeepSwiping ? moments.closeModal : null}
+          onDone={() => {
+            moments.closeModal()
+            signalDone()
+            setIsDone(true)
+          }}
+        />
+      )}
+    </>
+  )
+
   if (isDone || currentIndex >= movies.length) {
     // Show the ranking straight away with what we already know; RankingView
     // reconciles with the database in the background.
     const matchesToShow = isSolo ? liked : matches
-    return <>{toast}<RankingView banner={nudge || null} matches={matchesToShow} liked={liked} room={room} movies={movies} onDone={() => navigate('/')} isSolo={isSolo} /></>
+    return <>{toast}<RankingView banner={nudge || null} matches={matchesToShow} liked={liked} room={room} movies={movies} onDone={() => navigate('/')} isSolo={isSolo} />{matchLayer}</>
   }
 
   // Movie mode — swipe UI
@@ -709,7 +752,7 @@ export default function Room() {
           )
         ) : (
           matches.length > 0 && (
-            <span key={bumpKey} className={`room-matches${bumpKey > 0 ? ' is-bump' : ''}`}>
+            <span key={moments.bumpKey} className={`room-matches${moments.bumpKey > 0 ? ' is-bump' : ''}`}>
               {matches.length} match{matches.length !== 1 ? 'es' : ''}
             </span>
           )
@@ -745,6 +788,8 @@ export default function Room() {
           onSwipe={handleSwipe}
           onUndo={handleUndo}
           canUndo={canUndo}
+          fallbackEmoji={room.type === 'series' ? '📺' : '🎬'}
+          paused={Boolean(moments.modalItem)}
           active
         />
       </div>
@@ -761,28 +806,7 @@ export default function Room() {
         </button>
       </div>
 
-      {/* Stays mounted, so a screen reader hears each later match. */}
-      {!isSolo && <div className="room-sr-only" role="status" aria-live="polite">{matchAnnounce}</div>}
-      {burstItem && !isSolo && (
-        <MatchBurst key={burstItem.id} item={burstItem} roomType={room.type} onDone={() => { setBurstItem(null); setMatchAnnounce('') }} />
-      )}
-
-      {matchItem && !isSolo && (
-        <MatchModal
-          item={matchItem}
-          roomType={room.type}
-          swipeCount={currentIndex}
-          // Only ever the room's first match now (later ones are a burst), so
-          // its heading must not follow matches.length while it is open.
-          matchCount={1}
-          onContinue={() => setMatchItem(null)}
-          onDone={() => {
-            setMatchItem(null)
-            signalDone()
-            setIsDone(true)
-          }}
-        />
-      )}
+      {matchLayer}
     </div>
   )
 }

@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
-import { saveMatch } from '../lib/savedMatches'
 import { prefersReducedMotion } from '../lib/motion'
 import './MatchBurst.css'
 
-// Every match after the first: no dialog to close, just the film itself
-// lifting out of the deck, glowing in its own poster colours, throwing a few
-// hearts and settling into the match counter. The first match keeps the full
-// MatchModal moment.
+// Every match after the first: no dialog to close, just the matched card
+// itself (film, show or place) lifting out of the deck, glowing in its own
+// photo's colours, throwing a few hearts and settling into the match counter.
+// The first match keeps the full MatchModal moment. Saving to the history is
+// the room's job (useSaveMatches).
 const HEARTS = [
   { x: -78, y: -46, r: -18, d: 0 },
   { x: 74, y: -52, r: 16, d: 40 },
@@ -16,8 +16,9 @@ const HEARTS = [
   { x: 44, y: -80, r: 10, d: 100 },
 ]
 const DURATION_MS = 2600
+const BLANK = { movies: '🎬', series: '📺', food: '🍽️', activities: '🎯' }
 
-export default function MatchBurst({ item, roomType = 'movies', onDone }) {
+export default function MatchBurst({ item, roomType = 'movies', emoji, onDone }) {
   const flightRef = useRef(null)
 
   // Aim the exit at the match counter wherever the header puts it. offset*
@@ -32,15 +33,6 @@ export default function MatchBurst({ item, roomType = 'movies', onDone }) {
   }, [])
 
   useEffect(() => {
-    // The history entry the modal used to write.
-    saveMatch({
-      id: item.id,
-      title: item.title,
-      category: roomType,
-      image: item.poster || null,
-      year: item.year || null,
-      rating: item.rating || null,
-    })
     const t = setTimeout(onDone, prefersReducedMotion() ? 2200 : DURATION_MS)
     return () => clearTimeout(t)
     // One burst per item; the parent remounts it (key) for the next match.
@@ -58,7 +50,7 @@ export default function MatchBurst({ item, roomType = 'movies', onDone }) {
           <span className="mb-poster" aria-hidden="true">
             {item.poster
               ? <img src={item.poster} alt="" width="46" height="69" />
-              : <span className="mb-poster-blank">🎬</span>}
+              : <span className="mb-poster-blank">{emoji || BLANK[roomType] || '🎬'}</span>}
             <span className="mb-badge">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />

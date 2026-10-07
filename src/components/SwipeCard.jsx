@@ -7,7 +7,12 @@ const SWIPE_THRESHOLD = 100
 const ROTATION_FACTOR = 0.15
 const DRAG_MIN_MOVE = 30  // px — below this the card never moves (pure tap zone)
 
-export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = false }) {
+// fallbackEmoji: what a card without a photo shows (📺 for a show, the room's
+// emoji for a place); films keep 🎬. paused: a dialog (the match) is open over
+// the deck, so the arrow keys must not swipe the card behind it.
+export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = false, fallbackEmoji = '🎬', paused = false }) {
+  const pausedRef = useRef(paused)
+  useEffect(() => { pausedRef.current = paused }, [paused])
   const cardRef = useRef(null)
   const startPos = useRef({ x: 0, y: 0 })
   const isDraggingRef = useRef(false)
@@ -156,7 +161,7 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
   useEffect(() => {
     if (!active) return
     function onKey(e) {
-      if (isLeavingRef.current) return
+      if (isLeavingRef.current || pausedRef.current) return
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
       if (e.key === 'ArrowLeft')  swipeVia('left')
       if (e.key === 'ArrowRight') swipeVia('right')
@@ -217,7 +222,7 @@ export default function SwipeCard({ item, onSwipe, active, onUndo, canUndo = fal
               </div>
             ) : (
               <div className="card-poster card-poster-placeholder">
-                <span className="placeholder-icon">{item.emoji || '🎬'}</span>
+                <span className="placeholder-icon">{item.emoji || fallbackEmoji}</span>
               </div>
             )}
             <div className="card-info">

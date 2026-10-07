@@ -167,3 +167,14 @@
 }
 .match-actions-row .btn { font-size: 16px; }
 .match-actions-row .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Places: when it is open and where it is. */
+.match-open { color: var(--success); font-weight: 600; }
+.match-closed { color: var(--danger, #ef4444); font-weight: 600; }
+.match-address {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: -8px 0 4px;
+  text-align: center;
+  text-wrap: balance;
+}

@@ -207,3 +207,40 @@ it('waits for the session before touching the database', async () => {
   expect(order[0]).toBe('session')
   expect(order).not.toContain(undefined)
 })
+
+it('sends the matched item to the server, which needs it to verify the match', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true })
+  vi.stubGlobal('fetch', fetchMock)
+  const { notifyRoom } = await import('../src/lib/push')
+  notifyRoom('review-room', 'match', { from: 'b', itemId: 424 })
+  const body = JSON.parse(fetchMock.mock.calls[0][1].body)
+  expect(body).toMatchObject({ roomId: 'review-room', event: 'match', from: 'b', itemId: 424 })
+})
+
+it('names a food match from the room deck and speaks to a group as everyone', async () => {
+  for (const [name, value] of Object.entries({ VAPID_PUBLIC_KEY: 'fake', VAPID_PRIVATE_KEY: 'fake', SUPABASE_URL: 'https://review.invalid', SUPABASE_SERVICE_ROLE_KEY: 'fake' })) vi.stubEnv(name, value)
+  const topic = JSON.stringify({ playerCount: 3, _phase: 'places', _places: [{ id: 'g1', numId: 2500001, title: 'Lokál Dlouhá' }] })
+  state.tables.rooms = [{ id: 'review-room', type: 'food', status: 'active', topic_id: topic }]
+  state.tables.swipes = ['a', 'b', 'c'].map(t => ({ room_id: 'review-room', user_token: t, item_id: 2500001, direction: 'right' }))
+  state.tables.push_subscriptions = [{ room_id: 'review-room', user_token: 'a', subscription: {} }]
+  const webpush = (await import('web-push')).default
+  const res = response()
+  await notify({ method: 'POST', headers: {}, body: { roomId: 'review-room', event: 'match', itemId: 2500001, from: 'c' } }, res)
+  expect(res.code).toBe(200)
+  const payload = JSON.parse(webpush.sendNotification.mock.calls.at(-1)[1])
+  expect(payload.body).toContain('Lokál Dlouhá')
+  expect(payload.body).toContain('Everyone')
+})
+
+it('refuses a place push for an item that is not in the room deck, and drops a link posing as a name', async () => {
+  const { placeTitle } = await import('../api/notify')
+  const room = { topic_id: JSON.stringify({ _places: [
+    { numId: 2500001, title: 'Lokál Dlouhá' },
+    { numId: 2500002, title: 'Win a prize at evil.example/claim' },
+    { numId: 2500003, title: 'Café‮ Savoy\u0007' },
+  ] }) }
+  expect(placeTitle(room, 2500001)).toBe('Lokál Dlouhá')
+  expect(placeTitle(room, 2500002)).toBeNull()        // generic copy instead
+  expect(placeTitle(room, 2500003)).toBe('Café Savoy')
+  expect(placeTitle(room, 1999)).toBeUndefined()      // not a place: no push at all
+})

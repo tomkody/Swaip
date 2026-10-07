@@ -108,6 +108,21 @@ export default function RankingView({ matches: initialMatches, liked = [], room,
   // the real DONE sentinel as one there (undefined → the default set elsewhere).
   const sentinels = (room.type === 'movies' || room.type === 'series') ? MOVIE_SENTINELS : undefined
   const [matches, setMatches] = useState(initialMatches)
+  // The room keeps its own list current after this screen opens: a like on the
+  // last card resolves a moment later, and a group's best-voted list fills in
+  // as votes arrive. Take in what it adds (removals come from refreshPicks).
+  // While it shows the best-voted list, or when it switches to or from it,
+  // the room's list replaces ours. A state copy rather than a remount keeps the
+  // ranking someone is in the middle of.
+  const propKey = `${isFallback ? 'f' : 'm'}:${initialMatches.map(m => m.id).join(',')}`
+  const [lastProp, setLastProp] = useState({ key: propKey, isFallback })
+  if (propKey !== lastProp.key) {
+    const replace = isFallback || lastProp.isFallback
+    setLastProp({ key: propKey, isFallback })
+    setMatches(prev => replace
+      ? initialMatches
+      : [...prev, ...initialMatches.filter(m => !prev.some(p => p.id === m.id))])
+  }
   const [top3, setTop3] = useState([])
   const [phase, setPhase] = useState('rank') // 'rank' | 'results'
   const [partnerRanks, setPartnerRanks] = useState(null)

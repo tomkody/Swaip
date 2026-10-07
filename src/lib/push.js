@@ -56,12 +56,14 @@ export async function enablePushForRoom(roomId, userToken) {
 }
 
 // Fire-and-forget: ask the server to notify everyone else in the room.
-export function notifyRoom(roomId, event, { from, title } = {}) {
+// `itemId` is what the server checks a match against (and names it by); it
+// used to be dropped here, so every match push was refused as unverified.
+export function notifyRoom(roomId, event, { from, itemId } = {}) {
   try {
     fetch('/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roomId, event, from, title }),
+      body: JSON.stringify({ roomId, event, from, itemId }),
     }).catch(() => {})
   } catch { /* never block the flow on notifications */ }
 }

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import confetti from 'canvas-confetti'
-import { saveMatch } from '../lib/savedMatches'
 import { useDialogFocus } from '../lib/useDialogFocus'
 import { prefersReducedMotion } from '../lib/motion'
 import WhereToWatch from './WhereToWatch'
@@ -9,6 +8,8 @@ import { generateShareImage, downloadCanvas } from '../lib/shareImage'
 import './MatchModal.css'
 
 // Rotating celebration copy so the 5th match doesn't read like the 1st.
+const BLANK = { movies: '🎬', series: '📺', food: '🍽️', activities: '🎯' }
+
 const MATCH_TITLES = ['Another match!', 'Two great minds!', "You're on a roll!", 'Snap - matched again!', 'So in sync!']
 const MATCH_SUBS = [
   'Add it to tonight\'s shortlist',
@@ -18,9 +19,12 @@ const MATCH_SUBS = [
   'Your taste lines up',
 ]
 
-export default function MatchModal({ item, roomType, swipeCount = 0, matchCount = 1, onContinue, onDone }) {
+// The same moment for every room type. Places (food, activities) show where
+// and when instead of year and streaming; `subtitle` and `emoji` let the room
+// say it its own way, `remaining` adds how many cards are left to the button.
+// Saving to the history is the room's job (useSaveMatches), not this dialog's.
+export default function MatchModal({ item, roomType, swipeCount = 0, matchCount = 1, subtitle: subtitleOverride, emoji, remaining, onContinue, onDone }) {
   const hasConfettied = useRef(false)
-  const hasSaved = useRef(false)
   const [sharing, setSharing] = useState(false)
   const modalRef = useRef(null)
   // Escape = "Keep Swiping" (or Done when there's nothing to continue). The
@@ -33,8 +37,9 @@ export default function MatchModal({ item, roomType, swipeCount = 0, matchCount 
   const n = Math.max(1, matchCount)
   const isFirst = n === 1
   const title = isFirst ? "It's a Match!" : `${MATCH_TITLES[(n - 2) % MATCH_TITLES.length]} · #${n}`
-  const subtitle = isFirst ? 'You both swiped right' : MATCH_SUBS[(n - 2) % MATCH_SUBS.length]
+  const subtitle = subtitleOverride || (isFirst ? 'You both swiped right' : MATCH_SUBS[(n - 2) % MATCH_SUBS.length])
   const isPlace = roomType === 'food' || roomType === 'activities'
+  const blank = item.emoji || emoji || BLANK[roomType] || '🎬'
 
   useEffect(() => {
     if (!hasConfettied.current) {
@@ -52,20 +57,6 @@ export default function MatchModal({ item, roomType, swipeCount = 0, matchCount 
     }
   }, [isFirst])
 
-  useEffect(() => {
-    if (!hasSaved.current && item) {
-      hasSaved.current = true
-      saveMatch({
-        id: item.id,
-        title: item.title,
-        category: roomType || 'movies',
-        image: item.poster || null,
-        year: item.year || null,
-        rating: item.rating || null,
-      })
-    }
-  }, [item, roomType])
-
   async function handleShare() {
     if (sharing) return
     setSharing(true)
@@ -73,7 +64,7 @@ export default function MatchModal({ item, roomType, swipeCount = 0, matchCount 
       const canvas = await generateShareImage({
         title: item.title,
         posterUrl: item.poster || null,
-        emoji: item.emoji || null,
+        emoji: blank,
         swipeCount,
         platforms: item.platforms,
         rating: item.rating,
@@ -103,22 +94,43 @@ export default function MatchModal({ item, roomType, swipeCount = 0, matchCount 
             <img src={item.poster} alt={item.title} className={`match-poster ${isPlace ? 'match-poster--wide' : 'match-poster--portrait'}`} />
           ) : (
             <div className={`match-poster match-poster-placeholder ${isPlace ? 'match-poster--wide' : 'match-poster--portrait'}`}>
-              {item.emoji || (roomType === 'series' ? '📺' : '🎬')}
+              {blank}
             </div>
           )}
           <h2 className="match-item-title">{item.title}</h2>
-          {(item.year || item.rating) && (
-            <p className="match-meta">
-              {item.year}{item.rating ? ` · ⭐ ${item.rating}` : ''}
-            </p>
+          {isPlace ? (
+            <>
+              {(item.rating || item.isOpen != null) && (
+                <p className="match-meta">
+                  {item.rating ? `★ ${item.rating}` : ''}
+                  {item.rating && item.isOpen != null ? ' · ' : ''}
+                  {item.isOpen != null && (
+                    <span className={item.isOpen ? 'match-open' : 'match-closed'}>
+                      {item.isOpen ? '● Open' : '● Closed'}
+                    </span>
+                  )}
+                  {item.isOpen && item.closesAt ? ` · until ${item.closesAt}` : ''}
+                  {item.isOpen === false && item.opensAt ? ` · opens ${item.opensAt}` : ''}
+                </p>
+              )}
+              {item.address && <p className="match-address">{item.address}</p>}
+            </>
+          ) : (
+            <>
+              {(item.year || item.rating) && (
+                <p className="match-meta">
+                  {item.year}{item.rating ? ` · ⭐ ${item.rating}` : ''}
+                </p>
+              )}
+              <WhereToWatch platforms={item.platforms} title={item.title} className="wtw--center" />
+            </>
           )}
-          <WhereToWatch platforms={item.platforms} title={item.title} className="wtw--center" />
         </div>
 
         <div className="match-actions">
           {onContinue && (
             <button className="btn btn-primary" onClick={onContinue}>
-              Keep swiping
+              {remaining > 0 ? `Keep swiping · ${remaining} left` : 'Keep swiping'}
             </button>
           )}
           <div className="match-actions-row">

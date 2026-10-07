@@ -1,16 +1,13 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import confetti from 'canvas-confetti'
-import { prefersReducedMotion } from '../lib/motion'
 import HomeLogo from './HomeLogo'
 import ThemeToggle from './ThemeToggle'
 import AppHeader from './AppHeader'
 import InvitePanel from './InvitePanel'
 import CategoryGrid from './CategoryGrid'
-import { seededShuffle } from '../lib/random'
-import { saveMatch } from '../lib/savedMatches'
-import { ACTIVITY_CATEGORIES as _ACTIVITY_CATEGORIES } from '../lib/activities'
-import { getRoomPlayerCount, getParticipantCount, fetchVoteCounts } from '../lib/room'
-
+import { removeMatch } from '../lib/savedMatches'
+import { useMatchMoments, useSaveMatches, reconcileMatches } from '../lib/useMatchMoments'
+import { track } from '../lib/analytics'
+import { roomCategories } from '../lib/roomCategories'
 import { fetchNearbyPlaces, getBrandKey } from '../lib/placesApi'
 import { notifyRoom } from '../lib/push'
 import {
@@ -23,67 +20,120 @@ import {
   subscribeToRoomChanges,
   getRoom,
   fetchRoomMatches,
+  getRoomPlayerCount,
+  getParticipantCount,
+  fetchVoteCounts,
   countItemLikers,
   DONE_ITEM_ID,
 } from '../lib/room'
 import SwipeCard from './SwipeCard'
 import RankingView from './RankingView'
-import './ActivityRoom.css'
+import MatchModal from './MatchModal'
+import MatchBurst from './MatchBurst'
+import './PlacesRoom.css'
 
-const ACT_CAT_DONE_NUMID = 1999
+// Food & Drinks and Activities are the same game: pick categories together,
+// then swipe real places nearby. They used to be two copies of this file that
+// drifted apart; now one component, and only the words and the category list
+// differ. The swiping itself follows the movie deck in Room.jsx: first match
+// is the full MatchModal, later ones a MatchBurst, undo takes a match back,
+// progress survives a reload, matches are checked against the database.
 
-// Stable per-room category order. A module-level cache (rather than useMemo)
-// keeps the array identity stable across renders without fighting hook deps.
-const catOrderCache = new Map()
-function categoriesForRoom(roomId) {
-  if (!catOrderCache.has(roomId)) catOrderCache.set(roomId, seededShuffle(_ACTIVITY_CATEGORIES, roomId))
-  return catOrderCache.get(roomId)
+const plural = (n, word, many = word + 's') => `${n} ${n === 1 ? word : many}`
+
+const KINDS = {
+  food: {
+    catDoneBase: 2999,          // category-phase done marker (per round: base - round)
+    categoriesFor: (roomId, loc) => roomCategories('food', roomId, loc?.countryCode),
+    emoji: '🍽️',
+    places: 'restaurants',
+    placesTitle: 'Restaurants',
+    picked: 'cuisines',
+    catCount: n => plural(n, 'cuisine'),
+    noneSelected: 'No cuisines selected',
+    noneMatched: 'No cuisine matches',
+    soloNoneHint: 'Swipe right on at least one cuisine to see restaurants.',
+    noAgreement: 'You didn\'t agree on any cuisines. Try creating a new room!',
+    tryDifferent: 'Try different cuisines',
+    tryOther: ' Try a different cuisine.',
+    noLocation: ' Add a location when creating the room.',
+    gridTitle: '🍽️ What are you in the mood for?',
+    hintSolo: 'Pick every cuisine you fancy - one or more.',
+    hintGroup: n => `Pick what you fancy - you'll eat what all ${n} agree on.`,
+    hintPair: 'Pick every cuisine you fancy - you\'ll eat what you both agree on.',
+    matchPair: 'You both want to eat here',
+    matchGroup: 'You all want to eat here',
+  },
+  activities: {
+    catDoneBase: 1999,
+    categoriesFor: roomId => roomCategories('activities', roomId),
+    emoji: '🎯',
+    places: 'places',
+    placesTitle: 'Places',
+    picked: 'activities',
+    catCount: n => plural(n, 'activity type'),
+    noneSelected: 'No activities selected',
+    noneMatched: 'No activity matches',
+    soloNoneHint: 'Swipe right on at least one activity to see places.',
+    noAgreement: 'You didn\'t agree on any activities. Try creating a new room!',
+    tryDifferent: 'Try different categories',
+    tryOther: ' Try a different category.',
+    noLocation: ' Add a location when creating the room to see real nearby places.',
+    gridTitle: '🎯 What do you want to do?',
+    hintSolo: 'Pick everything you\'re up for - one or more.',
+    hintGroup: n => `Pick what you're up for - you'll do what all ${n} agree on.`,
+    hintPair: 'Pick everything you\'re up for - you\'ll do what you both agree on.',
+    matchPair: 'You both want to go here',
+    matchGroup: 'You all want to go here',
+  },
 }
 
-// Parse location data from topic_id field
+// ── Parse location data from topic_id ────────────────────────────────────────
 function parseLocation(topicId) {
   if (!topicId) return null
   try { return JSON.parse(topicId) } catch { return null }
 }
 
-// Parse phase/places/matched_categories from room row.
-function parseRoomActivityData(room) {
+// ── Parse phase/places/matched_categories from room row ──────────────────────
+// (room.phase / room.places: columns very old activity rooms still carry)
+function parseRoomPlacesData(room) {
   let topicData = {}
-  try { topicData = JSON.parse(room.topic_id || '{}') } catch { topicData = {} }
-
+  try { topicData = JSON.parse(room.topic_id || '{}') } catch { /* not JSON — keep default */ }
   const phase = topicData._phase || room.phase || 'categories'
-
   const matchedCategories = topicData._matched_categories ||
     (topicData._matched_category ? [topicData._matched_category] : [])
-
   let places = topicData._places || []
   if (places.length === 0 && room.places) {
     try { places = JSON.parse(room.places) } catch { /* not JSON — keep default */ }
   }
-
   const playerCount = topicData.playerCount || 2
   // Bumped by "try different" so every client starts a fresh round together
   // (and so the previous round's done-marker no longer counts).
   const round = topicData._round || 0
   const compromise = topicData._compromise === true
-
   return { phase, matchedCategories, places, playerCount, round, compromise }
 }
 
 
-// ─── Main ActivityRoom component ──────────────────────────────────────────────
+// ─── Main component ───────────────────────────────────────────────────────────
 
 const catsKey = id => `swaip_cats_${id}`
+// Where this player is in the places deck, so a reload (iOS Safari reloads the
+// tab behind the share sheet) doesn't send them back to the first place.
+const placesKey = id => `swaip_places_${id}`
 
-export default function ActivityRoom({ room, onDone, isSolo = false }) {
+// banner: the room's invite nudge while the partner hasn't opened the link.
+// partnerJoined: Room.jsx already knows when they have (realtime + poll).
+export default function PlacesRoom({ kind: kindName = 'food', room, onDone, isSolo = false, banner = null, partnerJoined = false }) {
+  const kind = KINDS[kindName] || KINDS.food
   const userToken = useRef(getRoomToken(room.id))
   // Memoised: a fresh object every render changed fetchAndTransitionToPlaces'
   // identity each time, which kept restarting the partner fallback poll.
   const location = useMemo(() => parseLocation(room.topic_id), [room.topic_id])
 
-  const ACTIVITY_CATEGORIES = useMemo(() => categoriesForRoom(room.id), [room.id])
+  const CATS = useMemo(() => kind.categoriesFor(room.id, location), [kind, room.id, location])
 
-  const initialData = parseRoomActivityData(room)
+  const initialData = parseRoomPlacesData(room)
   const [phase, setPhase] = useState(initialData.phase)
   const [matchedCategories, setMatchedCategories] = useState(initialData.matchedCategories)
   const [places, setPlaces] = useState(initialData.places)
@@ -105,15 +155,39 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     } catch { return null }
   })
 
-  const [currentIndex, setCurrentIndex] = useState(0)
+  // Same for the places deck: index, likes, skipped brands, done.
+  const [deckSaved] = useState(() => {
+    if (initialData.phase !== 'places' || initialData.places.length === 0) return null
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(placesKey(room.id)) || 'null')
+      return saved?.round === initialData.round ? saved : null
+    } catch { return null }
+  })
+
+  const [currentIndex, setCurrentIndex] = useState(() => Math.min(deckSaved?.index || 0, initialData.places.length))
+  // Cards actually shown and swiped. Brand skipping jumps the index past the
+  // chain's other branches, so the index alone made the counter leap (3 / 40,
+  // then 7 / 40) and the deck end before N / N.
+  const [seen, setSeen] = useState(() => deckSaved?.seen ?? Math.min(deckSaved?.index || 0, initialData.places.length))
   const [selectedCats, setSelectedCats] = useState(() => new Set(resumed || []))
   const [matches, setMatches] = useState([])
   const matchesRef = useRef([])
   useEffect(() => { matchesRef.current = matches }, [matches])
-  const [likedPlaces, setLikedPlaces] = useState([])
-  const [matchItem, setMatchItem] = useState(null)
-  const [isDone, setIsDone] = useState(false)
+  // What the database check must not undo yet (see reconcileMatches).
+  const recentMatchRef = useRef(new Map())
+  const takingBackRef = useRef(new Set())
+  // Bumped by every local change to the matches; a database read that started
+  // before one is out of date and is thrown away.
+  const matchEditRef = useRef(0)
+  const [likedPlaces, setLikedPlaces] = useState(() =>
+    deckSaved ? initialData.places.filter(p => (deckSaved.liked || []).includes(p.numId)) : [])
+  const [isDone, setIsDone] = useState(Boolean(deckSaved?.done))
   const [partnerDone, setPartnerDone] = useState(false)
+  const [partnerLikeIds, setPartnerLikeIds] = useState([]) // their final likes: how many matches are still reachable
+  // First match: the full MatchModal. Every later one: a MatchBurst.
+  const moments = useMatchMoments(matchesRef)
+  const { show: showMatch, drop: dropMatch, closeModal, endBurst } = moments
+  useSaveMatches(matches, room.type, !isSolo)
   const [participantCount, setParticipantCount] = useState(1)
   const [voteCounts, setVoteCounts] = useState({})
 
@@ -132,14 +206,18 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   const allDoneSeenRef = useRef(0)
   const pendingSwipesRef = useRef([])
   const likedCatIdsRef = useRef(new Set(resumed || []))
-  const rejectedBrandsRef = useRef(new Set())
+  // Brands this player swiped left on are skipped for the rest of the deck.
+  // The ref serves the swipe handler; the state copy serves rendering.
+  const rejectedBrandsRef = useRef(new Set(deckSaved?.brands || []))
+  const [skippedBrands, setSkippedBrands] = useState(() => new Set(deckSaved?.brands || []))
   const historyRef = useRef([])            // this session's place swipes, newest last (undo)
   const [canUndo, setCanUndo] = useState(false)
-  const donePlacesSignalledRef = useRef(false)
+  // Restored with the deck, so a reload of a finished deck doesn't log
+  // swiping_done a second time.
+  const donePlacesSignalledRef = useRef(Boolean(deckSaved?.signalled))
 
   useEffect(() => { isDoneRef.current = isDone }, [isDone])
 
-  // True when this user has swiped all places but isDone hasn't been set yet
   const finishedSwiping = phase === 'places' && places.length > 0 && currentIndex >= places.length && !isDone
 
   // Ref so the swipe subscription can tell if we're already on the results/waiting
@@ -147,42 +225,30 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   const resultsShownRef = useRef(false)
   useEffect(() => { resultsShownRef.current = isDone || finishedSwiping }, [isDone, finishedSwiping])
 
-  // Save every match to the "Saved Matches" drawer (movies already did this;
-  // activities/food matches were silently never saved). saveMatch dedupes.
   useEffect(() => {
-    if (matchItem) saveMatch({ id: matchItem.id, title: matchItem.title, category: room.type, image: matchItem.poster || null, rating: matchItem.rating || null })
-  }, [matchItem, room.type])
+    if (phase !== 'places' || places.length === 0) return
+    try {
+      sessionStorage.setItem(placesKey(room.id), JSON.stringify({
+        round, index: currentIndex, seen, liked: likedPlaces.map(p => p.numId), brands: [...skippedBrands], done: isDone,
+        signalled: donePlacesSignalledRef.current,
+      }))
+    } catch { /* storage blocked: a reload starts the deck again */ }
+  }, [phase, places.length, room.id, round, currentIndex, seen, likedPlaces, skippedBrands, isDone])
 
-  // Solo: auto-complete when all places swiped
+  // Fetch the next couple of photos before their cards mount (the movie deck
+  // does three; place photos are a paid lookup, so only what's next in line).
   useEffect(() => {
-    if (!(isSolo && finishedSwiping)) return
-    const t = setTimeout(() => setIsDone(true), 0)   // deferred — no sync setState in effects
-    return () => clearTimeout(t)
-  }, [isSolo, finishedSwiping])
+    if (phase !== 'places') return
+    let n = 0
+    for (let i = currentIndex + 1; i < places.length && n < 2; i++) {
+      const p = places[i]
+      if (skippedBrands.has(getBrandKey(p.title))) continue
+      n++
+      if (p.poster) { const img = new Image(); img.src = p.poster }
+    }
+  }, [phase, places, currentIndex, skippedBrands])
 
-  // ── Poll for new matches while waiting for partner to finish ─────────────
-  useEffect(() => {
-    if (!finishedSwiping || isSolo) return
-    const interval = setInterval(async () => {
-      try {
-        const ids = await fetchRoomMatches(room.id, userToken.current, playerCount)
-        if (!ids) return
-        const canonical = places.filter(p => ids.includes(p.numId))
-        if (canonical.length > 0) {
-          setMatches(prev => {
-            const merged = [...prev]
-            for (const p of canonical) {
-              if (!merged.find(m => m.id === p.id)) merged.push(p)
-            }
-            return merged
-          })
-        }
-      } catch { /* non-fatal */ }
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [finishedSwiping, isSolo, room.id, places, playerCount])
-
-  // ── Track participant count (for N-player waiting UI) ────────────────────
+  // ── Track participant count ───────────────────────────────────────────────
   useEffect(() => {
     if (isSolo) return
     getParticipantCount(room.id).then(setParticipantCount).catch(() => {})
@@ -192,14 +258,46 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     return () => clearInterval(interval)
   }, [isSolo, room.id])  
 
-  // ── Authoritative matches from DB when results screen opens ──────────────
+  // ── Keep the match counter honest ────────────────────────────────────────
+  // Built from realtime events alone, a dropped socket or a backgrounded tab
+  // left it short (and a partner's take-back never arrived). Check against the
+  // database, like the movie deck does, also on the results: these matches
+  // are what Saved matches records.
+  useEffect(() => {
+    if (isSolo || phase !== 'places' || places.length === 0) return
+    let active = true
+    const reconcile = async () => {
+      try {
+        const edit = matchEditRef.current
+        const ids = await fetchRoomMatches(room.id, userToken.current, playerCount)
+        if (!active || !ids || edit !== matchEditRef.current) return   // null = read failed; keep what we have
+        const prev = matchesRef.current
+        const next = reconcileMatches(prev, places, ids, {
+          keyOf: p => p.numId, recent: recentMatchRef.current, takingBack: takingBackRef.current,
+        })
+        if (next === prev) return
+        // Gone from the database: a take-back realtime never delivered.
+        for (const m of prev) if (!next.some(n => n.id === m.id)) removeMatch(m.id, room.type)
+        setMatches(next)
+      } catch { /* non-fatal */ }
+    }
+    reconcile()
+    const poll = setInterval(reconcile, 8000)
+    const onVisible = () => { if (document.visibilityState === 'visible') reconcile() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      active = false
+      clearInterval(poll)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [isSolo, phase, places, room.id, room.type, playerCount])
+
+  // ── Authoritative match fetch when results screen opens ──────────────────
   useEffect(() => {
     if (isSolo) return
-    const showingResults =
-      isDone || (phase === 'places' && places.length > 0 && currentIndex >= places.length)
+    const showingResults = isDone || (phase === 'places' && places.length > 0 && currentIndex >= places.length)
     if (!showingResults || places.length === 0) return
 
-    // Fetch vote counts for all places (shows X/N agreed in results)
     fetchVoteCounts(room.id).then(setVoteCounts).catch(() => {})
 
     fetchRoomMatches(room.id, userToken.current, playerCount)
@@ -219,7 +317,17 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       .catch(() => {})
   }, [isSolo, isDone, currentIndex, places.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Subscribe to partner/group swipes ────────────────────────────────────
+  // A group with no unanimous pick sees its best-voted places. The results now
+  // open the moment this player finishes, while the others still vote, so keep
+  // the counts coming instead of freezing them at that moment.
+  const onResults = isDone || finishedSwiping
+  useEffect(() => {
+    if (isSolo || playerCount <= 2 || !onResults) return
+    const t = setInterval(() => { fetchVoteCounts(room.id).then(setVoteCounts).catch(() => {}) }, 12000)
+    return () => clearInterval(t)
+  }, [isSolo, playerCount, onResults, room.id])
+
+  // ── Subscribe to group place swipes ──────────────────────────────────────
   useEffect(() => {
     if (isSolo) return
     const unsub = subscribeToSwipes(room.id, userToken.current, (itemId) => {
@@ -227,11 +335,13 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       if (phase === 'places') {
         const place = places.find(p => p.numId === numId)
         if (place) {
+          matchEditRef.current++
+          recentMatchRef.current.set(place.id, Date.now())
           setMatches(prev => prev.find(m => m.id === place.id) ? prev : [...prev, place])
           // Only celebrate while still swiping — not over the results/waiting screen.
           if (!resultsShownRef.current) {
-            setMatchItem(place)
-          if (!prefersReducedMotion()) confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
+            track('match', { type: room.type })
+            showMatch(place)
           }
         }
       }
@@ -239,8 +349,14 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       // A partner took back a like with undo — drop that match here too.
       isMatched: id => matchesRef.current.some(m => m.numId === id),
       onUnmatch: id => {
+        const gone = matchesRef.current.find(m => m.numId === id)
+        matchEditRef.current++
         setMatches(prev => prev.filter(m => m.numId !== id))
-        setMatchItem(cur => (cur && cur.numId === id ? null : cur))
+        if (gone) {
+          recentMatchRef.current.delete(gone.id)   // its grace period would bring it back
+          dropMatch(gone.id)
+          removeMatch(gone.id, room.type)
+        }
       },
     })
     return unsub
@@ -251,23 +367,31 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     if (isSolo || phase !== 'places') return
     if (!(finishedSwiping || isDone) || donePlacesSignalledRef.current) return
     donePlacesSignalledRef.current = true
+    track('swiping_done', { type: room.type, swiped: seen, matches: matchesRef.current.length })
     recordSwipe(room.id, userToken.current, DONE_ITEM_ID, 'right', playerCount).catch(() => {})
-  }, [isSolo, phase, finishedSwiping, isDone, room.id, playerCount])
+  }, [isSolo, phase, finishedSwiping, isDone, room.id, room.type, playerCount, seen])
 
   // ── Tell the still-swiping user once a partner finished the places phase.
   // Places don't record passes, so "how far did they get" can't be derived
-  // from likes — the banner simply shows as soon as they're done. ──
+  // from likes — the banner simply shows as soon as they're done. Like the
+  // movie deck it says how many of their picks are still ahead, which is the
+  // actual reason to keep going. ──
   useEffect(() => {
     if (isSolo) return
     let active = true
     let handled = false
-    const markDone = () => {
+    const markDone = (picks) => {
       if (!active || handled) return
       handled = true
       setPartnerDone(true)
+      // Their likes are final now: the full set still reachable in this deck.
+      if (picks?.partnerIds) setPartnerLikeIds(picks.partnerIds)
+      else fetchRoomPicks(room.id, userToken.current)
+        .then(p => { if (active && p?.partnerIds) setPartnerLikeIds(p.partnerIds) })
+        .catch(() => {})
     }
     const check = () => fetchRoomPicks(room.id, userToken.current)
-      .then(p => { if (p && p.othersDone > 0) markDone() })
+      .then(p => { if (p && p.othersDone > 0) markDone(p) })
       .catch(() => {})
     check()
     const unsub = subscribeToRoomPicks(room.id, userToken.current, (swipe) => {
@@ -275,7 +399,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     })
     const poll = setInterval(() => { if (!handled) check() }, 5000)
     return () => { active = false; clearInterval(poll); unsub() }
-  }, [isSolo, room.id])
+  }, [isSolo, room.id, round])
 
   // ── fetchAndTransitionToPlaces ────────────────────────────────────────────
   const fetchAndTransitionToPlaces = useCallback(async (matchedCats, { compromise = false } = {}) => {
@@ -286,12 +410,11 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     setTransitioning(true)
     setFetchingPlaces(true)
 
-    // Race guard: if both partners finish categories at the same instant they can
-    // both reach here. If the other already wrote places, reuse them instead of
-    // making a second (divergent, paid) Google call.
+    // Race guard: if the other person already fetched places, reuse them instead
+    // of making a second (divergent, paid) Google call.
     try {
       const existing = await getRoom(room.id)
-      const data = existing ? parseRoomActivityData(existing) : null
+      const data = existing ? parseRoomPlacesData(existing) : null
       if (data && data.places.length > 0) {
         setPlaces(data.places)
         setMatchedCategories(data.matchedCategories.length ? data.matchedCategories : matchedCats)
@@ -299,6 +422,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
         setFetchingPlaces(false)
         setPhase('places')
         setCurrentIndex(0)
+        setSeen(0)
         setTransitioning(false)
         setWaitingForPartner(false)
         return
@@ -308,14 +432,14 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     let allPlaces = []
     let fetchError = null
     if (location?.lat != null && matchedCats.length > 0) {
-      // Fetch per-category lists, then interleave round-robin (park, coffee, park, coffee…)
+      // Fetch per-category lists, then interleave round-robin (Italian, Japanese, Italian, Japanese…)
       // All categories at once: one after another cost a full round trip each.
       // Results stay in matchedCats order, so the interleave is unchanged.
       const settled = await Promise.allSettled(matchedCats.map(cat =>
         fetchNearbyPlaces(location.lat, location.lng, location.radius || 5000, cat.types, room.id)))
       const perCat = settled.map((r, i) => {
         if (r.status === 'fulfilled') return r.value
-        console.error('[ActivityRoom] fetch error for', matchedCats[i].label, r.reason)
+        console.error('[PlacesRoom] fetch error for', matchedCats[i].label, r.reason)
         fetchError = fetchError || r.reason   // remember the first real API/network failure
         return []
       })
@@ -334,8 +458,6 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
         const rank = p => p.isOpen === true ? 0 : p.isOpen === false ? 1 : 2
         return rank(a) - rank(b)
       })
-    } else if (!location?.lat) {
-      console.warn('[ActivityRoom] No location data - skipping places fetch. location:', location)
     }
 
     setFetchingPlaces(false)
@@ -352,13 +474,13 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
 
     try {
       await updateActivityRoomPhase(room.id, { phase: 'places', matched_categories: matchedCats, places: allPlaces, locationData: location, compromise, round: roundRef.current })
-    } catch (err) { console.error('[ActivityRoom] updateActivityRoomPhase error:', err) }
+    } catch (err) { console.error('[PlacesRoom] updateActivityRoomPhase error:', err) }
 
     // Read canonical places from DB
     try {
       const canonical = await getRoom(room.id)
       if (canonical) {
-        const data = parseRoomActivityData(canonical)
+        const data = parseRoomPlacesData(canonical)
         if (data.places.length > 0) allPlaces = data.places
       }
     } catch { /* canonical read failed — use local allPlaces */ }
@@ -366,6 +488,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     setPlaces(allPlaces)
     setPhase('places')
     setCurrentIndex(0)
+    setSeen(0)
     setTransitioning(false)
     setWaitingForPartner(false)
   }, [location, room.id])  
@@ -373,7 +496,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   // The done-marker is per round: `base` for the first pass, base-1 for the
   // next, and so on. Without that, a second round would count everyone's old
   // marker and transition the moment the first person confirmed.
-  const catDoneId = ACT_CAT_DONE_NUMID - round
+  const catDoneId = kind.catDoneBase - round
 
   // What the room should search for. Normally the categories everyone liked; if
   // nobody agreed on a single one, the most-voted ones instead — an empty list
@@ -381,15 +504,15 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
   const resolveMatchedCategories = useCallback(async () => {
     const allMatchIds = await fetchRoomMatches(room.id, userToken.current, playerCount)
     if (allMatchIds === null) throw new Error('Could not read the picks - try confirming again')
-    const matched = ACTIVITY_CATEGORIES.filter(c => allMatchIds.includes(c.numId))
+    const matched = CATS.filter(c => allMatchIds.includes(c.numId))
     if (matched.length > 0) return { cats: matched, compromise: false }
     const counts = await fetchVoteCounts(room.id)
-    const scored = ACTIVITY_CATEGORIES
+    const scored = CATS
       .map(c => ({ c, n: counts[c.numId] || 0 }))
       .filter(x => x.n > 0)
       .sort((a, b) => b.n - a.n)
     return { cats: scored.slice(0, 3).map(x => x.c), compromise: scored.length > 0 }
-  }, [room.id, playerCount, ACTIVITY_CATEGORIES])
+  }, [room.id, playerCount, CATS])
 
   // Everyone drops back to the picker together after a "try different" — the
   // room row carries the round number, and each client resets when it sees a
@@ -405,16 +528,34 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     setMatchedCategories([])
     setIsCompromise(false)
     setCurrentIndex(0)
+    setSeen(0)
     setPlacesError(null)
     setWaitingForPartner(false)
     setTransitioning(false)
-  }, [])
+    // The new round is a new deck: nothing of the old one carries over (its
+    // matches stay in Saved matches).
+    matchesRef.current = []
+    matchEditRef.current++
+    setMatches([])
+    setLikedPlaces([])
+    rejectedBrandsRef.current = new Set()
+    setSkippedBrands(new Set())
+    setIsDone(false)
+    historyRef.current = []
+    setCanUndo(false)
+    setPartnerDone(false)
+    setPartnerLikeIds([])
+    donePlacesSignalledRef.current = false
+    recentMatchRef.current.clear()
+    closeModal()
+    endBurst()
+    try { sessionStorage.removeItem(placesKey(room.id)) } catch { /* storage blocked */ }
+  }, [room.id, closeModal, endBurst])
 
   // ── handleCategoriesDone ──────────────────────────────────────────────────
   const handleCategoriesDone = useCallback(async () => {
     if (isSolo) {
-      // Solo: use liked categories directly, no partner sentinel
-      const likedCats = ACTIVITY_CATEGORIES.filter(c => likedCatIdsRef.current.has(c.numId))
+      const likedCats = CATS.filter(c => likedCatIdsRef.current.has(c.numId))
       const catsToUse = likedCats.length > 0 ? likedCats : []
       await fetchAndTransitionToPlaces(catsToUse)
       return
@@ -437,10 +578,10 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
         await fetchAndTransitionToPlaces(resolved.cats, { compromise: resolved.compromise })
       }
     } catch (err) {
-      console.error('[ActivityRoom] handleCategoriesDone error:', err)
+      console.error('[PlacesRoom] handleCategoriesDone error:', err)
       setWaitingForPartner(false)
     }
-  }, [isSolo, room.id, playerCount, catDoneId, ACTIVITY_CATEGORIES, resolveMatchedCategories, fetchAndTransitionToPlaces])  
+  }, [isSolo, room.id, playerCount, catDoneId, CATS, resolveMatchedCategories, fetchAndTransitionToPlaces])  
 
   // ── Category multi-select (grid) ───────────────────────────────────────────
   const toggleCategory = useCallback((numId) => {
@@ -464,11 +605,11 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     await handleCategoriesDone()
   }, [selectedCats, isSolo, room.id, handleCategoriesDone])
 
-  // ── Subscribe to room data changes (partner fetched places → both transition) ──
+  // ── Subscribe to room changes (detect partner fetched places) ────────────
   useEffect(() => {
     if (isSolo) return
     const unsub = subscribeToRoomChanges(room.id, (updatedRoom) => {
-      const data = parseRoomActivityData(updatedRoom)
+      const data = parseRoomPlacesData(updatedRoom)
       // Someone hit "try different …" — everyone goes back to the picker.
       if (data.round > roundRef.current) { startNewRound(data.round); return }
       if (data.phase === 'places' && phase === 'categories') {
@@ -482,6 +623,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
           setPlaces(data.places)
           setPhase('places')
           setCurrentIndex(0)
+          setSeen(0)
           setTransitioning(false)
           setWaitingForPartner(false)
         }, 600)
@@ -492,14 +634,14 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     const poll = (phase === 'places' && places.length === 0)
       ? setInterval(() => {
           getRoom(room.id)
-            .then(r => { if (r && parseRoomActivityData(r).round > roundRef.current) startNewRound(parseRoomActivityData(r).round) })
+            .then(r => { if (r && parseRoomPlacesData(r).round > roundRef.current) startNewRound(parseRoomPlacesData(r).round) })
             .catch(() => {})
         }, 4000)
       : null
     return () => { unsub(); if (poll) clearInterval(poll) }
   }, [isSolo, room.id, phase, places.length, startNewRound])  
 
-  // ── Polling fallback: check room every 3s while waiting for partner ────────
+  // ── Polling fallback ──────────────────────────────────────────────────────
   useEffect(() => {
     if (phase !== 'categories' || isSolo) return
     // Spread out across clients so two people don't both take over (and both
@@ -509,7 +651,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       try {
         const latest = await getRoom(room.id)
         if (!latest) return
-        const data = parseRoomActivityData(latest)
+        const data = parseRoomPlacesData(latest)
         if (data.round > roundRef.current) { startNewRound(data.round); return }
         if (data.round < roundRef.current) return          // stale row, ignore
         if (data.phase === 'places' && !placesTransitionFiredRef.current) {
@@ -519,6 +661,7 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
           setPlaces(data.places)
           setPhase('places')
           setCurrentIndex(0)
+          setSeen(0)
           setWaitingForPartner(false)
           setTransitioning(false)
           return
@@ -539,12 +682,12 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
             }
           }
         }
-      } catch (err) { console.error('[ActivityRoom] categories poll:', err) }
+      } catch (err) { console.error('[PlacesRoom] categories poll:', err) }
     }, 3000)
     return () => clearInterval(interval)
   }, [isSolo, room.id, phase, waitingForPartner, playerCount, catDoneId, startNewRound, resolveMatchedCategories, fetchAndTransitionToPlaces])  
 
-  // ── Place swipe handler ───────────────────────────────────────────────────
+  // ── Swipe a place ─────────────────────────────────────────────────────────
   const handlePlaceSwipe = useCallback(async (direction) => {
     const place = places[currentIndex]
     if (!place) return
@@ -554,9 +697,11 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     if (direction === 'left' && !rejectedBrandsRef.current.has(brand)) {
       rejectedBrandsRef.current.add(brand)
       entry.addedBrand = true
+      setSkippedBrands(new Set(rejectedBrandsRef.current))
     }
     historyRef.current.push(entry)
     setCanUndo(true)
+    setSeen(n => n + 1)
 
     let nextIndex = currentIndex + 1
     while (nextIndex < places.length && rejectedBrandsRef.current.has(getBrandKey(places[nextIndex].title))) {
@@ -573,16 +718,18 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
         entry.pending = recordSwipe(room.id, userToken.current, place.numId, direction, playerCount)
         const isMatch = await entry.pending
         if (isMatch && !entry.undone) {
+          matchEditRef.current++
+          recentMatchRef.current.set(place.id, Date.now())
+          track('match', { type: room.type })
           notifyRoom(room.id, 'match', { from: userToken.current, itemId: place.numId })
-          setMatchItem(place)
+          showMatch(place)
           setMatches(prev => prev.find(m => m.id === place.id) ? prev : [...prev, place])
-          if (!prefersReducedMotion()) confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
         }
       } catch (err) {
         console.error('recordSwipe error:', err)
       }
     }
-  }, [isSolo, places, currentIndex, room.id, playerCount])
+  }, [isSolo, places, currentIndex, room.id, room.type, playerCount, showMatch])
 
   // Step back one place. A skipped brand comes back into the deck; a taken-back
   // like is written as a newer 'left' vote so its match disappears too.
@@ -591,94 +738,90 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
     setCanUndo(historyRef.current.length > 0)
     if (!last) return
     last.undone = true
-    if (last.addedBrand) rejectedBrandsRef.current.delete(getBrandKey(last.place.title))
+    if (last.addedBrand) {
+      rejectedBrandsRef.current.delete(getBrandKey(last.place.title))
+      setSkippedBrands(new Set(rejectedBrandsRef.current))
+    }
     setCurrentIndex(last.index)
+    setSeen(n => Math.max(0, n - 1))
+    track('swipe_undo', { type: room.type, direction: last.direction })
     if (last.direction !== 'right') return
     setLikedPlaces(prev => prev.filter(p => p.id !== last.place.id))
+    const wasMatch = matchesRef.current.some(m => m.id === last.place.id)
     setMatches(prev => prev.filter(p => p.id !== last.place.id))
+    // The burst takes no taps, so undo stays reachable while it plays.
+    dropMatch(last.place.id)
     if (isSolo) return
+    if (wasMatch) removeMatch(last.place.id, room.type)
+    matchEditRef.current++
+    recentMatchRef.current.delete(last.place.id)
+    takingBackRef.current.add(last.place.id)
     try {
       await last.pending?.catch(() => {})
       await recordSwipe(room.id, userToken.current, last.place.numId, 'left', playerCount)
     } catch (err) {
       console.error('Failed to take back a like:', err)
+    } finally {
+      takingBackRef.current.delete(last.place.id)
     }
-  }, [isSolo, room.id, playerCount])
+  }, [isSolo, room.id, room.type, playerCount, dropMatch])
 
-  // ── Place match modal (together mode only) ────────────────────────────────
-  if (matchItem && !isSolo) {
-    const canKeepSwiping = !isDone && currentIndex < places.length
-    return (
-      <div className="act-match-overlay">
-        <div className="act-match-modal">
-          <div className="celebrate-badge celebrate-badge--heart act-match-badge">
-            <svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-          </div>
-          <h1>It's a Match!</h1>
-          <p className="act-match-subtitle">You both want to go here</p>
-
-          <div className="act-match-card">
-            {matchItem.poster ? (
-              <img src={matchItem.poster} alt={matchItem.title} className="act-match-img" />
-            ) : (
-              <div className="act-match-img-placeholder">{matchedCategories[0]?.emoji || '📍'}</div>
-            )}
-            <div className="act-match-info">
-              <h2>{matchItem.title}</h2>
-              {matchItem.rating && <p className="act-match-rating">★ {matchItem.rating}</p>}
-              {matchItem.isOpen != null && (
-                <p className="act-match-hours">
-                  <span style={{ color: matchItem.isOpen ? '#22c55e' : '#ef4444' }}>
-                    {matchItem.isOpen ? '● Open' : '● Closed'}
-                  </span>
-                  {matchItem.isOpen && matchItem.closesAt ? ` · until ${matchItem.closesAt}` : ''}
-                  {!matchItem.isOpen && matchItem.opensAt ? ` · opens ${matchItem.opensAt}` : ''}
-                </p>
-              )}
-              {matchItem.address && <p className="act-match-address">{matchItem.address}</p>}
-            </div>
-          </div>
-
-          <div className="act-match-actions">
-            {canKeepSwiping ? (
-              <>
-                <button className="btn btn-primary act-match-cta" onClick={() => setMatchItem(null)}>
-                  Keep Swiping · {places.length - currentIndex} left
-                </button>
-                <p className="act-match-cta-hint">Don't stop - there might be more matches!</p>
-                <button className="act-match-skip" onClick={() => { setMatchItem(null); setIsDone(true) }}>
-                  See all results
-                </button>
-              </>
-            ) : (
-              <button className="btn btn-primary act-match-cta" onClick={() => { setMatchItem(null); setIsDone(true) }}>
-                See All Matches
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    )
-  }
+  // ── Match moments (together mode only) ────────────────────────────────────
+  // The deck's first match opens the dialog, every later one flies into the
+  // counter. Also over the results: a like on the very last card that makes a
+  // match lands there (a partner's match on the results is not celebrated).
+  const canKeepSwiping = !isDone && currentIndex < places.length
+  // Cards still to come, not counting the branches of a chain being skipped.
+  const left = places.slice(currentIndex).filter(p => !skippedBrands.has(getBrandKey(p.title))).length
+  // A place without a photo: its category's emoji when the room matched on one.
+  const placeEmoji = matchedCategories.length === 1 ? matchedCategories[0].emoji : kind.emoji
+  const matchLayer = !isSolo && (
+    <>
+      {/* Stays mounted, so a screen reader hears each later match. */}
+      <div className="room-sr-only" role="status" aria-live="polite"><span key={moments.bumpKey}>{moments.announce}</span></div>
+      {moments.burstItem && (
+        <MatchBurst key={moments.burstItem.id} item={moments.burstItem} roomType={room.type} emoji={placeEmoji} onDone={moments.endBurst} />
+      )}
+      {moments.modalItem && (
+        <MatchModal
+          item={moments.modalItem}
+          roomType={room.type}
+          swipeCount={seen}
+          matchCount={1}
+          subtitle={playerCount > 2 ? kind.matchGroup : kind.matchPair}
+          emoji={placeEmoji}
+          remaining={canKeepSwiping ? left : 0}
+          onContinue={canKeepSwiping ? moments.closeModal : null}
+          onDone={() => { moments.closeModal(); setIsDone(true) }}
+        />
+      )}
+    </>
+  )
 
   // ── Results → RankingView ─────────────────────────────────────────────────
-  if (isDone) {
+  // Straight after the last card, like the movie deck: the results show the
+  // partner's progress live, so a separate "waiting for your partner" screen
+  // only kept people from their matches.
+  if (isDone || finishedSwiping) {
     const normalizedPlaces = places.map(p => ({ ...p, id: p.numId }))
     const resultsToShow = isSolo ? likedPlaces : matches
 
-    // If no unanimous matches in group mode, fall back to best-voted places
     let finalResults = resultsToShow
     let usedVoteFallback = false
     if (!isSolo && resultsToShow.length === 0 && playerCount > 2 && Object.keys(voteCounts).length > 0) {
-      usedVoteFallback = true
       const sorted = [...normalizedPlaces].sort((a, b) => (voteCounts[b.id] || 0) - (voteCounts[a.id] || 0))
-      finalResults = sorted.filter(p => (voteCounts[p.id] || 0) >= 2).slice(0, 10)
+      const best = sorted.filter(p => (voteCounts[p.id] || 0) >= 2).slice(0, 10)
+      // Only a list with something on it: an empty "Most wanted (0)" says less
+      // than "no matches yet".
+      if (best.length > 0) { usedVoteFallback = true; finalResults = best }
     }
 
     const normalizedResults = finalResults.map(p => ({ ...p, id: p.numId }))
     return (
+      <>
       <RankingView
         matches={normalizedResults}
+        liked={likedPlaces.map(p => ({ ...p, id: p.numId }))}
         room={room}
         movies={normalizedPlaces}
         onDone={onDone}
@@ -687,150 +830,19 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
         voteCounts={voteCounts}
         isFallback={usedVoteFallback}
       />
+      {matchLayer}
+      </>
     )
   }
 
   // ── Waiting for group to finish categories ───────────────────────────────
   if (waitingForPartner && !transitioning) {
-    const likedCats = ACTIVITY_CATEGORIES.filter(c => selectedCats.has(c.numId))
+    const likedCats = CATS.filter(c => selectedCats.has(c.numId))
     const othersNeeded = playerCount - 1
-    return (
-      <div className="act-center has-app-header">
-        <AppHeader className="center-app-header" />
-        <div className="act-waiting">
-          <div className="act-waiting-icon">⏳</div>
-          <h2>{playerCount > 2 ? `Waiting for the group…` : `Waiting for your partner…`}</h2>
-          {playerCount > 2 && (
-            <p className="act-waiting-participants">
-              {participantCount >= playerCount
-                ? `All ${playerCount} players have joined`
-                : `${participantCount} of ${playerCount} players joined`}
-            </p>
-          )}
-          <p className="act-waiting-text">
-            {playerCount > 2
-              ? `You've picked your activities. Waiting for the other ${othersNeeded} player${othersNeeded !== 1 ? 's' : ''}.`
-              : `You've picked your activities. Hang tight!`}
-          </p>
-          {likedCats.length > 0 && (
-            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 8 }}>
-              Your picks: {likedCats.map(c => `${c.emoji} ${c.label}`).join(', ')}
-            </p>
-          )}
-          {participantCount < playerCount ? (
-            <div className="act-waiting-invite">
-              <p className="act-waiting-text">
-                {playerCount > 2
-                  ? `Invite the others. Everyone picks their own activities on their phone, then you all swipe through places you agree on.`
-                  : `Invite your partner. They pick their own activities on their phone, then you both swipe through places you agree on.`}
-              </p>
-              <InvitePanel roomId={room.id} type={room.type} />
-            </div>
-          ) : (
-            <div className="loader" style={{ margin: '16px auto' }} />
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  // ── Transition screen ─────────────────────────────────────────────────────
-  if (transitioning) {
-    return (
-      <div className="act-center has-app-header">
-        <AppHeader className="center-app-header" />
-        <div className="act-transition">
-          {fetchingPlaces ? (
-            <>
-              <div className="act-transition-emoji">🔍</div>
-              <h2>Finding places…</h2>
-              <p className="act-transition-sub">
-                Searching for {matchedCategories.map(c => c.label).join(', ')} nearby
-              </p>
-              <div className="loader" style={{ marginTop: 20 }} />
-            </>
-          ) : matchedCategories.length > 0 ? (
-            <>
-              <div className="act-transition-emoji">{isCompromise && !isSolo ? '🤝' : '🎉'}</div>
-              <h2>
-                {isSolo
-                  ? `Finding ${matchedCategories.length} activity type${matchedCategories.length !== 1 ? 's' : ''}…`
-                  : isCompromise
-                    ? 'Meeting in the middle'
-                    : `You matched on ${matchedCategories.length} activity type${matchedCategories.length !== 1 ? 's' : ''}!`}
-              </h2>
-              <p className="act-transition-sub">
-                {isCompromise && !isSolo && 'No exact match, so here\u2019s what got the most votes: '}
-                {matchedCategories.map(c => `${c.emoji} ${c.label}`).join(' · ')}
-              </p>
-              <div className="loader" style={{ marginTop: 20 }} />
-            </>
-          ) : (
-            <>
-              <div className="act-transition-emoji">😅</div>
-              <h2>{isSolo ? 'No activities selected' : 'No activity matches'}</h2>
-              <p className="act-transition-sub">{isSolo ? 'Swipe right on at least one activity to see places.' : 'You didn\'t agree on any activities. Try creating a new room!'}</p>
-            </>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  // ── No-location error / places fetch error ────────────────────────────────
-  async function retryCategories() {
-    const next = roundRef.current + 1
-    startNewRound(next)
-    if (isSolo) return
-    // Persist the new round so the other players reset too. Without this their
-    // client kept reading the old "places" row and dragged this one back into it.
-    try {
-      await updateActivityRoomPhase(room.id, {
-        phase: 'categories', matched_categories: [], places: [], locationData: location, round: next,
-      })
-    } catch (err) { console.error('[ActivityRoom] retryCategories:', err) }
-  }
-
-  if (phase === 'places' && placesError) {
-    return (
-      <div className="act-center has-app-header">
-        <AppHeader className="center-app-header" />
-        <div className="act-error">
-          <div className="act-error-icon">😕</div>
-          <h2>Couldn't load places</h2>
-          <p className="act-error-sub">{placesError}</p>
-          <button className="btn btn-primary" style={{ marginTop: 10 }} onClick={retryCategories}>
-            Try different categories
-          </button>
-          <button className="btn btn-secondary" style={{ marginTop: 8 }} onClick={onDone}>
-            Go home
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // ── Place swipe (no places available) ─────────────────────────────────────
-  if (phase === 'places' && places.length === 0) {
-    return (
-      <div className="act-center has-app-header">
-        <AppHeader className="center-app-header" />
-        <div className="act-error">
-          <div className="act-error-icon">{matchedCategories[0]?.emoji || '📍'}</div>
-          <h2>No places found</h2>
-          <p className="act-error-sub">
-            We couldn't find any {matchedCategories.map(c => c.label).join(' or ') || 'places'} nearby.
-            {!location ? ' Add a location when creating the room to see real nearby places.' : ' Try a different category.'}
-          </p>
-          <button className="btn btn-primary" onClick={retryCategories}>Try different categories</button>
-          <button className="btn btn-secondary" style={{ marginTop: 8 }} onClick={onDone}>Go home</button>
-        </div>
-      </div>
-    )
-  }
-
-  // ── Waiting for group to finish swiping places ───────────────────────────
-  if (finishedSwiping) {
+    // participantCount only counts players who have confirmed something, so a
+    // partner who opened the link and is still picking looked absent, and the
+    // creator kept being told to invite them. In a pair Room knows better.
+    const everyoneIn = participantCount >= playerCount || (playerCount === 2 && partnerJoined)
     return (
       <div className="act-center has-app-header">
         <AppHeader className="center-app-header" />
@@ -845,31 +857,137 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
             </p>
           )}
           <p className="act-waiting-text">
-            You've swiped through all {places.length} places.
-            {matches.length > 0
-              ? ` ${playerCount > 2 ? 'Group matched on' : 'You\'ve matched on'} ${matches.length} place${matches.length !== 1 ? 's' : ''}!`
-              : playerCount > 2 ? ' Waiting to see what the group agrees on…' : ' Waiting to see if you agree on any…'}
+            {playerCount > 2
+              ? `You've picked your ${kind.picked}. Waiting for the other ${othersNeeded} player${othersNeeded !== 1 ? 's' : ''}.`
+              : everyoneIn
+                ? `You've picked your ${kind.picked}. Your partner is picking theirs now.`
+                : `You've picked your ${kind.picked}. Hang tight!`}
           </p>
-          <div className="loader" style={{ margin: '16px auto' }} />
-          {matches.length > 0 && (
-            <div className="act-waiting-matches">
-              {matches.map(p => (
-                <div key={p.id} className="act-waiting-match-item">
-                  {p.poster
-                    ? <img src={p.poster} alt={p.title} className="act-waiting-match-thumb" />
-                    : <div className="act-waiting-match-thumb act-waiting-match-thumb--empty">{matchedCategories[0]?.emoji || '📍'}</div>}
-                  <span className="act-waiting-match-name">{p.title}</span>
-                </div>
-              ))}
-            </div>
+          {likedCats.length > 0 && (
+            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 8 }}>
+              Your picks: {likedCats.map(c => `${c.emoji} ${c.label}`).join(', ')}
+            </p>
           )}
-          <button
-            className="btn btn-primary"
-            style={{ width: '100%', marginTop: 20 }}
-            onClick={() => setIsDone(true)}
-          >
-            See results now
+          {!everyoneIn ? (
+            <div className="act-waiting-invite">
+              <p className="act-waiting-text">
+                {playerCount > 2
+                  ? `Invite the others. Everyone picks their own ${kind.picked} on their phone, then you all swipe through places you agree on.`
+                  : `Invite your partner. They pick their own ${kind.picked} on their phone, then you both swipe through places you agree on.`}
+              </p>
+              <InvitePanel roomId={room.id} type={room.type} />
+            </div>
+          ) : (
+            <div className="loader" style={{ margin: '16px auto' }} />
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Transition / celebration screen ──────────────────────────────────────
+  if (transitioning) {
+    return (
+      <div className="act-center has-app-header">
+        <AppHeader className="center-app-header" />
+        <div className="act-transition">
+          {fetchingPlaces ? (
+            <>
+              <div className="act-transition-emoji">🔍</div>
+              <h2>Finding {kind.places}…</h2>
+              <p className="act-transition-sub">
+                Searching for {matchedCategories.map(c => c.label).join(', ')} nearby
+              </p>
+              <div className="loader" style={{ marginTop: 20 }} />
+            </>
+          ) : matchedCategories.length > 0 ? (
+            <>
+              <div className="act-transition-emoji">{isCompromise && !isSolo ? '🤝' : '🎉'}</div>
+              <h2>
+                {isSolo
+                  ? `Finding ${kind.catCount(matchedCategories.length)}…`
+                  : isCompromise
+                    ? 'Meeting in the middle'
+                    : `You matched on ${kind.catCount(matchedCategories.length)}!`}
+              </h2>
+              <p className="act-transition-sub">
+                {isCompromise && !isSolo && 'No exact match, so here\u2019s what got the most votes: '}
+                {matchedCategories.map(c => `${c.emoji} ${c.label}`).join(' · ')}
+              </p>
+              <div className="loader" style={{ marginTop: 20 }} />
+            </>
+          ) : (
+            <>
+              <div className="act-transition-emoji">😅</div>
+              <h2>{isSolo ? kind.noneSelected : kind.noneMatched}</h2>
+              <p className="act-transition-sub">{isSolo ? kind.soloNoneHint : kind.noAgreement}</p>
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Places fetch error ────────────────────────────────────────────────────
+  async function retryCategories() {
+    const next = roundRef.current + 1
+    startNewRound(next)
+    if (isSolo) return
+    // Persist the new round so the other players reset too. Without this their
+    // client kept reading the old "places" row and dragged this one back into it.
+    try {
+      await updateActivityRoomPhase(room.id, {
+        phase: 'categories', matched_categories: [], places: [], locationData: location, round: next,
+      })
+    } catch (err) { console.error('[PlacesRoom] retryCategories:', err) }
+  }
+
+  if (phase === 'places' && placesError) {
+    return (
+      <div className="act-center has-app-header">
+        <AppHeader className="center-app-header" />
+        <div className="act-error">
+          <div className="act-error-icon">😕</div>
+          <h2>Couldn't load {kind.places}</h2>
+          <p className="act-error-sub">{placesError}</p>
+          <button className="btn btn-primary" style={{ marginTop: 10 }} onClick={retryCategories}>
+            {kind.tryDifferent}
           </button>
+          <button className="btn btn-secondary" style={{ marginTop: 8 }} onClick={onDone}>Go home</button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── No places found ───────────────────────────────────────────────────────
+  if (phase === 'places' && places.length === 0) {
+    return (
+      <div className="act-center has-app-header">
+        <AppHeader className="center-app-header" />
+        <div className="act-error">
+          <div className="act-error-icon">{matchedCategories[0]?.emoji || kind.emoji}</div>
+          <h2>No {kind.places} found</h2>
+          <p className="act-error-sub">
+            We couldn't find any {matchedCategories.map(c => c.label).join(' or ') || kind.places} nearby.
+            {!location ? kind.noLocation : kind.tryOther}
+          </p>
+          <button className="btn btn-primary" onClick={retryCategories}>{kind.tryDifferent}</button>
+          <button className="btn btn-secondary" style={{ marginTop: 8 }} onClick={onDone}>Go home</button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── No location set ───────────────────────────────────────────────────────
+  if (!location) {
+    return (
+      <div className="act-center has-app-header">
+        <AppHeader className="center-app-header" />
+        <div className="act-error">
+          <div className="act-error-icon">📍</div>
+          <h2>No location set</h2>
+          <p className="act-error-sub">Please create a new room and enter your location.</p>
+          <button className="btn btn-primary" onClick={onDone}>Go home</button>
         </div>
       </div>
     )
@@ -881,23 +999,25 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
       <div className="act-room">
         <div className="act-header">
           <HomeLogo />
-          <span className="act-phase-label">🎯 What do you want to do?</span>
+          <span className="act-phase-label">{kind.gridTitle}</span>
           <div className="act-header-right">
             <span className="act-progress">{selectedCats.size} selected</span>
             <ThemeToggle />
           </div>
         </div>
 
+        {banner && <div className="act-banner">{banner}</div>}
+
         <div className="act-grid-scroll">
           <p className="act-grid-hint">
             {isSolo
-              ? 'Pick everything you\'re up for - one or more.'
+              ? kind.hintSolo
               : playerCount > 2
-                ? `Pick what you're up for - you'll do what all ${playerCount} agree on.`
-                : 'Pick everything you\'re up for - you\'ll do what you both agree on.'}
+                ? kind.hintGroup(playerCount)
+                : kind.hintPair}
           </p>
           <CategoryGrid
-            categories={ACTIVITY_CATEGORIES}
+            categories={CATS}
             selected={selectedCats}
             onToggle={toggleCategory}
           />
@@ -910,17 +1030,17 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
             disabled={selectedCats.size === 0 || fetchingPlaces}
           >
             {fetchingPlaces
-              ? 'Finding places…'
+              ? `Finding ${kind.places}…`
               : selectedCats.size === 0
                 ? 'Pick at least one'
-                : `Find places · ${selectedCats.size} selected`}
+                : `Find ${kind.places} · ${selectedCats.size} selected`}
           </button>
         </div>
       </div>
     )
   }
 
-  // ── Place swipe UI ────────────────────────────────────────────────────────
+  // ── Restaurant swipe UI ───────────────────────────────────────────────────
   const currentPlace = places[currentIndex]
   return (
     <div className="act-room">
@@ -928,25 +1048,41 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
         <HomeLogo />
         <span className="act-phase-label">
           {matchedCategories.map(c => c.emoji).join(' ')}{' '}
-          {location?.locationName ? `near ${location.locationName}` : 'Places'}
+          {location?.locationName ? `near ${location.locationName}` : kind.placesTitle}
         </span>
         <div className="act-header-right">
           {isSolo
-            ? likedPlaces.length > 0 && <span className="act-match-count">{likedPlaces.length} pick{likedPlaces.length !== 1 ? 's' : ''}</span>
-            : matches.length > 0 && <span className="act-match-count">{matches.length} match{matches.length !== 1 ? 'es' : ''}</span>}
-          <span className="act-progress">{currentIndex + 1} / {places.length}</span>
+            ? likedPlaces.length > 0 && <span className="room-matches">{likedPlaces.length} pick{likedPlaces.length !== 1 ? 's' : ''}</span>
+            : matches.length > 0 && (
+              // The burst flies into this pill; the key replays its bump.
+              <span key={moments.bumpKey} className={`room-matches${moments.bumpKey > 0 ? ' is-bump' : ''}`}>
+                {matches.length} match{matches.length !== 1 ? 'es' : ''}
+              </span>
+            )}
+          <span className="act-progress">{seen + 1} / {seen + left}</span>
           <ThemeToggle />
         </div>
       </div>
 
-      {partnerDone && !isSolo && (
-        <div className="act-banner">
-          <div className="partner-done-banner">
-            <span className="partner-done-dot" aria-hidden="true" />
-            {playerCount > 2 ? 'Someone finished swiping' : 'Your partner finished swiping'}
+      {partnerDone && !isSolo && (() => {
+        // In a pair a match needs only their like, so count their picks still
+        // ahead (minus brands this player is skipping). A group needs everyone.
+        const theirs = new Set(partnerLikeIds)
+        const reachable = playerCount > 2 ? 0 : places.slice(currentIndex)
+          .filter(p => theirs.has(p.numId) && !skippedBrands.has(getBrandKey(p.title))).length
+        return (
+          <div className="act-banner">
+            <div className="partner-done-banner">
+              <span className="partner-done-dot" aria-hidden="true" />
+              {playerCount > 2
+                ? 'Someone finished swiping'
+                : reachable > 0
+                  ? `Your partner finished · ${reachable} possible match${reachable !== 1 ? 'es' : ''} left`
+                  : 'Your partner finished swiping'}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       <div className="act-cards">
         <SwipeCard
@@ -955,6 +1091,8 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
           onSwipe={handlePlaceSwipe}
           onUndo={handlePlaceUndo}
           canUndo={canUndo}
+          fallbackEmoji={placeEmoji}
+          paused={Boolean(moments.modalItem)}
           active
         />
       </div>
@@ -966,6 +1104,8 @@ export default function ActivityRoom({ room, onDone, isSolo = false }) {
             : `I'm done swiping${matches.length > 0 ? ` · ${matches.length} match${matches.length !== 1 ? 'es' : ''}` : ''}`}
         </button>
       </div>
+
+      {matchLayer}
     </div>
   )
 }

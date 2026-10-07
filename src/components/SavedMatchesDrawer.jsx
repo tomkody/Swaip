@@ -89,7 +89,9 @@ export default function SavedMatchesDrawer({ open, onClose }) {
                   <div className="drawer-group-items">
                     {grouped[cat].map(m => (
                       <div key={m.id + m.category} className="drawer-item">
-                        {m.image ? (
+                        {/* Places saved before this was fixed carry a Google photo
+                            URL, which is a paid lookup on every load: show the emoji. */}
+                        {m.image && cat !== 'food' && cat !== 'activities' ? (
                           <img src={m.image} alt={m.title} className="drawer-item-img" />
                         ) : (
                           <div className="drawer-item-img drawer-item-placeholder">

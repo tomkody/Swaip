@@ -288,7 +288,8 @@ async function generateMatchesImage({ items, typeLabel, recommendation, solo = f
   const cardGap = 24
   const cardStartY = contentTop
   const posterW = 120, posterH = 172
-  const emojiMap = { series: '📺', activities: '🎯', food: '🍽️' }
+  // RankingView passes its typeLabel ('shows', 'restaurants'), not the room type.
+  const emojiMap = { series: '📺', shows: '📺', activities: '🎯', food: '🍽️', restaurants: '🍽️' }
   const fallbackEmoji = emojiMap[typeLabel] || '🎬'
 
   for (let i = 0; i < displayItems.length; i++) {

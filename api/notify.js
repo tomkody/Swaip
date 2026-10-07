@@ -14,7 +14,14 @@ const COPY = {
   joined: { title: '🎉 They joined!', body: 'Your partner just joined your Swaip room - start swiping!' },
   match:  { title: "💘 It's a match!", body: 'You both liked the same thing - open Swaip to see it.' },
 }
+// Food and activity rooms take up to 6 players: "your partner" and "you both"
+// would be wrong there.
+const GROUP_COPY = {
+  joined: { title: '🎉 Someone joined!', body: 'Someone just joined your Swaip room - start swiping!' },
+  match:  { title: "💘 It's a match!", body: 'Everyone liked the same thing - open Swaip to see it.' },
+}
 const CATALOG_TABLE = { movies: 'movie_catalog', series: 'series_catalog' }
+const PLACE_TYPES = new Set(['food', 'activities'])
 
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
@@ -43,6 +50,25 @@ function playerCount(room) {
   try { return Number(JSON.parse(room.topic_id || '')?.playerCount) || 2 } catch { return 2 }
 }
 
+// A place room carries its deck in the row (topic_id._places), so a place is
+// named without any Google call. Unlike the catalogs, that row is writable by
+// any member of the room, so the name is treated as untrusted: plain text,
+// no links, short. Returns undefined when the item isn't one of the places.
+const URL_LIKE = /(https?:|www\.|[a-z0-9-]+\.[a-z]{2,}(\/|$))/i
+export function placeTitle(room, item) {
+  let places
+  try { places = JSON.parse(room.topic_id || '')?._places } catch { return undefined }
+  const place = Array.isArray(places) ? places.find(p => Number(p?.numId) === item) : null
+  if (!place) return undefined
+  const title = typeof place.title === 'string'
+    // Control and bidi-override characters are exactly what must not reach a lock screen.
+    // eslint-disable-next-line no-control-regex
+    ? place.title.replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, '').replace(/\s+/g, ' ').trim()
+    : ''
+  if (!title || title.length > 60 || URL_LIKE.test(title)) return null
+  return title
+}
+
 // 'joined' is legit once the room is active. The client flips the status and
 // pings us in the same tick, so give that write a moment to land.
 async function verifyJoined(supabase, room, id) {
@@ -53,7 +79,8 @@ async function verifyJoined(supabase, room, id) {
 }
 
 // 'match' is legit when enough distinct players liked the item and the sender
-// is one of them. The title comes from our catalog, never from the request.
+// is one of them. The title comes from our catalog (or, for places, the
+// room's own deck, sanitised), never from the request.
 async function verifyMatch(supabase, room, id, itemId, from) {
   const item = Number(itemId)
   if (!Number.isFinite(item)) return { ok: false }
@@ -71,6 +98,10 @@ async function verifyMatch(supabase, room, id, itemId, from) {
   }
   const likers = new Set([...latest.values()].filter(v => v.direction === 'right').map(v => v.user_token))
   if (likers.size < playerCount(room) || (from && !likers.has(from))) return { ok: false }
+  if (PLACE_TYPES.has(room.type)) {
+    const title = placeTitle(room, item)
+    return title === undefined ? { ok: false } : { ok: true, title }
+  }
   const table = CATALOG_TABLE[room.type]
   if (!table) return { ok: true, title: null }
   const { data: rows } = await supabase.from(table).select('title').eq('tmdb_id', item).limit(1)
@@ -117,7 +148,7 @@ export default async function handler(req, res) {
 
   markNotified(signature)
   webpush.setVapidDetails('mailto:hello@swaip.app', pub, priv)
-  const copy = COPY[event]
+  const copy = (playerCount(room) > 2 ? GROUP_COPY : COPY)[event]
   const payload = JSON.stringify({
     title: copy.title,
     body: title ? `${title} - ${copy.body}` : copy.body,
