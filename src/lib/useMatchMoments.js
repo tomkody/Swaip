@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { saveMatch } from './savedMatches'
 
 const PLACE_TYPES = new Set(['food', 'activities'])
@@ -12,9 +12,19 @@ export function useMatchMoments(matchesRef) {
   const [burstItem, setBurstItem] = useState(null)
   const [bumpKey, setBumpKey] = useState(0)      // replays the counter bump once per burst
   const [announce, setAnnounce] = useState('')   // what the live region reads out
+  // Each match is celebrated once. The second liker hears about it twice (own
+  // swipe, then realtime), and on a slow phone the echo came after they had
+  // closed the dialog, which opened it again: "Keep swiping" seemed broken.
+  // Updated synchronously, so it also settles first-vs-later between two
+  // matches landing in the same moment.
+  const celebratedRef = useRef(new Set())
 
   const show = useCallback(item => {
-    if (matchesRef.current.some(m => m.id !== item.id)) {
+    const celebrated = celebratedRef.current
+    if (celebrated.has(item.id)) return
+    const later = matchesRef.current.some(m => m.id !== item.id) || [...celebrated].some(id => id !== item.id)
+    celebrated.add(item.id)
+    if (later) {
       setBurstItem(item)
       setBumpKey(k => k + 1)
       setAnnounce(`It's a match: ${item.title}`)
@@ -27,6 +37,7 @@ export function useMatchMoments(matchesRef) {
   // The announcement goes too: left in place, a later match with the same
   // title would set identical text and the screen reader would say nothing.
   const drop = useCallback(id => {
+    celebratedRef.current.delete(id)   // matched again later, it is new again
     setModalItem(cur => (cur && cur.id === id ? null : cur))
     setBurstItem(cur => (cur && cur.id === id ? null : cur))
     setAnnounce('')

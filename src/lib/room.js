@@ -747,6 +747,10 @@ export function subscribeToSwipes(roomId, userToken, onMatch, playerCount = 2, {
             return
           }
           if (swipe.user_token !== userToken && swipe.direction === 'right') {
+            // Already a match here: this player's own swipe found it first. The
+            // lookup below would see their like and report it a second time
+            // (on a slow phone after they had closed the dialog, reopening it).
+            if (isMatched?.(Number(swipe.item_id))) return
             // Fire match when all playerCount distinct users have liked this item
             const { data } = await supabase
               .from('swipes')
@@ -759,7 +763,7 @@ export function subscribeToSwipes(roomId, userToken, onMatch, playerCount = 2, {
             // Without the has(userToken) check, a match between other people in
             // the room would wrongly pop "It's a Match!" for someone who never
             // liked the item.
-            if (uniqueTokens.size >= playerCount && uniqueTokens.has(userToken)) {
+            if (uniqueTokens.size >= playerCount && uniqueTokens.has(userToken) && !isMatched?.(Number(swipe.item_id))) {
               onMatch(Number(swipe.item_id))
             }
           }
