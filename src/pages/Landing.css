@@ -512,6 +512,20 @@
   text-shadow: 0 1px 2px rgba(120, 30, 20, 0.25);
 }
 .lp-catcard--primary .lp-catcard-desc { color: rgba(255, 255, 255, 0.92); font-weight: 500; }
+/* Movies and TV Series each get their own colour, and neither is the orange
+   of the buttons: two identical orange tiles next to orange CTAs made it hard
+   to tell what to tap. Cinema red for films, screen-glow blue for TV. */
+.lp-catcard--movies {
+  background-image: linear-gradient(140deg, #D7264A 0%, #9B1B5A 100%);
+  text-shadow: 0 1px 2px rgba(70, 0, 25, 0.35);
+}
+.lp-catcard--series {
+  background-image: linear-gradient(140deg, #3460E0 0%, #5A3FD6 100%);
+  text-shadow: 0 1px 2px rgba(10, 20, 80, 0.35);
+}
+.lp-catcard--movies:hover, .lp-catcard--movies:focus-visible { box-shadow: 0 14px 34px rgba(155, 27, 90, 0.35); }
+.lp-catcard--series:hover, .lp-catcard--series:focus-visible { box-shadow: 0 14px 34px rgba(52, 96, 224, 0.35); }
+
 /* No tile on the gradient cards. A translucent white square sitting on the
    sunset gradient read as a stray box rather than as a container — the white
    cards below still get a tinted one, where it does its job. */

@@ -107,16 +107,55 @@ export function platformTag() {
   return 'desktop'
 }
 
+// Messenger, Instagram and Facebook open links in their own browser, which
+// gets that app's location permission (often approximate), not Safari's.
+export function inAppBrowserName() {
+  const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || ''
+  if (/FBAN\/Messenger|MessengerForiOS|Orca-Android/i.test(ua)) return 'Messenger'
+  if (/Instagram/i.test(ua)) return 'Instagram'
+  if (/FBAN|FBAV|FB_IAB/i.test(ua)) return 'Facebook'
+  return null
+}
+
+const IOS_BROWSERS = [[/CriOS\//, 'Chrome'], [/FxiOS\//, 'Firefox'], [/EdgiOS\//, 'Edge'], [/OPiOS\/|OPT\//, 'Opera'], [/GSA\//, 'Google']]
+
+// A phone fix of a kilometre or more is not weak GPS. It is the phone handing
+// websites an approximate location on purpose (Precise Location off for
+// Safari Websites, or for the app whose browser this is): the same phone shows
+// the exact spot in Google Maps, which has its own permission, and stepping
+// outside changes nothing.
+export function isApproximate(accuracy) {
+  return accuracy != null && accuracy >= 1000 && platformTag() !== 'desktop'
+}
+
 // Why the fix is poor, in three words. A number on its own reads like the app's
 // fault; "weak GPS" tells people it's the building they're standing in.
-export function accuracyReason() {
+export function accuracyReason(accuracy) {
+  if (isApproximate(accuracy)) return 'approximate location'
   return platformTag() === 'desktop' ? 'no GPS' : 'weak GPS'
 }
 
 // What to do about it. The iOS Settings path used to be here - five levels of
 // menu that nobody is going to walk through to pick a bar. Two things people
 // will actually do, and the first one is right there on screen.
-export function accuracyAdvice() {
+// For an approximate fix the one real fix is the setting, so it is named in a
+// single line rather than walked through.
+export function accuracyAdvice(accuracy) {
+  if (isApproximate(accuracy)) {
+    const app = inAppBrowserName()
+    if (app) return `${app} only shares an approximate location. Open swaip.app in Safari or Chrome, or type your street.`
+    const already = 'If it is already on, step outside for a minute or type your street.'
+    if (platformTag() === 'ios') {
+      // Each iOS browser has its own location permission; only Safari's lives
+      // under "Safari Websites".
+      const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || ''
+      const named = IOS_BROWSERS.find(([re]) => re.test(ua))?.[1]
+      if (named) return `Your iPhone may only be sharing an approximate location with ${named}. Turn on Precise Location in Settings › Privacy & Security › Location Services › ${named}. ${already}`
+      if (!/Safari\//.test(ua)) return 'This app may only be sharing an approximate location. Open swaip.app in Safari, or type your street.'
+      return `Your iPhone may only be sharing an approximate location with websites. Turn on Precise Location in Settings › Privacy & Security › Location Services › Safari Websites. ${already}`
+    }
+    return `Your phone may only be sharing an approximate location with this browser. Turn on precise location for it in your location settings. ${already}`
+  }
   return platformTag() === 'desktop'
     ? 'Type where you are - computers locate by Wi-Fi, which is often kilometres off.'
     : 'Type where you are, or step outside for a minute.'

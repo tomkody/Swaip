@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { accuracyLevel, formatAccuracy, accuracyBucket, getBestPosition } from '../geo'
+import { accuracyLevel, formatAccuracy, accuracyBucket, getBestPosition, accuracyReason, accuracyAdvice } from '../geo'
 
 describe('accuracyLevel', () => {
   it('treats a normal GPS fix as good', () => {
@@ -71,5 +71,41 @@ describe('getBestPosition', () => {
     const p = getBestPosition()
     geo.err({ code: 1 })
     await expect(p).rejects.toMatchObject({ code: 1 })
+  })
+})
+
+describe('approximate location advice', () => {
+  const as = ua => vi.stubGlobal('navigator', { userAgent: ua })
+  afterEach(() => vi.unstubAllGlobals())
+  const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1'
+
+  it('calls a kilometres-wide iPhone fix approximate and names the setting', () => {
+    as(IPHONE)
+    expect(accuracyReason(3200)).toBe('approximate location')
+    expect(accuracyAdvice(3200)).toMatch(/Safari Websites/)
+    expect(accuracyAdvice(3200)).toMatch(/If it is already on/)
+  })
+
+  it('points Chrome on iPhone at Chrome\'s own setting, not Safari\'s', () => {
+    as('Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/140.0.7339.101 Mobile/15E148 Safari/604.1')
+    expect(accuracyAdvice(3200)).toMatch(/Location Services › Chrome/)
+    expect(accuracyAdvice(3200)).not.toMatch(/Safari Websites/)
+  })
+
+  it('blames the in-app browser inside Messenger', () => {
+    as(`${IPHONE} [FBAN/MessengerForiOS;FBAV/500.0]`)
+    expect(accuracyAdvice(5000)).toMatch(/^Messenger only shares an approximate location/)
+  })
+
+  it('keeps "weak GPS" for a merely rough phone fix and "no GPS" on a computer', () => {
+    as(IPHONE)
+    expect(accuracyReason(400)).toBe('weak GPS')
+    as('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36')
+    expect(accuracyReason(3200)).toBe('no GPS')
+  })
+
+  it('never uses an em dash', () => {
+    as(IPHONE)
+    expect(`${accuracyAdvice(3200)} ${accuracyAdvice(400)}`).not.toMatch(/[—–]/)
   })
 })

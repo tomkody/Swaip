@@ -1,0 +1,155 @@
+/* Repeat-match animation. The chip starts where the swiped card was (the
+   middle of the deck), rises to just under the header, holds, then shrinks
+   off toward the match counter at the top right. Never takes a tap. */
+.mb-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 450;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 72px);
+}
+
+.mb-flight {
+  position: relative;
+  height: max-content;
+  animation: mbFlight 2600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+@keyframes mbFlight {
+  0%   { transform: translateY(34vh) scale(0.55); opacity: 0; }
+  14%  { transform: translateY(-6px) scale(1.06); opacity: 1; }
+  22%  { transform: translateY(0) scale(1); }
+  76%  { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx, 0px), var(--ty, -60px)) scale(0.2); opacity: 0; }
+}
+
+/* The film's own colours: its poster, blurred into a halo. */
+.mb-glow {
+  position: absolute;
+  inset: -14px -22px;
+  border-radius: 999px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(22px) saturate(1.8);
+  opacity: 0.75;
+  animation: mbGlow 1.3s ease-in-out 0.35s 2 alternate;
+}
+@keyframes mbGlow {
+  from { opacity: 0.75; transform: scale(1); }
+  to   { opacity: 0.95; transform: scale(1.08); }
+}
+
+.mb-chip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(320px, calc(100vw - 48px));
+  padding: 7px 18px 7px 7px;
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--border);
+}
+
+.mb-poster {
+  position: relative;
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  overflow: visible;
+}
+.mb-poster img,
+.mb-poster-blank {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  background: var(--bg-secondary);
+  font-size: 22px;
+  animation: mbPosterPop 600ms cubic-bezier(0.34, 1.56, 0.64, 1) 180ms both;
+}
+@keyframes mbPosterPop {
+  from { transform: scale(0.6) rotate(-12deg); }
+  to   { transform: scale(1) rotate(0); }
+}
+.mb-badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, #FF4D6D, #FF2E63);
+  box-shadow: 0 0 0 2px var(--bg-card);
+  animation: mbBeat 700ms ease-out 450ms 2;
+}
+@keyframes mbBeat {
+  0%, 100% { transform: scale(1); }
+  35%      { transform: scale(1.35); }
+}
+
+.mb-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+.mb-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #E0245E;
+}
+[data-theme="dark"] .mb-kicker { color: #FF6B8E; }
+.mb-title {
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Hearts thrown off the poster as it lands. */
+.mb-hearts {
+  position: absolute;
+  left: 30px;
+  top: 30px;
+  width: 0;
+  height: 0;
+}
+.mb-heart {
+  position: absolute;
+  left: -7px;
+  top: -7px;
+  color: #FF3D6E;
+  opacity: 0;
+  animation: mbHeart 900ms cubic-bezier(0.22, 1, 0.36, 1) calc(320ms + var(--d)) both;
+}
+@keyframes mbHeart {
+  0%   { transform: translate(0, 0) scale(0.4) rotate(0); opacity: 0; }
+  25%  { opacity: 1; }
+  100% { transform: translate(var(--x), var(--y)) scale(1) rotate(var(--r)); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mb-flight { animation: mbFade 2200ms ease both; }
+  .mb-glow, .mb-badge, .mb-poster img, .mb-poster-blank { animation: none; }
+  .mb-hearts { display: none; }
+}
+@keyframes mbFade {
+  0%   { opacity: 0; }
+  12%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { opacity: 0; }
+}

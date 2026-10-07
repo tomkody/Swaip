@@ -12,8 +12,8 @@ import './Landing.css'
 // catalogue-backed picks lead as coral tiles, the beta rooms follow on
 // neutral cards. `tone` keys the icon tile colour.
 const CATEGORIES = [
-  { to: '/create/movies',        label: 'Movies',        desc: "Find a film you'll both love",        emoji: '🍿', primary: true },
-  { to: '/create/series',        label: 'TV Series',     desc: 'Find your next binge-watch',          emoji: '📺', primary: true },
+  { to: '/create/movies',        label: 'Movies',        desc: "Find a film you'll both love",        emoji: '🍿', primary: true, tile: 'movies' },
+  { to: '/create/series',        label: 'TV Series',     desc: 'Find your next binge-watch',          emoji: '📺', primary: true, tile: 'series' },
   { to: '/create/activities',    label: 'Activities',    desc: 'Discover fun things to do nearby',    emoji: '🎯', tone: 'activities', beta: true },
   { to: '/create/food',          label: 'Food & Drinks', desc: 'Find where to eat or grab a drink',   emoji: '🍽️', tone: 'food',       beta: true },
   // Off the grid for now, kept whole so it can come back: the room, the route
@@ -164,7 +164,6 @@ export default function Landing() {
             <a className="lp-nav-link" href="#explore">Explore</a>
           </nav>
           <div className="lp-header-actions">
-            <a className="lp-btn lp-btn--sm" href="#explore" onClick={() => cta('header')}>Start a room</a>
             <HamburgerMenu dark={dark} onToggleDark={toggleDark} onSavedMatches={() => setDrawerOpen(true)} />
           </div>
         </div>
@@ -268,7 +267,7 @@ export default function Landing() {
                 <Link
                   key={c.to}
                   to={c.to}
-                  className={`lp-catcard ${c.primary ? 'lp-catcard--primary' : ''} ${c.wide ? 'lp-catcard--wide' : ''}`}
+                  className={`lp-catcard ${c.primary ? 'lp-catcard--primary' : ''} ${c.tile ? `lp-catcard--${c.tile}` : ''} ${c.wide ? 'lp-catcard--wide' : ''}`}
                   onClick={() => cta(`category:${c.label}`)}
                 >
                   {c.beta && <span className="lp-catcard-beta">Beta</span>}
@@ -302,11 +301,11 @@ export default function Landing() {
               <p className="lp-panel-label">Preview · room setup</p>
               <div className="lp-modes">
                 <div className="lp-mode is-on">
-                  <span className="lp-mode-icon">👥</span>
+                  <span className="lp-mode-icon">🤝</span>
                   <span><strong>Pick together</strong><span>Share a link and match on what you both want</span></span>
                 </div>
                 <div className="lp-mode">
-                  <span className="lp-mode-icon">👤</span>
+                  <span className="lp-mode-icon">🙋</span>
                   <span><strong>Pick solo</strong><span>Just you - swipe at your own pace</span></span>
                 </div>
               </div>
