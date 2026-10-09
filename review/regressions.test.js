@@ -259,7 +259,7 @@ it('serves a catalog region from the CDN only for a known kind, a region and a r
   expect(res.code).toBe(200)
   expect(res.body.map(r => r.title).sort()).toEqual(['A', 'B'])
   // The cache key must not be free-form, or anyone could bust the CDN copy.
-  for (const query of [{ kind: 'movies', region: 'CZ', d: '2020-01-01' }, { kind: 'users', region: 'CZ', d: catalogDay() }, { kind: 'movies', region: 'cz;', d: catalogDay() }]) {
+  for (const query of [{ kind: 'movies', region: 'CZ', d: '2020-01-01' }, { kind: 'movies', region: 'CZ', d: catalogDay(Date.now() + 86400000) }, { kind: 'users', region: 'CZ', d: catalogDay() }, { kind: '__proto__', region: 'CZ', d: catalogDay() }, { kind: 'movies', region: 'cz;', d: catalogDay() }]) {
     res = response()
     await catalog({ method: 'GET', query }, res)
     expect(res.code).toBe(400)

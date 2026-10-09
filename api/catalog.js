@@ -6,7 +6,7 @@
 // runs only on a cache miss.
 //   GET /api/catalog?kind=movies|series&region=CZ&d=2026-10-09
 // `d` (see src/lib/catalogDay.js) only names the copy; only the current day
-// and the two before it are accepted, so the cache can't be busted at will.
+// and the two before it are accepted, which keeps the number of copies small.
 
 import { createClient } from '@supabase/supabase-js'
 import { catalogDay } from '../src/lib/catalogDay.js'
@@ -43,9 +43,11 @@ export default async function handler(req, res) {
   const kind = String(req.query.kind || '')
   const region = String(req.query.region || '')
   const day = String(req.query.d || '')
-  const table = TABLES[kind]
+  const table = Object.hasOwn(TABLES, kind) ? TABLES[kind] : null
   const now = Date.now()
-  const days = new Set([-2, -1, 0, 1].map(k => catalogDay(now + k * DAY_MS)))
+  // Today and the two days before (a partner joining late). Not tomorrow:
+  // that copy would be filled with today's rows and served all of tomorrow.
+  const days = new Set([-2, -1, 0].map(k => catalogDay(now + k * DAY_MS)))
   if (!table || !/^[A-Z]{2}$/.test(region) || !days.has(day)) {
     return fail(res, 400, 'kind (movies|series), region (two letters) and d (a recent catalog day) are required')
   }

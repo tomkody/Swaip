@@ -14,9 +14,53 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
+// Created on first use, not at import. Creating the client registers its own
+// auth listener, which refreshes a returning visitor's expired session at once,
+// on every page, the landing page included, and a refresh counts that browser
+// as a monthly active user (50,000 on the Free plan). The landing page never
+// touches it now. Token refreshing is also off until ensureSession() finds a
+// room that needs it. `supabase` stays null without credentials, as before.
+let client = null
+function realClient() {
+  if (!client) client = createClient(supabaseUrl, supabaseAnonKey, { auth: { autoRefreshToken: false } })
+  return client
+}
 export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? new Proxy({}, {
+      get(_target, prop) {
+        const c = realClient()
+        const value = c[prop]
+        return typeof value === 'function' ? value.bind(c) : value
+      },
+    })
   : null
+
+// The signed-in user id stored by an earlier visit, read straight from
+// storage: asking the auth client would refresh an expired token.
+export function storedUserId() {
+  if (!supabaseUrl) return null
+  try {
+    const ref = new URL(supabaseUrl).hostname.split('.')[0]
+    return JSON.parse(localStorage.getItem(`sb-${ref}-auth-token`) || 'null')?.user?.id || null
+  } catch { return null }
+}
+
+// Called with the user whenever a session is ready or changes, but only after
+// something on the page has needed one (see ensureSession).
+const sessionListeners = new Set()
+let sessionWatch = false
+export function onSession(cb) {
+  sessionListeners.add(cb)
+  return () => sessionListeners.delete(cb)
+}
+function watchSession() {
+  if (sessionWatch || !supabase) return
+  sessionWatch = true
+  supabase.auth.startAutoRefresh()
+  supabase.auth.onAuthStateChange((_event, session) => {
+    for (const cb of sessionListeners) cb(session?.user || null)
+  })
+}
 
 // ── Anonymous session ─────────────────────────────────────────────────────────
 // Row-level security needs something to hang an identity on. The anon KEY is
@@ -37,7 +81,7 @@ export function ensureSession() {
   if (!sessionPromise) {
     sessionPromise = (async () => {
       const { data } = await supabase.auth.getSession()
-      if (data?.session) return data.session
+      if (data?.session) { watchSession(); return data.session }
       const { data: created, error } = await supabase.auth.signInAnonymously()
       if (error) {
         if (!signInWarned) {
@@ -47,6 +91,7 @@ export function ensureSession() {
         sessionPromise = null      // let a later call retry
         return null
       }
+      watchSession()
       return created?.session || null
     })()
   }

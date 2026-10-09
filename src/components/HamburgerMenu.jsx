@@ -152,7 +152,8 @@ export default function HamburgerMenu({ onSavedMatches, dark, onToggleDark }) {
           <div className="hm-divider" />
 
           {/* Account (hidden until sign-in is enabled; brings its own divider) */}
-          <AccountSection />
+          {/* Its effect reads the auth client, so it isn't mounted while sign-in is off. */}
+          {SIGNIN_ENABLED && <AccountSection />}
 
           {/* Contact */}
           <a className="hm-item" href="mailto:swaiptheapp@gmail.com">

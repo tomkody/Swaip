@@ -1,5 +1,4 @@
-import { supabase } from './supabase'
-import { getUser, onAuthChange } from './auth'
+import { supabase, storedUserId, onSession } from './supabase'
 
 // Saved matches: localStorage is the instant source of truth, and every save is
 // mirrored to a Supabase `saved_matches` table under a persistent DEVICE id so
@@ -23,6 +22,11 @@ function currentKey() { return historyKey || getDeviceId() }
 
 export function initHistorySync() {
   if (!supabase) return
+  // Without touching the auth client at boot (that refreshes an expired token,
+  // counting the visitor as a monthly user on the landing page too): the key
+  // comes from storage, and the adoption below runs once a room has signed in.
+  const stored = storedUserId()
+  if (stored) historyKey = `user:${stored}`
   const apply = (user) => {
     if (!user) { historyKey = null; return }
     const userKey = `user:${user.id}`
@@ -39,8 +43,7 @@ export function initHistorySync() {
     }
     historyKey = userKey
   }
-  getUser().then(apply)
-  onAuthChange(apply)
+  onSession(apply)
 }
 
 export function getDeviceId() {
@@ -116,7 +119,7 @@ export async function syncSavedMatches() {
   if (!supabase || remoteUnavailable || !device) return local
   // Without a session (someone who never opened a room) the policies return
   // nothing anyway: skip the request rather than sign them in for it.
-  if (!(await getUser())) return local
+  if (!storedUserId()) return local
   try {
     const { data, error } = await supabase
       .from('saved_matches')
