@@ -1,6 +1,7 @@
 import { supabase, ensureSession } from './supabase'
 import { v4 as uuidv4 } from 'uuid'
 import { detectRegion } from './tmdb'
+import { catalogDay } from './catalogDay'
 import { track } from './analytics'
 
 // Sentinel item ids used to signal "I'm done" rather than a real pick.
@@ -189,9 +190,9 @@ export function getRoomToken(roomId) {
 export async function createMovieRoom(platforms = [], genres = [], { solo = false, length = 'any', era = 'any' } = {}) {
   track('room_created', { type: 'movies', solo, length, era })
   const roomId = uuidv4().slice(0, 8)
-  // Pin the creator's region so every partner swipes the SAME deck.
+  // Pin the creator's region and catalog day so every partner swipes the SAME deck.
   const filters = JSON.stringify({
-    platforms, genres, region: detectRegion(),
+    platforms, genres, region: detectRegion(), cd: catalogDay(),
     ...(solo && { solo: true }),
     ...(length !== 'any' && { length }),
     ...(era !== 'any' && { era }),
@@ -257,8 +258,8 @@ export async function createConversationRoom(topicIds, topicNames, { solo = fals
 export async function createSeriesRoom(platforms = [], genres = [], { solo = false } = {}) {
   track('room_created', { type: 'series', solo })
   const roomId = uuidv4().slice(0, 8)
-  // Pin the creator's region so every partner swipes the SAME deck.
-  const filters = JSON.stringify({ platforms, genres, region: detectRegion(), ...(solo && { solo: true }) })
+  // Pin the creator's region and catalog day so every partner swipes the SAME deck.
+  const filters = JSON.stringify({ platforms, genres, region: detectRegion(), cd: catalogDay(), ...(solo && { solo: true }) })
 
   if (!supabase) {
     const room = { id: roomId, type: 'series', platforms: filters, created_at: new Date().toISOString(), status: 'waiting' }

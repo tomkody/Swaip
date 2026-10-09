@@ -30,6 +30,24 @@
       ]
     },
     {
+      "source": "/(icons|landing|game-masks)/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/(favicon-v2.png|favicon.ico|swaip-icon.png|swaip-icon-dark.png|swaip-icon-transparent.png|logo.png|logo-dark.png|og-image.png|icons.svg|manifest.json)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+      ]
+    },
+    {
       "source": "/(.*)",
       "headers": [
         {

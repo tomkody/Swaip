@@ -27,9 +27,15 @@ export function initHistorySync() {
     if (!user) { historyKey = null; return }
     const userKey = `user:${user.id}`
     const device = getDeviceId()
-    if (device && historyKey !== userKey && !remoteUnavailable) {
+    // Once per identity on this device, not on every page load (it was a
+    // database write for every visit).
+    const adoptedFlag = `swaip_history_adopted_${user.id}`
+    let adopted = false
+    try { adopted = localStorage.getItem(adoptedFlag) === '1' } catch { /* storage blocked */ }
+    if (device && historyKey !== userKey && !remoteUnavailable && !adopted) {
       supabase.from('saved_matches').update({ device_key: userKey })
-        .eq('device_key', device).then(() => {}, () => {})
+        .eq('device_key', device)
+        .then(({ error }) => { if (!error) { try { localStorage.setItem(adoptedFlag, '1') } catch { /* storage blocked */ } } }, () => {})
     }
     historyKey = userKey
   }
@@ -108,6 +114,9 @@ export async function syncSavedMatches() {
   const local = getSavedMatches()
   const device = currentKey()
   if (!supabase || remoteUnavailable || !device) return local
+  // Without a session (someone who never opened a room) the policies return
+  // nothing anyway: skip the request rather than sign them in for it.
+  if (!(await getUser())) return local
   try {
     const { data, error } = await supabase
       .from('saved_matches')

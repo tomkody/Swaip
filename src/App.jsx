@@ -1,6 +1,7 @@
-import { lazy, Suspense } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { lazy, Suspense, useEffect } from 'react'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Landing from './pages/Landing'
+import { ensureSession } from './lib/supabase'
 import './App.css'
 
 // Route-level code-splitting: the landing page loads instantly from the main
@@ -25,7 +26,19 @@ function RouteFallback() {
   )
 }
 
+// Row-level security matches rooms against an anonymous identity. Start that
+// sign-in as soon as someone heads for a room or a create page, so it runs
+// while the page's code downloads; the promise is cached, so everything after
+// just awaits the same one. Landing and legal pages never sign anyone in.
+function useSessionWhereNeeded() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    if (/^\/(room|create)\//.test(pathname)) ensureSession()
+  }, [pathname])
+}
+
 export default function App() {
+  useSessionWhereNeeded()
   return (
     <div className="app">
       <Suspense fallback={<RouteFallback />}>

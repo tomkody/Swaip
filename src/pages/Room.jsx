@@ -52,7 +52,7 @@ const JOIN_COPY = {
 }
 
 function parseRoomFilters(raw) {
-  const none = { platforms: [], genres: [], region: undefined, prefs: normalizePrefs() }
+  const none = { platforms: [], genres: [], region: undefined, day: undefined, prefs: normalizePrefs() }
   if (!raw) return none
   try {
     const parsed = JSON.parse(raw)
@@ -61,6 +61,7 @@ function parseRoomFilters(raw) {
       platforms: parsed.platforms || [],
       genres: parsed.genres || [],
       region: parsed.region,
+      day: typeof parsed.cd === 'string' ? parsed.cd : undefined,   // catalog day the room was built on
       prefs: normalizePrefs(parsed),
     }
   } catch {
@@ -170,12 +171,12 @@ export default function Room() {
           setPartnerJoined(true)
         }
 
-        const { platforms, genres, region, prefs } = parseRoomFilters(roomData.platforms ?? roomData.topic_id)
+        const { platforms, genres, region, day, prefs } = parseRoomFilters(roomData.platforms ?? roomData.topic_id)
         let deck = []
         if (roomData.type === 'movies') {
-          deck = await fetchTopRatedMovies(roomData.id, platforms, genres, region, prefs)
+          deck = await fetchTopRatedMovies(roomData.id, platforms, genres, region, prefs, day)
         } else if (roomData.type === 'series') {
-          deck = await fetchTopRatedSeries(roomData.id, platforms, genres, region)
+          deck = await fetchTopRatedSeries(roomData.id, platforms, genres, region, day)
         }
         setMovies(deck)
         if (saved && deck.length > 0) {

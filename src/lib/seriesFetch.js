@@ -3,6 +3,7 @@ import { SERIES_GENRES } from './seriesGenres'
 import { normalizeGenres, matchesGenres } from './genres'
 import { supabase } from './supabase'
 import { CATALOG_REGIONS, detectRegion } from './regions'
+import { catalogDay } from './catalogDay'
 import { buildDeck } from './deck'
 
 // Static fallback catalog (used offline / when Supabase or the catalog is empty).
@@ -63,12 +64,12 @@ function rowToSeries(r) {
   }
 }
 
-async function loadCatalog(region) {
+async function loadCatalog(region, day) {
   // A single failed read used to drop this player onto the static list while
   // their partner stayed on the catalog — two different decks. Retry a blip.
   for (let attempt = 0; attempt < 2; attempt++) {
     if (attempt > 0) await new Promise(r => setTimeout(r, 400))
-    const { data, error } = await readCatalogRegion('series_catalog', region)
+    const { data, error } = await readCatalogRegion('series_catalog', region, day)
     if (!error && data && data.length > 0) return data
     if (!error) return null           // genuinely empty — retrying won't help
   }
@@ -78,8 +79,8 @@ async function loadCatalog(region) {
 // Region-accurate TV catalog from Supabase, populated nightly from TMDB.
 // Falls back to US, then the bundled static list, so it can never render empty.
 // Load a region's catalog and keep only shows streamable on a tracked platform.
-async function loadStreamable(region) {
-  const rows = await loadCatalog(region)
+async function loadStreamable(region, day) {
+  const rows = await loadCatalog(region, day)
   const streamable = rows ? rows.map(rowToSeries).filter(s => s.platforms.length > 0) : []
   return streamable.length ? streamable : null
 }
@@ -88,13 +89,14 @@ async function loadStreamable(region) {
 // pool: the create page starts the read and the room reuses it. Resolves to
 // null when there is no catalog to use (the caller falls back to the static list).
 const poolCache = new Map()
-export function loadSeriesPool(region) {
+export function loadSeriesPool(region, day = catalogDay()) {
   const reg = region || detectRegion()
-  const key = CATALOG_REGIONS.includes(reg) ? reg : 'US'
+  const regionKey = CATALOG_REGIONS.includes(reg) ? reg : 'US'
+  const key = `${regionKey}:${day}`
   if (poolCache.has(key)) return poolCache.get(key)
   const promise = (async () => {
-    let streamable = await loadStreamable(key)
-    if (!streamable && key !== 'US') streamable = await loadStreamable('US')
+    let streamable = await loadStreamable(regionKey, day)
+    if (!streamable && regionKey !== 'US') streamable = await loadStreamable('US', day)
     return streamable
   })()
   poolCache.set(key, promise)
@@ -106,11 +108,11 @@ export function loadSeriesPool(region) {
   return promise
 }
 
-export async function fetchTopRatedSeries(roomId, platforms = [], genres = [], region) {
+export async function fetchTopRatedSeries(roomId, platforms = [], genres = [], region, day) {
   if (!supabase) return fetchStaticSeries(roomId, platforms, genres)
   try {
-    // Prefer the room's pinned region so both partners swipe the SAME deck.
-    const streamable = await loadSeriesPool(region)
+    // Prefer the room's pinned region and catalog day so both partners swipe the SAME deck.
+    const streamable = await loadSeriesPool(region, day || undefined)
     if (!streamable) return fetchStaticSeries(roomId, platforms, genres)
 
     const pool = filterPool(streamable, platforms, genres)

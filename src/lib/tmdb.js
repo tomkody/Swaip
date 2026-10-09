@@ -3,6 +3,7 @@ import { MOVIE_GENRES } from './movieGenres'
 import { normalizeGenres, matchesGenres } from './genres'
 import { supabase } from './supabase'
 import { CATALOG_REGIONS, detectRegion } from './regions'
+import { catalogDay } from './catalogDay'
 import { buildDeck } from './deck'
 import { prefsPredicate } from './movieFilters'
 
@@ -72,10 +73,22 @@ function rowToMovie(r) {
   }
 }
 
-// One region of a catalog table, all of it. PostgREST ends a plain read at 1000
-// rows without saying so - `.limit(2000)` doesn't lift that - and the US movie
-// catalog is past 800. Ordered by id so both partners fetch identical rows.
-export async function readCatalogRegion(table, region) {
+// One region of a catalog table, all of it. First from the CDN copy
+// (api/catalog.js): the direct read was about half a megabyte of Supabase
+// egress per player, most of the Free plan's 5 GB. `day` names the copy (the
+// room pins it), so both partners get the same rows. The direct read stays as
+// the fallback: PostgREST ends a plain read at 1000 rows without saying so -
+// `.limit(2000)` doesn't lift that - and the US movie catalog is past 800.
+// Ordered by id so both partners fetch identical rows.
+export async function readCatalogRegion(table, region, day = catalogDay()) {
+  try {
+    const kind = table === 'series_catalog' ? 'series' : 'movies'
+    const r = await fetch(`/api/catalog?kind=${kind}&region=${encodeURIComponent(region)}&d=${encodeURIComponent(day)}`)
+    if (r.ok) {
+      const rows = await r.json()
+      if (Array.isArray(rows)) return { data: rows, error: null }
+    }
+  } catch { /* no endpoint (local dev) or offline: read directly */ }
   const rows = []
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supabase
@@ -87,13 +100,13 @@ export async function readCatalogRegion(table, region) {
   }
 }
 
-async function loadCatalog(region) {
+async function loadCatalog(region, day) {
   // One failed read used to drop this player onto the static list while their
   // partner stayed on the catalog — two different decks, no real matches. A
   // blip is worth retrying before accepting that.
   for (let attempt = 0; attempt < 2; attempt++) {
     if (attempt > 0) await new Promise(r => setTimeout(r, 400))
-    const { data, error } = await readCatalogRegion('movie_catalog', region)
+    const { data, error } = await readCatalogRegion('movie_catalog', region, day)
     if (!error && data && data.length > 0) return data
     if (!error) return null           // genuinely empty — retrying won't help
   }
@@ -105,26 +118,28 @@ async function loadCatalog(region) {
 // Load a region's catalog and keep only titles actually streamable on one of
 // our tracked platforms — we tell users they'll find it on one of them, so we
 // don't surface titles that aren't on any. Returns null if none.
-async function loadStreamable(region) {
-  const rows = await loadCatalog(region)
+async function loadStreamable(region, day) {
+  const rows = await loadCatalog(region, day)
   const streamable = rows ? rows.map(rowToMovie).filter(m => m.platforms.length > 0) : []
   return streamable.length ? streamable : null
 }
 
 // The full streamable pool for a region (catalog → US catalog → static list).
-// Cached per region for the session: the create page starts the read while
-// people pick options, and the room reuses it without a second fetch.
+// Cached per region and catalog day for the session: the create page starts
+// the read while people pick options, and the room reuses it without a second
+// fetch. `day` is the room's pinned catalog day (today's on the create page).
 const poolCache = new Map()
-export async function loadMoviePool(region) {
+export async function loadMoviePool(region, day = catalogDay()) {
   const reg = region || detectRegion()
-  const key = CATALOG_REGIONS.includes(reg) ? reg : 'US'
+  const regionKey = CATALOG_REGIONS.includes(reg) ? reg : 'US'
+  const key = `${regionKey}:${day}`
   if (poolCache.has(key)) return poolCache.get(key)
   let fellBack = false
   const promise = (async () => {
     if (!supabase) return loadStaticMovies()
     try {
-      let streamable = await loadStreamable(key)
-      if (!streamable && key !== 'US') streamable = await loadStreamable('US')
+      let streamable = await loadStreamable(regionKey, day)
+      if (!streamable && regionKey !== 'US') streamable = await loadStreamable('US', day)
       if (streamable) return streamable
     } catch (e) {
       console.error('[tmdb] catalog read failed, using static list:', e)
@@ -147,10 +162,10 @@ export function filterMoviePool(all, platforms = [], genres = []) {
   return filterPool(all, platforms, genres)
 }
 
-export async function fetchTopRatedMovies(roomId, platforms = [], genres = [], region, prefs) {
-  // Prefer the room's pinned region so both partners swipe the SAME deck.
+export async function fetchTopRatedMovies(roomId, platforms = [], genres = [], region, prefs, day) {
+  // Prefer the room's pinned region and catalog day so both partners swipe the SAME deck.
   try {
-    const pool = filterPool(await loadMoviePool(region), platforms, genres)
+    const pool = filterPool(await loadMoviePool(region, day || undefined), platforms, genres)
     return buildDeck(pool, roomId, { prefer: prefsPredicate(prefs) })
   } catch (e) {
     console.error('[tmdb] pool load failed, using static list:', e)

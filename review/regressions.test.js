@@ -45,6 +45,8 @@ import { submitConversationSelections, getConversationMatches, fetchRoomPicks, f
 import notify from '../api/notify'
 import places from '../api/places'
 import refreshMovies, { writeCatalog } from '../api/refresh-movies'
+import catalog from '../api/catalog'
+import { catalogDay } from '../src/lib/catalogDay'
 
 beforeEach(() => { state.tables = {}; vi.unstubAllEnvs(); vi.unstubAllGlobals() })
 
@@ -243,4 +245,28 @@ it('refuses a place push for an item that is not in the room deck, and drops a l
   expect(placeTitle(room, 2500002)).toBeNull()        // generic copy instead
   expect(placeTitle(room, 2500003)).toBe('Café Savoy')
   expect(placeTitle(room, 1999)).toBeUndefined()      // not a place: no push at all
+})
+
+it('serves a catalog region from the CDN only for a known kind, a region and a recent catalog day', async () => {
+  vi.stubEnv('VITE_SUPABASE_URL', 'https://review.invalid'); vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon')
+  state.tables.movie_catalog = [
+    { tmdb_id: 2, region: 'CZ', title: 'B', platforms: ['netflix'] },
+    { tmdb_id: 1, region: 'CZ', title: 'A', platforms: ['netflix'] },
+    { tmdb_id: 3, region: 'US', title: 'C', platforms: ['netflix'] },
+  ]
+  let res = response()
+  await catalog({ method: 'GET', query: { kind: 'movies', region: 'CZ', d: catalogDay() } }, res)
+  expect(res.code).toBe(200)
+  expect(res.body.map(r => r.title).sort()).toEqual(['A', 'B'])
+  // The cache key must not be free-form, or anyone could bust the CDN copy.
+  for (const query of [{ kind: 'movies', region: 'CZ', d: '2020-01-01' }, { kind: 'users', region: 'CZ', d: catalogDay() }, { kind: 'movies', region: 'cz;', d: catalogDay() }]) {
+    res = response()
+    await catalog({ method: 'GET', query }, res)
+    expect(res.code).toBe(400)
+  }
+})
+
+it('names the catalog day from 06:00 UTC, after both nightly refreshes', () => {
+  expect(catalogDay(Date.parse('2026-10-09T05:59:00Z'))).toBe('2026-10-08')
+  expect(catalogDay(Date.parse('2026-10-09T06:00:00Z'))).toBe('2026-10-09')
 })
